@@ -631,8 +631,13 @@ h5 {
     position: relative;
 }
 
-.toggle-switch input {
-    display: none;
+/* Profile Buttons */
+.profile-btns {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 25px;
 }
 
 .toggle-switch label {

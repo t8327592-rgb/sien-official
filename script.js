@@ -97,9 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(orderForm);
 
-            fetch('https://formspree.io/f/xaqqkwye', {
+            fetch('https://ssgform.com/s/oUyPUuSmLYCq', {
                 method: 'POST',
                 headers: {
+                    // SSGform may accept this, or just standard FormData. 
+                    // Keeping simple to avoid CORS preflight issues if strict, but 'Accept' is usually safe.
                     'Accept': 'application/json'
                 },
                 body: formData
