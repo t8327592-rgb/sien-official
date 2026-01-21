@@ -631,6 +631,10 @@ h5 {
     position: relative;
 }
 
+.toggle-switch input {
+    display: none;
+}
+
 /* Profile Buttons */
 .profile-btns {
     display: flex;
@@ -789,11 +793,21 @@ h5 {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    /* Ensure ease timing */
+    will-change: transform;
+    /* Hint browser for performance */
+    transform: translateY(0);
+    /* Explicitly set default state */
 }
 
 .work-item:hover {
     transform: translateY(-5px);
+    border-color: var(--accent-blue);
+    /* Added border hover effect */
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+    /* Optional: Enhance shadow like typical hover states */
 }
 
 .video-container {

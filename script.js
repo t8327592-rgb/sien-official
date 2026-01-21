@@ -99,11 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             fetch('https://ssgform.com/s/oUyPUuSmLYCq', {
                 method: 'POST',
-                headers: {
-                    // SSGform may accept this, or just standard FormData. 
-                    // Keeping simple to avoid CORS preflight issues if strict, but 'Accept' is usually safe.
-                    'Accept': 'application/json'
-                },
+                mode: 'no-cors', // Important: SSGform likely redirects or doesn't support CORS JSON, so we use no-cors to allow submission without error
                 body: formData
             })
                 .then(() => {
@@ -200,10 +196,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            // Metadata loaded (Duration)
+            const onMetadataLoaded = () => {
+                if (activeAudio.duration && !isNaN(activeAudio.duration)) {
+                    seekBar.max = activeAudio.duration;
+                    totalTimeText.innerText = formatTime(activeAudio.duration);
+                }
+            };
+            audioBefore.addEventListener('loadedmetadata', onMetadataLoaded);
+            // In case already loaded
+            if (audioBefore.readyState >= 1) onMetadataLoaded();
+
             // Time Update (only update UI if from active track)
             const onTimeUpdate = (e) => {
                 if (e.target !== activeAudio) return;
                 const t = activeAudio.currentTime;
+                // Avoid seek fighting
+                // Only update if not currently dragging? 
+                // Using 'input' event for drag usually handles this naturally if updates are frequent.
                 seekBar.value = t;
                 currTimeText.innerText = formatTime(t);
             };
@@ -226,16 +236,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const onEnd = () => {
                 isPlaying = false;
                 btn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                audioBefore.currentTime = 0;
-                audioAfter.currentTime = 0;
-                audioBefore.pause();
-                audioAfter.pause();
+                activeAudio.currentTime = 0; // Use activeAudio
+                const other = activeAudio === audioBefore ? audioAfter : audioBefore;
+                other.currentTime = 0;
+
+                activeAudio.pause();
+                other.pause(); // Ensure both pause
+
                 seekBar.value = 0;
                 currTimeText.innerText = "0:00";
             };
             audioBefore.addEventListener('ended', onEnd);
             audioAfter.addEventListener('ended', onEnd);
         });
+    }
+
+    // Helper
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
     // --- 4. Portfolio Grid (Mix Page) ---
