@@ -135,41 +135,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const currTimeText = document.getElementById(`time-${sampleId}`);
             const totalTimeText = document.getElementById(`total-${sampleId}`);
 
-            // Logic to sync mute state
-            const syncVolume = () => {
-                const type = document.querySelector(`input[name="sample${sampleId}-type"]:checked`).value;
-                if (type === 'before') {
-                    audioBefore.muted = false;
-                    audioAfter.muted = true;
+            // State
+            let activeAudio = audioBefore; // Default
+            let isPlaying = false;
+
+            // Helper: Switch Active Track
+            const switchTrack = (newType) => {
+                const prevAudio = activeAudio;
+                const newAudio = newType === 'before' ? audioBefore : audioAfter;
+
+                if (prevAudio === newAudio) return;
+
+                // Sync time
+                const currentTime = prevAudio.currentTime;
+                newAudio.currentTime = currentTime;
+
+                // Create seamless switch
+                if (isPlaying) {
+                    prevAudio.pause();
+                    newAudio.play().catch(e => console.error("Playback failed:", e));
                 } else {
-                    audioBefore.muted = true;
-                    audioAfter.muted = false;
+                    prevAudio.pause(); // Ensure paused
                 }
-            };
-            syncVolume();
 
-            // Format time helper
-            const formatTime = (t) => {
-                if (isNaN(t)) return "0:00";
-                const m = Math.floor(t / 60);
-                const s = Math.floor(t % 60);
-                return `${m}:${s < 10 ? '0' : ''}${s}`;
+                activeAudio = newAudio;
+
+                // Mute state for visual consistency (though we only play one)
+                audioBefore.muted = (newType !== 'before');
+                audioAfter.muted = (newType !== 'after');
             };
 
-            // Set duration
-            const setDuration = () => {
-                if (!isNaN(audioBefore.duration)) {
-                    totalTimeText.innerText = formatTime(audioBefore.duration);
-                    seekBar.max = audioBefore.duration;
-                }
-            };
-            audioBefore.addEventListener('loadedmetadata', setDuration);
-            if (audioBefore.readyState >= 1) setDuration();
+            // Radio Change -> Switch Track
+            const radios = document.getElementsByName(`sample${sampleId}-type`);
+            radios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    switchTrack(e.target.value);
+                });
+            });
 
             // Play/Pause
             btn.addEventListener('click', () => {
-                if (audioBefore.paused) {
-                    // Stop others
+                if (activeAudio.paused) {
+                    // Stop others logic if needed (optional, keeping simple for mobile)
                     document.querySelectorAll('audio').forEach(a => {
                         if (a !== audioBefore && a !== audioAfter) {
                             a.pause();
@@ -180,45 +187,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (b !== btn) b.innerHTML = '<i class="fa-solid fa-play"></i>';
                     });
 
-                    // Play both
-                    audioBefore.play();
-                    audioAfter.play();
-                    btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    activeAudio.play().then(() => {
+                        isPlaying = true;
+                        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    }).catch(e => console.error("Play error:", e));
                 } else {
-                    // Pause both
-                    audioBefore.pause();
-                    audioAfter.pause();
+                    activeAudio.pause();
+                    isPlaying = false;
                     btn.innerHTML = '<i class="fa-solid fa-play"></i>';
                 }
             });
 
-            // Update Time (Master: Before)
-            audioBefore.addEventListener('timeupdate', () => {
-                const t = audioBefore.currentTime;
+            // Time Update (only update UI if from active track)
+            const onTimeUpdate = (e) => {
+                if (e.target !== activeAudio) return;
+                const t = activeAudio.currentTime;
                 seekBar.value = t;
                 currTimeText.innerText = formatTime(t);
-                // Sync check
-                if (Math.abs(audioAfter.currentTime - t) > 0.15) {
-                    audioAfter.currentTime = t;
-                }
-            });
+            };
+
+            audioBefore.addEventListener('timeupdate', onTimeUpdate);
+            audioAfter.addEventListener('timeupdate', onTimeUpdate);
 
             // Seek
             seekBar.addEventListener('input', () => {
                 const seekTo = parseFloat(seekBar.value);
-                audioBefore.currentTime = seekTo;
-                audioAfter.currentTime = seekTo;
-                currTimeText.innerText = formatTime(seekTo);
-            });
+                activeAudio.currentTime = seekTo;
+                // Silently sync the other one
+                const other = activeAudio === audioBefore ? audioAfter : audioBefore;
+                other.currentTime = seekTo;
 
-            // Radio Change -> sync volume
-            const radios = document.getElementsByName(`sample${sampleId}-type`);
-            radios.forEach(radio => {
-                radio.addEventListener('change', syncVolume);
+                currTimeText.innerText = formatTime(seekTo);
             });
 
             // End
             const onEnd = () => {
+                isPlaying = false;
                 btn.innerHTML = '<i class="fa-solid fa-play"></i>';
                 audioBefore.currentTime = 0;
                 audioAfter.currentTime = 0;
@@ -228,7 +232,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 currTimeText.innerText = "0:00";
             };
             audioBefore.addEventListener('ended', onEnd);
+            audioAfter.addEventListener('ended', onEnd);
         });
+    }
+
+    // --- 4. Portfolio Grid (Mix Page) ---
+    const portfolioContainer = document.getElementById('mix-portfolio');
+    const showMoreBtn = document.getElementById('show-more-btn');
+
+    if (portfolioContainer && showMoreBtn) {
+        const portfolioVideos = [
+            'olpsRfUFdjw', // 1
+            'voTuWFmcbeI', // 2
+            'Le84jUtbRwo', // 3
+            'E6bS-n2nx0g', // 4
+            'u4rAEKOKeZA', // 5
+            'tDUgj37HhOw', // 6
+            'yRFFBglbLWo', // 7
+            'ZYCwYSK0RK4', // 8
+            'P06mDQyOs14'  // 9
+        ];
+
+        let loadedCount = 0;
+        const loadStep = 3;
+
+        const createVideoItem = (videoId) => {
+            const item = document.createElement('div');
+            item.className = 'work-item fade-in'; // Reuse work-item style + animation
+            item.innerHTML = `
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+                </div>
+            `;
+            return item;
+        };
+
+        const loadMore = () => {
+            const nextBatch = portfolioVideos.slice(loadedCount, loadedCount + loadStep);
+
+            nextBatch.forEach(vid => {
+                const el = createVideoItem(vid);
+                portfolioContainer.appendChild(el);
+            });
+
+            loadedCount += nextBatch.length;
+
+            // Hide button if all loaded
+            if (loadedCount >= portfolioVideos.length) {
+                showMoreBtn.style.display = 'none';
+            }
+        };
+
+        // Initial Load
+        loadMore();
+
+        // Button Event
+        showMoreBtn.addEventListener('click', loadMore);
     }
 
     // --- 6. Hero Background Video Cycle ---
@@ -241,5 +300,4 @@ document.addEventListener('DOMContentLoaded', () => {
             bgVideos[currentVidIdx].classList.add('active');
         }, 7000);
     }
-
 });
