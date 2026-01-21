@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オリジナル楽曲制作 | Sien-Official</title>
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="logo"><a href="index.html">SIEN<span class="highlight">.OFFICIAL</span></a></div>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label"><span></span></label>
+        <nav class="nav-menu">
+            <ul>
+                <li><a href="mix.html">Mix & Mastering</a></li>
+                <li><a href="original.html" class="active-link">オリジナル楽曲制作</a></li>
+                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Page Title -->
+    <div class="page-header">
+        <div class="container">
+            <h1>オリジナル楽曲制作</h1>
+            <p>世界に一つだけのオリジナル楽曲を制作します。</p>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="container text-center">
+
+            <div class="original-grid">
+                <div class="price-card featured" style="max-width: 400px;">
+                    <div class="badge">人気</div>
+                    <h3>スタンダードプラン</h3>
+                    <div class="price"><span id="price_orig_std">¥66,000</span> <span class="tax-note">/ 60日</span>
+                    </div>
+                    <p class="price-desc">作詞・作曲・編曲・MIX・マスタリング込。<br>「そのまま投稿できる完成品」を納品します。</p>
+                </div>
+
+                <div class="price-card" style="max-width: 400px;">
+                    <h3>作詞持ち込みプラン</h3>
+                    <div class="price"><span id="price_orig_lyrics">¥55,000</span> <span class="tax-note">/ 60日</span>
+                    </div>
+                    <p class="price-desc">ご自身で作詞される方向け。<br>費用を抑えつつ高クオリティな楽曲を制作します。</p>
+                </div>
+            </div>
+
+            <div class="options-box mt-4" style="max-width: 600px; margin: 30px auto;">
+                <h4>Option</h4>
+                <p><strong>生楽器演奏追加:</strong> + <span id="price_opt_live">¥10,000</span> （専門プレイヤーによる生演奏を追加します）</p>
+            </div>
+
+            <!-- Portfolio Section -->
+            <div class="portfolio-section mt-5">
+                <h3 class="widget-title text-center">Portfolio</h3>
+                <p class="section-desc">過去の制作事例</p>
+
+                <div class="video-grid" id="original-portfolio">
+                    <!-- Dynamic Content by JS -->
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <a href="order.html" class="btn btn-primary btn-lg">お見積もり・相談する</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mix.html">Mix & Mastering</a>
+            <a href="original.html">オリジナル楽曲制作</a>
+            <a href="order.html">ご依頼フォーム</a>
+        </div>
+        <p>&copy; 2026 Sien-Official. All Rights Reserved.</p>
+    </footer>
+
+    <script src="script.js?v=21"></script>
+</body>
+
+</html>

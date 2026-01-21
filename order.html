@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order - Sien-Official</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="logo"><a href="index.html">SIEN<span class="highlight">.OFFICIAL</span></a></div>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label">
+            <span></span>
+        </label>
+        <nav class="nav-menu">
+            <ul>
+                <li><a href="mix.html">Mix & Mastering</a></li>
+                <li><a href="original.html">オリジナル楽曲制作</a></li>
+                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Page Title -->
+    <div class="page-header">
+        <div class="container">
+            <h1>ご依頼フォーム</h1>
+            <p>お見積もり・ご依頼はこちらから</p>
+        </div>
+    </div>
+
+    <!-- Order Section -->
+    <section class="section">
+        <div class="container">
+
+            <div class="order-status text-center">
+                <span class="status-open"><i class="fa-solid fa-circle-check"></i> 現在ご依頼受付中です</span>
+            </div>
+
+            <!-- Important Notice -->
+            <div class="notice-box">
+                <div class="notice-header">
+                    <i class="fa-solid fa-circle-info"></i> 【重要】一部楽曲のオプション料金について
+                </div>
+                <div class="notice-content">
+                    <p>
+                        現在、大変ご好評をいただいております【Giga &
+                        TeddyLoid】【こっちのけんと】の楽曲をはじめ、制作に多くの工程と時間を要する楽曲につきましては、誠に恐縮ながらオプション料金（3,000円～10,000円）を頂戴しております。<br><br>
+                        料金は録音音源の状態やトラック数により変動いたします。<br>
+                        ご依頼の際は、何卒ご理解賜りますようお願いいたします。<br><br>
+                        その他、ご不明な点がございましたら、お気軽にお問い合わせください。
+                    </p>
+                </div>
+            </div>
+
+
+            <!-- Form Area -->
+            <form id="orderForm" class="order-form-clean" action="#" method="POST" data-netlify="true" name="contact">
+                <input type="hidden" name="form-name" value="contact">
+
+                <!-- Single Column Grid -->
+                <div class="form-grid">
+                    <!-- Activity Name -->
+                    <div class="form-group">
+                        <label>活動名 / お名前 <span class="req">*</span></label>
+                        <input type="text" name="name" required placeholder="活動名を入力">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label>メールアドレス <span class="req">*</span></label>
+                        <input type="email" name="email" required placeholder="example@email.com">
+                    </div>
+
+                    <!-- Twitter ID -->
+                    <div class="form-group">
+                        <label>Twitter ID <span class="req">*</span></label>
+                        <input type="text" name="twitter_id" required placeholder="@sien_mc09">
+                    </div>
+
+                    <!-- Contact Method -->
+                    <div class="form-group">
+                        <label>希望する連絡手段 <span class="req">*</span></label>
+                        <select name="contact_method" required>
+                            <option value="">選択してください</option>
+                            <option value="email">メール</option>
+                            <option value="twitter_dm">Twitter DM</option>
+                        </select>
+                    </div>
+
+                    <!-- Song Name -->
+                    <div class="form-group full-width">
+                        <label>曲名をご入力ください (ない場合は"なし"と入力ください) <span class="req">*</span></label>
+                        <input type="text" name="song_name" required placeholder="例: モニタリング / なし">
+                    </div>
+
+                    <!-- Plan -->
+                    <div class="form-group">
+                        <label>プランを選択してください <span class="req">*</span></label>
+                        <select name="plan" required>
+                            <option value="">選択してください</option>
+                            <option value="standard">スタンダードプラン</option>
+                            <option value="one_chorus">ワンコーラスプラン</option>
+                            <option value="short">ショート動画用MIX</option>
+                            <option value="speed">スピードプラン</option>
+                            <option value="super_speed">超スピードプラン</option>
+                            <option value="collab">コラボ・合唱プラン</option>
+                            <option value="original_std">オリジナル楽曲 スタンダード</option>
+                            <option value="original_lyrics">オリジナル楽曲 作詞持ち込み</option>
+                            <option value="other">その他・ご相談</option>
+                        </select>
+                    </div>
+
+                    <!-- Option -->
+                    <div class="form-group">
+                        <label>オプション / その他</label>
+                        <input type="text" name="options" placeholder="ボーカルガイド、カットアップ、エンコードなど">
+                    </div>
+
+                    <!-- Upload URL -->
+                    <div class="form-group full-width">
+                        <label>レコーディング済み音源のアップロードURL</label>
+                        <input type="url" name="upload_url" placeholder="Gigafile便、Google DriveなどのURL">
+                    </div>
+
+                    <!-- Key -->
+                    <div class="form-group">
+                        <label>歌唱キー</label>
+                        <input type="text" name="key" placeholder="原キー, +3, -2, etc.">
+                    </div>
+
+                    <!-- Ref URL -->
+                    <div class="form-group">
+                        <label>参考曲 (YouTubeなどのURL)</label>
+                        <input type="url" name="ref_url" placeholder="https://...">
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="form-group full-width">
+                        <label>ご要望・ご質問・特記事項など</label>
+                        <textarea name="remarks" placeholder="ご自由にご記入ください"></textarea>
+                    </div>
+                </div>
+
+                <!-- Agreement -->
+                <div class="form-group checkbox-group mt-4" style="text-align: center;">
+                    <input type="checkbox" id="agree" required
+                        style="width: auto; margin-right: 10px; transform: scale(1.2);">
+                    <label for="agree" style="display: inline; font-size: 1rem; cursor: pointer;">
+                        <a href="https://lit.link/sien09" target="_blank" class="disclaimer-link"
+                            style="color: #2563eb; text-decoration: underline;">ご依頼に関する留意事項</a>に同意する <span
+                            class="req">*</span>
+                    </label>
+                </div>
+
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg" style="min-width: 250px;">
+                        内容を送信する <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div id="successMessage" class="success-message hidden">
+                <i class="fa-regular fa-paper-plane"></i>
+                <h3>Thank you!</h3>
+                <p>送信が完了しました。内容を確認し、後ほどご連絡いたします。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mix.html">Mix & Mastering</a>
+            <a href="original.html">オリジナル楽曲制作</a>
+            <a href="order.html">ご依頼フォーム</a>
+        </div>
+        <p>&copy; 2026 Sien-Official. All Rights Reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
