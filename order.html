@@ -69,25 +69,108 @@
 
 
             <!-- Form Area -->
-            <form action="https://formspree.io/f/xaqqkwye" method="POST">
-                <div class="form-group">
-                    <label>活動名 / お名前</label>
-                    <input type="text" name="name" placeholder="例：しえん" required>
-                </div>
-                <div class="form-group">
-                    <label>メールアドレス</label>
-                    <input type="email" name="email" placeholder="example@gmail.com" required>
-                </div>
-                <div class="form-group">
-                    <label>ご相談内容</label>
-                    <textarea name="message" rows="5" placeholder="ご依頼内容や納期などをご記入ください" required></textarea>
+            <form id="orderForm" class="order-form-clean" action="#" method="POST" data-netlify="true" name="contact">
+                <input type="hidden" name="form-name" value="contact">
+
+                <!-- Single Column Grid -->
+                <div class="form-grid">
+                    <!-- Activity Name -->
+                    <div class="form-group">
+                        <label>活動名 / お名前 <span class="req">*</span></label>
+                        <input type="text" name="name" required placeholder="活動名を入力">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label>メールアドレス <span class="req">*</span></label>
+                        <input type="email" name="email" required placeholder="example@email.com">
+                    </div>
+
+                    <!-- Twitter ID -->
+                    <div class="form-group">
+                        <label>Twitter ID <span class="req">*</span></label>
+                        <input type="text" name="twitter_id" required placeholder="@sien_mc09">
+                    </div>
+
+                    <!-- Contact Method -->
+                    <div class="form-group">
+                        <label>希望する連絡手段 <span class="req">*</span></label>
+                        <select name="contact_method" required>
+                            <option value="">選択してください</option>
+                            <option value="email">メール</option>
+                            <option value="twitter_dm">Twitter DM</option>
+                        </select>
+                    </div>
+
+                    <!-- Song Name -->
+                    <div class="form-group full-width">
+                        <label>曲名をご入力ください (ない場合は"なし"と入力ください) <span class="req">*</span></label>
+                        <input type="text" name="song_name" required placeholder="例: モニタリング / なし">
+                    </div>
+
+                    <!-- Plan -->
+                    <div class="form-group">
+                        <label>プランを選択してください <span class="req">*</span></label>
+                        <select name="plan" required>
+                            <option value="">選択してください</option>
+                            <option value="standard">スタンダードプラン</option>
+                            <option value="one_chorus">ワンコーラスプラン</option>
+                            <option value="short">ショート動画用MIX</option>
+                            <option value="speed">スピードプラン</option>
+                            <option value="super_speed">超スピードプラン</option>
+                            <option value="collab">コラボ・合唱プラン</option>
+                            <option value="original_std">オリジナル楽曲 スタンダード</option>
+                            <option value="original_lyrics">オリジナル楽曲 作詞持ち込み</option>
+                            <option value="other">その他・ご相談</option>
+                        </select>
+                    </div>
+
+                    <!-- Option -->
+                    <div class="form-group">
+                        <label>オプション / その他</label>
+                        <input type="text" name="options" placeholder="ボーカルガイド、カットアップ、エンコードなど">
+                    </div>
+
+                    <!-- Upload URL -->
+                    <div class="form-group full-width">
+                        <label>レコーディング済み音源のアップロードURL</label>
+                        <input type="url" name="upload_url" placeholder="Gigafile便、Google DriveなどのURL">
+                    </div>
+
+                    <!-- Key -->
+                    <div class="form-group">
+                        <label>歌唱キー</label>
+                        <input type="text" name="key" placeholder="原キー, +3, -2, etc.">
+                    </div>
+
+                    <!-- Ref URL -->
+                    <div class="form-group">
+                        <label>参考曲 (YouTubeなどのURL)</label>
+                        <input type="url" name="ref_url" placeholder="https://...">
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="form-group full-width">
+                        <label>ご要望・ご質問・特記事項など</label>
+                        <textarea name="remarks" placeholder="ご自由にご記入ください"></textarea>
+                    </div>
                 </div>
 
-                <input type="hidden" name="_next" value="https://sien-official.vercel.app/order.html">
-                <input type="hidden" name="_subject" value="【Sien-Official】新しいお問い合わせが届きました">
+                <!-- Agreement -->
+                <div class="form-group checkbox-group mt-4" style="text-align: center;">
+                    <input type="checkbox" id="agree" required
+                        style="width: auto; margin-right: 10px; transform: scale(1.2);">
+                    <label for="agree" style="display: inline; font-size: 1rem; cursor: pointer;">
+                        <a href="https://lit.link/sien09" target="_blank" class="disclaimer-link"
+                            style="color: #2563eb; text-decoration: underline;">ご依頼に関する留意事項</a>に同意する <span
+                            class="req">*</span>
+                    </label>
+                </div>
 
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">内容を送信する</button>
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg" style="min-width: 250px;">
+                        内容を送信する <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>
                 </div>
             </form>
 

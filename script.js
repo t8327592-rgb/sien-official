@@ -97,10 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(orderForm);
 
-            fetch('/', {
+            fetch('https://formspree.io/f/xaqqkwye', {
                 method: 'POST',
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams(formData).toString()
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: formData
             })
                 .then(() => {
                     // Hide entire input area (form + notice + status)
