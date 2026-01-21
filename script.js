@@ -242,27 +242,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (portfolioContainer && showMoreBtn) {
         const portfolioVideos = [
-            'olpsRfUFdjw', // 1
-            'voTuWFmcbeI', // 2
-            'Le84jUtbRwo', // 3
-            'E6bS-n2nx0g', // 4
-            'u4rAEKOKeZA', // 5
-            'tDUgj37HhOw', // 6
-            'yRFFBglbLWo', // 7
-            'ZYCwYSK0RK4', // 8
-            'P06mDQyOs14'  // 9
+            { id: 'olpsRfUFdjw', title: '[歌ってみた]Campus mode!!/初星学園 ❴ぽぷ・にゃーちふぃんど/月見ひひと/純粋なの/re;BON❵' },
+            { id: 'voTuWFmcbeI', title: 'いーあるふぁんくらぶ / ぷりあま Cover【歌ってみた】' },
+            { id: 'Le84jUtbRwo', title: '【子ﾗｲｵﾝ♀が】けっかおーらい/ヴィジランテOP【描いて歌ってみた】VTuber Cover' },
+            { id: 'E6bS-n2nx0g', title: '【歌ってみた】天才 / SMITH(すみす)' },
+            { id: 'u4rAEKOKeZA', title: '火ノ要鎮 / 平田義久 - じょん【歌ってみた】' },
+            { id: 'tDUgj37HhOw', title: '白い雪のプリンセスは Covered by 草刈七海' },
+            { id: 'yRFFBglbLWo', title: 'キラー（Cover）/とうにこ' },
+            { id: 'ZYCwYSK0RK4', title: '【歌ってみた】ダーリンゲームオーバーラブ / ウルハシスティー' },
+            { id: 'P06mDQyOs14', title: 'きゅうくらりん / 田中バター【歌ってみた】' }
         ];
 
         let loadedCount = 0;
         const loadStep = 3;
 
-        const createVideoItem = (videoId) => {
+        const createVideoItem = (video) => {
             const item = document.createElement('div');
-            item.className = 'work-item fade-in'; // Reuse work-item style + animation
+            item.className = 'work-item fade-in';
             item.innerHTML = `
                 <div class="video-container">
-                    <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
                 </div>
+                <p class="work-title">${video.title}</p>
             `;
             return item;
         };
@@ -288,6 +289,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Button Event
         showMoreBtn.addEventListener('click', loadMore);
+    }
+
+    // --- 5. Portfolio Grid (Original Page) ---
+    const originalPortfolioContainer = document.getElementById('original-portfolio');
+    if (originalPortfolioContainer) {
+        const originalVideos = [
+            { id: 'Rc531IszCes', title: '【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】' },
+            { id: 'zTxvMNXaFoA', title: '【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】' },
+            { id: 'Ke1HAX8Z49I', title: '週末を待て。『SODA』Music Video' }
+        ];
+
+        const createOriginalItem = (video) => {
+            const item = document.createElement('div');
+            item.className = 'work-item fade-in';
+            item.innerHTML = `
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <p class="work-title">${video.title}</p>
+            `;
+            return item;
+        };
+
+        originalVideos.forEach(video => {
+            originalPortfolioContainer.appendChild(createOriginalItem(video));
+        });
     }
 
     // --- 6. Hero Background Video Cycle ---
