@@ -103,11 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: new URLSearchParams(formData).toString()
             })
                 .then(() => {
-                    // Hide form, show success
-                    orderForm.style.display = 'none';
+                    // Hide entire input area (form + notice + status)
+                    const inputArea = document.getElementById('input-area');
+                    if (inputArea) inputArea.style.display = 'none';
+
+                    // Show success
                     successMessage.classList.remove('hidden');
                     orderForm.reset();
-                    window.scrollTo(0, orderForm.offsetTop - 100);
+                    window.scrollTo(0, 0);
                 })
                 .catch((error) => {
                     alert('送信に失敗しました。時間をおいて再度お試しください。');
