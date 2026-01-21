@@ -432,10 +432,12 @@ h5 {
 
 @media (max-width: 768px) {
     .hero {
-        /* Enforce 16:9 aspect ratio for horizontal video look */
+        /* Push down by header height to clear text from being covered */
+        margin-top: 70px;
+        /* Exact 16:9 Aspect Ratio */
         height: 56.25vw;
-        min-height: 220px;
-        /* Minimum height for very small screens */
+        min-height: auto;
+        overflow: hidden;
     }
 
     .video-slide iframe {
@@ -449,25 +451,22 @@ h5 {
     }
 
     .hero-container h1 {
-        font-size: 5vw;
-        /* Responsive font size to ensure single line */
-        margin-bottom: 10px;
+        font-size: 4.5vw;
+        margin-bottom: 8px;
     }
 
     .sp-break {
         display: block;
-        /* Force break after 'に、' */
     }
 
     .hero-sub {
-        font-size: 3vw;
-        /* Smaller subtext */
-        margin-bottom: 20px;
+        font-size: 2.8vw;
+        margin-bottom: 10px;
     }
 
     .hero-container {
-        padding-bottom: 20px;
-        /* Adjust padding for shorter container */
+        /* Remove extra padding to keep everything tight in the 16:9 box */
+        padding-bottom: 0;
     }
 }
 
