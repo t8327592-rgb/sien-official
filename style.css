@@ -195,10 +195,13 @@ h5 {
 }
 
 .logo {
-    font-size: 1.4rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-    font-family: var(--font-heading);
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    height: 64px;
+    width: auto;
 }
 
 .nav-menu ul {
@@ -397,6 +400,11 @@ h5 {
     display: none;
 }
 
+.no-wrap-text {
+    white-space: nowrap;
+    display: inline-block;
+}
+
 .hero-sub {
     font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.95);
@@ -451,7 +459,8 @@ h5 {
     }
 
     .hero-container h1 {
-        font-size: 4.5vw;
+        font-size: 6vw !important;
+        /* Adjusted for better visibility */
         margin-bottom: 8px;
     }
 
@@ -998,6 +1007,22 @@ textarea {
     color: var(--accent-blue);
 }
 
+.form-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 40px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    display: block;
+    width: 100%;
+}
+
+.form-section-title:first-child {
+    margin-top: 0;
+}
+
 /* =========================================
    10. Components
    ========================================= */
@@ -1041,4 +1066,229 @@ textarea {
     font-weight: 700;
     border-bottom: 1px dashed #e5e7eb;
     padding-bottom: 10px;
+}
+
+/* =========================================
+   11. News Section (Redesign)
+   ========================================= */
+.news-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 60px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.news-header {
+    flex: 0 0 260px;
+    /* Fixed width for title */
+    text-align: left;
+}
+
+.news-header h2 {
+    font-size: 3rem;
+    /* Large font size like image */
+    font-weight: 500;
+    margin: 0;
+    text-align: left;
+    width: auto;
+    display: block;
+    white-space: nowrap;
+}
+
+.news-header .section-title {
+    text-align: left;
+    margin-bottom: 0;
+    width: auto;
+}
+
+.news-header .section-title::after {
+    display: none;
+    /* Remove blue underline for this specific layout */
+}
+
+.news-content {
+    flex: 1;
+}
+
+.news-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.news-item {
+    display: flex;
+    align-items: baseline;
+    padding: 20px 0;
+    border-bottom: 1px solid #e5e7eb;
+    /* Thin light line */
+    gap: 30px;
+}
+
+.news-item:first-child {
+    padding-top: 0;
+}
+
+.news-date {
+    color: #9ca3af;
+    /* Muted gray for date */
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    min-width: 100px;
+}
+
+.news-title {
+    color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 400;
+    transition: color 0.2s;
+}
+
+.news-title:hover {
+    color: var(--accent-blue);
+}
+
+.news-more {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.view-all {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--text-main);
+    padding-bottom: 2px;
+    transition: all 0.2s;
+}
+
+.view-all:hover {
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+@media (max-width: 768px) {
+    .news-container {
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .news-header {
+        flex: auto;
+        width: 100%;
+        text-align: center;
+    }
+
+    .news-header h2 {
+        text-align: center;
+    }
+
+    .news-item {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+
+    .news-date {
+        font-size: 0.85rem;
+    }
+}
+
+/* =========================================
+   12. News Archive Page
+   ========================================= */
+.news-archive {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.news-article {
+    background: white;
+    padding: 40px;
+    margin-bottom: 30px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.news-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.news-label {
+    background: var(--bg-gray);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.article-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.article-body {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--text-main);
+}
+
+.article-body p {
+    margin-bottom: 15px;
+}
+
+.article-body p:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .news-article {
+        padding: 25px;
+    }
+
+    .article-title {
+        font-size: 1.2rem;
+    }
+}
+
+/* =========================================
+   13. Works Page Tabs
+   ========================================= */
+.works-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--font-body);
+    color: var(--text-muted);
+}
+
+.tab-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.tab-btn.active {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
 }

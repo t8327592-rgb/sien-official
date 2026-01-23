@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order - Sien-Official</title>
+    <title>ご依頼フォーム | Sien-Official</title>
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,15 +22,16 @@
 
     <!-- Header Navigation -->
     <header class="header">
-        <div class="logo"><a href="index.html">SIEN<span class="highlight">.OFFICIAL</span></a></div>
+        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
         <label for="nav-toggle" class="nav-toggle-label">
             <span></span>
         </label>
         <nav class="nav-menu">
             <ul>
-                <li><a href="mix.html">Mix & Mastering</a></li>
+                <li><a href="mix.html">ミックス／マスタリング</a></li>
                 <li><a href="original.html">オリジナル楽曲制作</a></li>
+                <li><a href="works.html">制作実績</a></li>
                 <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
             </ul>
         </nav>
@@ -75,6 +77,10 @@
 
                     <!-- Single Column Grid -->
                     <div class="form-grid">
+
+                        <!-- Section 1: Basic Info -->
+                        <h3 class="form-section-title">【① 基本情報】</h3>
+
                         <!-- Activity Name -->
                         <div class="form-group">
                             <label>活動名 / お名前 <span class="req">*</span></label>
@@ -98,16 +104,13 @@
                             <label>希望する連絡手段 <span class="req">*</span></label>
                             <select name="希望する連絡手段" required>
                                 <option value="">選択してください</option>
-                                <option value="email">メール</option>
                                 <option value="twitter_dm">Twitter DM</option>
+                                <option value="email">メール</option>
                             </select>
                         </div>
 
-                        <!-- Song Name -->
-                        <div class="form-group full-width">
-                            <label>曲名をご入力ください (ない場合は"なし"と入力ください) <span class="req">*</span></label>
-                            <input type="text" name="曲名" required placeholder="例: モニタリング / なし">
-                        </div>
+                        <!-- Section 2: Request Details -->
+                        <h3 class="form-section-title">【② ご依頼内容】</h3>
 
                         <!-- Plan -->
                         <div class="form-group">
@@ -126,22 +129,42 @@
                             </select>
                         </div>
 
+                        <!-- Song Name -->
+                        <div class="form-group full-width">
+                            <label>曲名 (ない場合は"なし"と入力) <span class="req">*</span></label>
+                            <input type="text" name="曲名" required placeholder="例: モニタリング / なし">
+                        </div>
+
                         <!-- Option -->
                         <div class="form-group">
                             <label>オプション / その他</label>
                             <input type="text" name="オプション" placeholder="ボーカルガイド、カットアップ、エンコードなど">
                         </div>
 
-                        <!-- Upload URL -->
-                        <div class="form-group full-width">
-                            <label>レコーディング済み音源のアップロードURL</label>
-                            <input type="url" name="レコーディング済み音源" placeholder="Gigafile便、Google DriveなどのURL">
-                        </div>
+                        <!-- Section 3: Song Info -->
+                        <h3 class="form-section-title">【③ 楽曲情報】</h3>
 
                         <!-- Key -->
                         <div class="form-group">
-                            <label>歌唱キー</label>
-                            <input type="text" name="キー変更" placeholder="原キー, +3, -2, etc.">
+                            <label>歌唱キー <span class="req">*</span></label>
+                            <select name="キー変更" required>
+                                <option value="">選択してください</option>
+                                <option value="0">原キー (±0)</option>
+                                <option value="+1">+1</option>
+                                <option value="+2">+2</option>
+                                <option value="+3">+3</option>
+                                <option value="+4">+4</option>
+                                <option value="+5">+5</option>
+                                <option value="+6">+6</option>
+                                <option value="+7">+7</option>
+                                <option value="-1">-1</option>
+                                <option value="-2">-2</option>
+                                <option value="-3">-3</option>
+                                <option value="-4">-4</option>
+                                <option value="-5">-5</option>
+                                <option value="-6">-6</option>
+                                <option value="-7">-7</option>
+                            </select>
                         </div>
 
                         <!-- Ref URL -->
@@ -149,6 +172,33 @@
                             <label>参考曲 (YouTubeなどのURL)</label>
                             <input type="url" name="参考URL(任意)" placeholder="https://...">
                         </div>
+
+                        <!-- Section 4: Material Submission -->
+                        <h3 class="form-section-title">【④ 素材提出】</h3>
+
+                        <!-- Upload URL -->
+                        <div class="form-group full-width">
+                            <label>レコーディング済み音源のアップロードURL</label>
+                            <input type="url" name="レコーディング済み音源" placeholder="Gigafile便、Google DriveなどのURL">
+                            <p class="form-note" style="font-size: 0.9em; color: #aaa; margin-top: 5px;">
+                                ※音源が未提出の場合でもご依頼可能です。</p>
+                        </div>
+
+                        <!-- Section 5: Payment Method -->
+                        <h3 class="form-section-title">【⑤ お支払い方法】</h3>
+
+                        <!-- Payment Method -->
+                        <div class="form-group">
+                            <label>お支払い方法 <span class="req">*</span></label>
+                            <select name="お支払い方法" required>
+                                <option value="">選択してください</option>
+                                <option value="bank_transfer">銀行振込</option>
+                                <option value="credit_card">クレジットカード</option>
+                            </select>
+                        </div>
+
+                        <!-- Section 6: Free Text -->
+                        <h3 class="form-section-title">【⑥ 自由記述】</h3>
 
                         <!-- Remarks -->
                         <div class="form-group full-width">
@@ -179,7 +229,7 @@
 
             <div id="successMessage" class="success-message hidden">
                 <i class="fa-regular fa-paper-plane"></i>
-                <h3>Thank you!</h3>
+                <h3>送信完了</h3>
                 <p>送信が完了しました。<br>この度はご依頼いただき、誠にありがとうございます。<br><br>内容を確認のうえ、24時間以内にご連絡させていただきます。</p>
             </div>
         </div>
@@ -188,8 +238,9 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-links">
-            <a href="mix.html">Mix & Mastering</a>
+            <a href="mix.html">ミックス／マスタリング</a>
             <a href="original.html">オリジナル楽曲制作</a>
+            <a href="works.html">制作実績</a>
             <a href="order.html">ご依頼フォーム</a>
         </div>
         <p>&copy; 2026 Sien-Official. All Rights Reserved.</p>

@@ -259,84 +259,117 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // --- 4. Portfolio Grid (Mix Page) ---
+    // --- 4. Portfolio Data & Rendering ---
+
+    // Mix Videos Data
+    const portfolioVideos = [
+        { id: 'olpsRfUFdjw', title: '[歌ってみた]Campus mode!!/初星学園 ❴ぽぷ・にゃーちふぃんど/月見ひひと/純粋なの/re;BON❵' },
+        { id: 'voTuWFmcbeI', title: 'いーあるふぁんくらぶ / ぷりあま Cover【歌ってみた】' },
+        { id: 'Le84jUtbRwo', title: '【子ﾗｲｵﾝ♀が】けっかおーらい/ヴィジランテOP【描いて歌ってみた】VTuber Cover' },
+        { id: 'E6bS-n2nx0g', title: '【歌ってみた】天才 / SMITH(すみす)' },
+        { id: 'u4rAEKOKeZA', title: '火ノ要鎮 / 平田義久 - じょん【歌ってみた】' },
+        { id: 'tDUgj37HhOw', title: '白い雪のプリンセスは Covered by 草刈七海' },
+        { id: 'yRFFBglbLWo', title: 'キラー（Cover）/とうにこ' },
+        { id: 'ZYCwYSK0RK4', title: '【歌ってみた】ダーリンゲームオーバーラブ / ウルハシスティー' },
+        { id: 'P06mDQyOs14', title: 'きゅうくらりん / 田中バター【歌ってみた】' }
+    ];
+
+    // Original Videos Data
+    const originalVideos = [
+        { id: 'Rc531IszCes', title: '【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】' },
+        { id: 'zTxvMNXaFoA', title: '【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】' },
+        { id: 'Ke1HAX8Z49I', title: '週末を待て。『SODA』Music Video' }
+    ];
+
+    const createVideoItem = (video) => {
+        const item = document.createElement('div');
+        item.className = 'work-item';
+        item.innerHTML = `
+            <div class="video-container">
+                <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <p class="work-title">${video.title}</p>
+        `;
+        return item;
+    };
+
+
+    // >>>> Logic for MIX Page (mix.html)
     const portfolioContainer = document.getElementById('mix-portfolio');
     const showMoreBtn = document.getElementById('show-more-btn');
 
     if (portfolioContainer && showMoreBtn) {
-        const portfolioVideos = [
-            { id: 'olpsRfUFdjw', title: '[歌ってみた]Campus mode!!/初星学園 ❴ぽぷ・にゃーちふぃんど/月見ひひと/純粋なの/re;BON❵' },
-            { id: 'voTuWFmcbeI', title: 'いーあるふぁんくらぶ / ぷりあま Cover【歌ってみた】' },
-            { id: 'Le84jUtbRwo', title: '【子ﾗｲｵﾝ♀が】けっかおーらい/ヴィジランテOP【描いて歌ってみた】VTuber Cover' },
-            { id: 'E6bS-n2nx0g', title: '【歌ってみた】天才 / SMITH(すみす)' },
-            { id: 'u4rAEKOKeZA', title: '火ノ要鎮 / 平田義久 - じょん【歌ってみた】' },
-            { id: 'tDUgj37HhOw', title: '白い雪のプリンセスは Covered by 草刈七海' },
-            { id: 'yRFFBglbLWo', title: 'キラー（Cover）/とうにこ' },
-            { id: 'ZYCwYSK0RK4', title: '【歌ってみた】ダーリンゲームオーバーラブ / ウルハシスティー' },
-            { id: 'P06mDQyOs14', title: 'きゅうくらりん / 田中バター【歌ってみた】' }
-        ];
-
         let loadedCount = 0;
         const loadStep = 3;
 
-        const createVideoItem = (video) => {
-            const item = document.createElement('div');
-            item.className = 'work-item fade-in';
-            item.innerHTML = `
-                <div class="video-container">
-                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
-                </div>
-                <p class="work-title">${video.title}</p>
-            `;
-            return item;
-        };
-
         const loadMore = () => {
             const nextBatch = portfolioVideos.slice(loadedCount, loadedCount + loadStep);
-
             nextBatch.forEach(vid => {
-                const el = createVideoItem(vid);
-                portfolioContainer.appendChild(el);
+                portfolioContainer.appendChild(createVideoItem(vid));
             });
-
             loadedCount += nextBatch.length;
-
-            // Hide button if all loaded
             if (loadedCount >= portfolioVideos.length) {
                 showMoreBtn.style.display = 'none';
             }
         };
-
-        // Initial Load
         loadMore();
-
-        // Button Event
         showMoreBtn.addEventListener('click', loadMore);
     }
 
-    // --- 5. Portfolio Grid (Original Page) ---
+    // >>>> Logic for ORIGINAL Page (original.html)
     const originalPortfolioContainer = document.getElementById('original-portfolio');
     if (originalPortfolioContainer) {
-        const originalVideos = [
-            { id: 'Rc531IszCes', title: '【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】' },
-            { id: 'zTxvMNXaFoA', title: '【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】' },
-            { id: 'Ke1HAX8Z49I', title: '週末を待て。『SODA』Music Video' }
-        ];
-
-        const createOriginalItem = (video) => {
-            const item = document.createElement('div');
-            item.className = 'work-item fade-in';
-            item.innerHTML = `
-                <div class="video-container">
-                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
-                </div>
-                <p class="work-title">${video.title}</p>
-            `;
-            return item;
-        };
-
         originalVideos.forEach(video => {
-            originalPortfolioContainer.appendChild(createOriginalItem(video));
+            originalPortfolioContainer.appendChild(createVideoItem(video));
+        });
+    }
+
+    // >>>> Logic for WORKS Page (works.html) - New!
+    const worksMixContainer = document.getElementById('works-mix-container');
+    const worksOriginalContainer = document.getElementById('works-original-container');
+
+    if (worksMixContainer) {
+        portfolioVideos.forEach(video => {
+            worksMixContainer.appendChild(createVideoItem(video));
+        });
+    }
+    if (worksOriginalContainer) {
+        originalVideos.forEach(video => {
+            worksOriginalContainer.appendChild(createVideoItem(video));
+        });
+    }
+
+    // --- Works Page Tab Logic ---
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const catMix = document.getElementById('category-mix');
+    const catOriginal = document.getElementById('category-original');
+    const separator = document.getElementById('works-separator');
+
+    if (tabBtns.length > 0) {
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 1. Remove active class
+                tabBtns.forEach(b => b.classList.remove('active'));
+                // 2. Add active class
+                btn.classList.add('active');
+
+                // 3. Filter
+                const tab = btn.getAttribute('data-tab');
+
+                if (tab === 'all') {
+                    if (catMix) catMix.style.display = 'block';
+                    if (catOriginal) catOriginal.style.display = 'block';
+                    if (separator) separator.style.display = 'block';
+                } else if (tab === 'mix') {
+                    if (catMix) catMix.style.display = 'block';
+                    if (catOriginal) catOriginal.style.display = 'none';
+                    if (separator) separator.style.display = 'none';
+                } else if (tab === 'original') {
+                    if (catMix) catMix.style.display = 'none';
+                    if (catOriginal) catOriginal.style.display = 'block';
+                    if (separator) separator.style.display = 'none';
+                }
+            });
         });
     }
 

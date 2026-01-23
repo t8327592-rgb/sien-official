@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sien-Official | Mix & Mastering Engineer</title>
-    <meta name="description" content="Mix & Mastering, Original Song Production. あなたの歌ってみたに、説得力を。">
+    <title>Sien-Official | ミックス／マスタリングエンジニア</title>
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
+    <meta name="description" content="ミックス／マスタリング, オリジナル楽曲制作. あなたの歌ってみたに、説得力を。">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,15 +23,16 @@
 
     <!-- Header Navigation -->
     <header class="header">
-        <div class="logo"><a href="index.html">SIEN<span class="highlight">.OFFICIAL</span></a></div>
+        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
         <label for="nav-toggle" class="nav-toggle-label">
             <span></span>
         </label>
         <nav class="nav-menu">
             <ul>
-                <li><a href="mix.html">Mix & Mastering</a></li>
+                <li><a href="mix.html">ミックス／マスタリング</a></li>
                 <li><a href="original.html">オリジナル楽曲制作</a></li>
+                <li><a href="works.html">制作実績</a></li>
                 <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
             </ul>
         </nav>
@@ -58,7 +60,8 @@
         </div>
 
         <div class="hero-container">
-            <h1 class="fade-in">あなたの歌ってみたに、<br class="sp-break"><span class="accent-text">説得力を</span></h1>
+            <h1 class="fade-in"><span class="no-wrap-text"></span>あなたの歌ってみたに、</span><br class="sp-break"><span
+                    class="accent-text">説得力を</span></h1>
             <p class="hero-sub fade-in delay-1">迫力と臨場感のあるサウンド作り<br>インストに馴染む美しいMIX</p>
 
         </div>
@@ -72,7 +75,7 @@
                 <div class="profile-img-container">
                     <img src="./assets/profile.jpg" alt="Sien Profile" class="profile-photo">
                 </div>
-                <h3>しえん <span class="job-title">/ MIX Engineer, Composer</span></h3>
+                <h3>しえん <span class="job-title">/ ミックスエンジニア / 作曲家</span></h3>
                 <p class="profile-desc">
                     迫力と臨場感のあるサウンド作りを得意とし、インストにもなじむ綺麗なMIXを提供しています。<br>
                     いただいた音源を最高にカッコよく仕上げることにこだわっています。
@@ -80,18 +83,18 @@
 
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <span class="stat-label">Total Works</span>
+                        <span class="stat-label">総制作数</span>
                         <span class="stat-num">500+</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Major Clients</span>
+                        <span class="stat-label">主要取引先</span>
                         <span class="stat-text">アマル / ぷりっつ / こーく-不透明- / 深淵組 / re;BON ...etc</span>
                     </div>
                 </div>
 
                 <div class="profile-btns">
                     <a href="https://x.com/sien_mc09" target="_blank" class="btn btn-outline sns-btn">
-                        <i class="fa-brands fa-twitter"></i> Follow on X
+                        <i class="fa-brands fa-twitter"></i> Xをフォロー
                     </a>
                     <a href="order.html" class="btn btn-primary">お見積もり・相談する</a>
                 </div>
@@ -102,7 +105,7 @@
     <!-- Works Section (Static) -->
     <section id="works" class="section bg-gray">
         <div class="container">
-            <h2 class="section-title">Works</h2>
+            <h2 class="section-title">制作実績</h2>
             <div id="works-grid" class="video-grid">
 
                 <!-- Video 1 -->
@@ -134,6 +137,12 @@
 
             </div>
 
+            <!-- View Works Link -->
+            <div class="news-more">
+                <a href="works.html" class="view-all">制作実績を見る <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <!-- Order CTA -->
             <div class="text-center mt-5">
                 <a href="order.html" class="btn btn-primary btn-lg">お見積もり・相談する</a>
             </div>
@@ -141,13 +150,32 @@
     </section>
 
     <!-- News Section -->
+    <!-- News Section -->
     <section id="news" class="section">
-        <div class="container text-center">
-            <h2 class="section-title">News</h2>
-            <div class="twitter-container">
-                <a class="twitter-timeline" data-width="500" data-height="600" data-theme="light"
-                    href="https://twitter.com/sien_mc09?ref_src=twsrc%5Etfw">Tweets by sien_mc09</a>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        <div class="container">
+            <div class="news-container">
+                <div class="news-header">
+                    <h2 class="section-title text-left">お知らせ</h2>
+                </div>
+                <div class="news-content">
+                    <ul class="news-list">
+                        <li class="news-item">
+                            <span class="news-date">2026.01.24</span>
+                            <a href="news.html" class="news-title">ホームページをリニューアルしました</a>
+                        </li>
+                        <li class="news-item">
+                            <span class="news-date">2026.01.20</span>
+                            <a href="news.html" class="news-title">MIXのご依頼受付を再開しました</a>
+                        </li>
+                        <li class="news-item">
+                            <span class="news-date">2026.01.01</span>
+                            <a href="news.html" class="news-title">新年のご挨拶</a>
+                        </li>
+                    </ul>
+                    <div class="news-more">
+                        <a href="news.html" class="view-all">一覧を見る <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -155,8 +183,9 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-links">
-            <a href="mix.html">Mix & Mastering</a>
+            <a href="mix.html">ミックス／マスタリング</a>
             <a href="original.html">オリジナル楽曲制作</a>
+            <a href="works.html">制作実績</a>
             <a href="order.html">ご依頼フォーム</a>
         </div>
         <p>&copy; 2026 Sien-Official. All Rights Reserved.</p>
