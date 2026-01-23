@@ -1024,8 +1024,100 @@ textarea {
 }
 
 /* =========================================
-   10. Components
+   10. Components & Legal
    ========================================= */
+.legal-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.legal-table th,
+.legal-table td {
+    padding: 18px 25px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.legal-table th {
+    background-color: #f8f9fa;
+    color: var(--text-heading);
+    width: 30%;
+    font-weight: 600;
+}
+
+.legal-table td {
+    color: var(--text-main);
+}
+
+.legal-table tr:last-child th,
+.legal-table tr:last-child td {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+
+    .legal-table th,
+    .legal-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .legal-table th {
+        padding-bottom: 5px;
+        color: var(--accent-blue);
+    }
+
+    .legal-table td {
+        padding-top: 5px;
+    }
+}
+
+/* Privacy Policy & Terms Styles */
+.privacy-content h3,
+.terms-content h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 15px;
+    color: var(--text-heading);
+    border-left: 4px solid var(--accent-blue);
+    padding-left: 15px;
+}
+
+.privacy-content h3:first-of-type,
+.terms-content h3:first-of-type {
+    margin-top: 20px;
+}
+
+.privacy-content p,
+.terms-content p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+}
+
+.privacy-content ul,
+.terms-content ul {
+    margin-bottom: 20px;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.privacy-content li,
+.terms-content li {
+    margin-bottom: 5px;
+    color: var(--text-main);
+}
+
 .notice-box {
     margin: 0 auto 40px;
     max-width: 800px;

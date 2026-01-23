@@ -97,6 +97,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(orderForm);
 
+            // --- Value Mapping for Auto-Reply Email ---
+            // Map internal values to Japanese display text
+            const mappings = {
+                '希望する連絡手段': {
+                    'twitter_dm': 'Twitter DM',
+                    'email': 'メール'
+                },
+                'プラン': {
+                    'standard': 'スタンダードプラン',
+                    'one_chorus': 'ワンコーラスプラン',
+                    'short': 'ショート動画用MIX',
+                    'speed': 'スピードプラン',
+                    'super_speed': '超スピードプラン',
+                    'collab': 'コラボ・合唱プラン',
+                    'original_std': 'オリジナル楽曲 スタンダード',
+                    'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
+                    'other': 'その他・ご相談'
+                },
+                'キー変更': {
+                    '0': '原キー (±0)'
+                    // numbers like +1, -1 are fine as is
+                },
+                'お支払い方法': {
+                    'bank_transfer': '銀行振込',
+                    'credit_card': 'クレジットカード'
+                }
+            };
+
+            // Apply mappings
+            for (const [fieldName, mapObj] of Object.entries(mappings)) {
+                const val = formData.get(fieldName);
+                if (val && mapObj[val]) {
+                    formData.set(fieldName, mapObj[val]);
+                }
+            }
+
             fetch('https://ssgform.com/s/oUyPUuSmLYCq', {
                 method: 'POST',
                 mode: 'no-cors', // Important: SSGform likely redirects or doesn't support CORS JSON, so we use no-cors to allow submission without error
