@@ -133,6 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Remove internal field 'form-name' so it doesn't appear in the email
+            formData.delete('form-name');
+
             fetch('https://ssgform.com/s/oUyPUuSmLYCq', {
                 method: 'POST',
                 mode: 'no-cors', // Important: SSGform likely redirects or doesn't support CORS JSON, so we use no-cors to allow submission without error
