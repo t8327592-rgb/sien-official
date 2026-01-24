@@ -4,540 +4,839 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sien-Official | Admin Panel</title>
+    <title>Creator Dashboard | Sien-Official</title>
     <link rel="icon" type="image/png" href="./assets/favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Global Style -->
     <link rel="stylesheet" href="style.css">
+
     <style>
+        /* --- ADMIN DASHBOARD THEME --- */
         body {
-            background: #f3f4f6;
-            min-height: 100vh;
+            background-color: #f3f4f6;
+            /* Light Gray Background */
             font-family: 'Noto Sans JP', sans-serif;
+            color: #1f2937;
         }
 
-        .admin-login-wrapper {
+        /* Utils */
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-gray {
+            color: #6b7280;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        /* Auth Screen */
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100vh;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        /* HEADER */
+        .admin-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            z-index: 100;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0 40px;
         }
 
-        .login-box {
+        .brand {
+            font-family: 'Jost', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #111;
+            letter-spacing: 0.05em;
+        }
+
+        .brand span {
+            color: var(--accent-blue);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* NAVIGATION */
+        .nav-bar {
+            background: white;
+            padding: 0 40px;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            z-index: 90;
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-item {
+            padding: 16px 4px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            position: relative;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-item:hover {
+            color: var(--accent-blue);
+        }
+
+        .nav-item.active {
+            color: var(--accent-blue);
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-blue);
+        }
+
+        /* MAIN LAYOUT */
+        .main-content {
+            margin-top: 130px;
+            padding: 40px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* FILTER BAR */
+        .filter-bar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .filter-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .filter-chip:hover {
+            background: #f3f4f6;
+        }
+
+        .filter-chip.active {
+            background: #eff6ff;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .search-input {
+            margin-left: auto;
+            border: 1px solid #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 250px;
+        }
+
+        /* DATA TABLE */
+        .data-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #f9fafb;
+            padding: 16px 24px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 16px 24px;
+            border-top: 1px solid #f3f4f6;
+            vertical-align: middle;
+            color: #374151;
+        }
+
+        .data-table tr:hover {
+            background: #f9fafb;
+            transition: background 0.1s;
+        }
+
+        .user-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user-sub {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        /* STATUS BADGES */
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .bg-gray-100 {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .bg-orange-100 {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .bg-green-100 {
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .bg-blue-100 {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .bg-red-100 {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        /* PORTFOLIO GRID */
+        .pf-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .pf-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .pf-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .pf-thumb {
+            aspect-ratio: 16/9;
+            background: #111;
+            position: relative;
+        }
+
+        .pf-thumb iframe {
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .pf-body {
+            padding: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            transition: border 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .action-bar {
+            border-top: 1px solid #f3f4f6;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: flex-end;
+            background: #f9fafb;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+        }
+
+        .btn-danger {
+            background: white;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .btn-ghost:hover {
+            background: #f3f4f6;
+            color: #111;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .loading-spinner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #111;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Price Form */
+        .price-container {
+            max-width: 800px;
+            margin: 0 auto;
             background: white;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
         }
 
-        .admin-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-            display: none;
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #e5e7eb;
-            border: none;
-            border-radius: 5px 5px 0 0;
-            font-weight: bold;
-            color: #666;
-            transition: 0.2s;
-        }
-
-        .tab-btn.active {
-            background: #3b82f6;
-            color: white;
-        }
-
-        /* Content Areas */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-
-        /* Status Toggles */
-        .status-toggle {
-            display: flex;
-            gap: 10px;
-        }
-
-        .toggle-btn {
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            border: none;
-            transition: 0.2s;
-            background: #ddd;
-        }
-
-        .toggle-btn.active.open {
-            background: #10b981;
-            color: white;
-        }
-
-        .toggle-btn.active.consult {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .toggle-btn.active.close {
-            background: #ef4444;
-            color: white;
-        }
-
-        /* Lists (Works/Portfolios) */
-        .item-list {
+        .price-row {
             display: grid;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .list-item {
-            display: flex;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
             align-items: center;
-            gap: 10px;
-            background: #f9fafb;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 5px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f1f5f9;
         }
 
-        .list-item input[type="text"] {
-            flex: 1;
-            padding: 5px;
-        }
-
-        .list-item input[type="number"] {
-            width: 60px;
-            padding: 5px;
-        }
-
-        .btn-del {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-vis {
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: #ccc;
-        }
-
-        .btn-vis.active {
-            color: #3b82f6;
-        }
-
-        /* Pricing Inputs */
-        .price-group {
-            margin-bottom: 15px;
-        }
-
-        .price-group label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-            color: #555;
-        }
-
-        .price-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        /* News Editor */
-        .news-editor textarea {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .price-row:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- LOGIN -->
-    <div id="login-screen" class="admin-container" style="max-width:400px; margin-top:100px; display:block;">
-        <h2>Admin Login</h2>
-        <p style="color:#666; font-size:14px; margin-bottom:20px;">Local Data Manager</p>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="password" placeholder="********">
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Saving...</div>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2 class="brand mb-4"><span>></span>Sien-Official</h2>
+            <p class="text-gray mb-4">管理パスワードを入力してください</p>
+            <input type="password" id="auth-pass" class="form-input" style="text-align: center;" placeholder="Password">
+            <button class="btn btn-primary w-full mt-4" onclick="login()">ダッシュボードにログイン</button>
+            <p id="auth-msg" class="text-sm mt-4" style="color:#ef4444;"></p>
         </div>
-        <button class="btn btn-primary" onclick="checkLogin()" style="width:100%; margin-top:10px;">Login</button>
-        <p id="login-msg" style="color:red; margin-top:10px; font-size:13px;"></p>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="admin-container" style="display:none; max-width:1200px;">
-        <div class="dashboard-header" style="justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <h2 style="margin:0;">Dashboard</h2>
-                <span class="badge" id="status-badge" style="background:#eee; color:#333;">Loading...</span>
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="brand"><span>></span>Studio</div>
+        <div class="user-menu">
+            <span class="text-sm font-bold">Sien</span>
+            <div class="avatar"><img src="./assets/profile.jpg" alt=""></div>
+            <button class="btn btn-ghost btn-sm" onclick="logout()"><i
+                    class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('orders')">依頼管理</div>
+        <div class="nav-item" onclick="switchTab('portfolio')">ポートフォリオ</div>
+        <div class="nav-item" onclick="switchTab('prices')">プラン・料金設定</div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Tab: Orders -->
+        <div id="tab-orders" class="tab-pane">
+            <div class="page-title">
+                依頼管理 <span class="text-sm text-gray" style="font-weight:400;">(Rank: Pro)</span>
             </div>
-            <div style="display:flex; align-items:center;">
-                <button class="btn btn-primary" onclick="downloadData()" style="margin-right:10px;">💾 設定ファイルを保存
-                    (data.js)</button>
-                <button class="btn btn-outline" onclick="logout()">Logout</button>
+
+            <div class="filter-bar">
+                <div class="filter-chip active" onclick="filterOrders('all', this)">全て (<span id="count-all">0</span>)
+                </div>
+                <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手 (<span id="count-new">0</span>)</div>
+                <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち</div>
+                <div class="filter-chip" onclick="filterOrders('全て入金済み', this)">入金済み</div>
+                <div class="filter-chip" onclick="filterOrders('取引終了', this)">取引終了</div>
+                <div class="filter-chip" onclick="filterOrders('キャンセル', this)">キャンセル</div>
+                <input type="text" class="search-input" placeholder="依頼者名で絞り込み" onkeyup="searchOrders(this.value)">
+                <button class="btn btn-primary btn-sm" onclick="fetchData()"><i
+                        class="fa-solid fa-rotate-right"></i></button>
+            </div>
+
+            <div class="data-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ご依頼日</th>
+                            <th>曲名</th>
+                            <th>ご依頼者名</th>
+                            <th>プラン</th>
+                            <th>支払い</th>
+                            <th>納期</th>
+                            <th>ステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-list">
+                        <!-- JS Insert -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- TABS -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-works', this)">Works</button>
-            <button class="tab-btn" onclick="switchTab('tab-mix', this)">Mix</button>
-            <button class="tab-btn" onclick="switchTab('tab-orig', this)">Original</button>
-            <button class="tab-btn" onclick="switchTab('tab-settings', this)">Settings</button>
-        </div>
-
-        <!-- CONTENT: WORKS -->
-        <div id="tab-works" class="tab-content active">
-            <div class="section-header">
-                <h3>Works Portfolio</h3>
-                <button class="btn btn-primary" onclick="addItem('works')">+ Add New</button>
+        <!-- Tab: Portfolio -->
+        <div id="tab-portfolio" class="tab-pane hidden">
+            <div class="flex justify-between items-center mb-4">
+                <div class="page-title" style="margin:0;">ポートフォリオ</div>
+                <button class="btn btn-primary" onclick="savePortfolio()"><i class="fa-solid fa-cloud-arrow-up"></i>
+                    変更を保存</button>
             </div>
-            <div id="grid-works" class="card-grid"></div>
-        </div>
 
-        <!-- CONTENT: MIX -->
-        <div id="tab-mix" class="tab-content">
-            <div class="section-header">
-                <h3>Mix Portfolio</h3>
-                <button class="btn btn-primary" onclick="addItem('mix')">+ Add New</button>
-            </div>
-            <div id="grid-mix" class="card-grid"></div>
-        </div>
-
-        <!-- CONTENT: ORIG -->
-        <div id="tab-orig" class="tab-content">
-            <div class="section-header">
-                <h3>Original Portfolio</h3>
-                <button class="btn btn-primary" onclick="addItem('orig')">+ Add New</button>
-            </div>
-            <div id="grid-orig" class="card-grid"></div>
-        </div>
-
-        <!-- CONTENT: SETTINGS -->
-        <div id="tab-settings" class="tab-content">
-            <div class="card">
-                <h4>受付状況 (Status)</h4>
-                <div class="status-toggle" style="margin-top:10px;">
-                    <button class="toggle-btn" id="btnOpen" onclick="setStatus('open')">受付中 ⚪</button>
-                    <button class="toggle-btn" id="btnConsult" onclick="setStatus('consult')">要相談 🟠</button>
-                    <button class="toggle-btn" id="btnStop" onclick="setStatus('closed')">停止中 🔴</button>
+            <div class="mb-4">
+                <div class="filter-bar" style="display:inline-flex;">
+                    <div class="filter-chip active" onclick="switchPfCat('works', this)">制作実績 (Works)</div>
+                    <div class="filter-chip" onclick="switchPfCat('mix', this)">Mix Samples</div>
+                    <div class="filter-chip" onclick="switchPfCat('orig', this)">Original Songs</div>
                 </div>
             </div>
 
-            <div class="card">
-                <h4>お知らせ (News)</h4>
-                <div class="news-editor">
-                    <textarea id="newsText" placeholder="お知らせを入力..."></textarea>
-                    <div style="margin-top:10px;">
-                        <input type="checkbox" id="newsVisible"> <label for="newsVisible">トップページに表示する</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveNews()" style="margin-top:10px;">Save Memory</button>
-                </div>
-            </div>
+            <!-- Pf Works -->
+            <div id="pf-works" class="pf-grid"></div>
+            <div id="pf-mix" class="pf-grid hidden"></div>
+            <div id="pf-orig" class="pf-grid hidden"></div>
 
-            <div class="card">
-                <h4>料金設定 (Prices)</h4>
-                <div id="price-editor">
-                    <!-- Javascript will populate this -->
-                </div>
-                <button class="btn btn-primary" onclick="savePrices()">Save Memory</button>
+            <div class="mt-4 text-center">
+                <button class="btn btn-ghost" style="border:1px dashed #ccc; width:100%; padding:20px;"
+                    onclick="addPfItem()">+ 新規アイテムを追加</button>
             </div>
         </div>
 
-    </div>
+        <!-- Tab: Prices -->
+        <div id="tab-prices" class="tab-pane hidden">
+            <div class="page-title">プラン・料金設定</div>
+            <div class="price-container">
+                <h3 class="font-bold mb-4"
+                    style="border-bottom:2px solid var(--accent-blue); padding-bottom:10px; display:inline-block;">基本プラン
+                </h3>
+                <div id="price-form">
+                    <!-- JS Insert -->
+                </div>
+                <div class="mt-4 text-right">
+                    <button class="btn btn-primary" onclick="savePrices()">設定を保存</button>
+                </div>
+            </div>
+        </div>
 
-    <!-- Supabase SDK & Config -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase_config.js"></script>
+    </main>
+
+
+    <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- CORE STATE ---
+        let TOKEN = localStorage.getItem('admin_token') || '';
+        let DATA = { orders: [], works: [], mix: [], orig: [], prices: {} };
+        let activePfCat = 'works';
+
         // --- AUTH ---
-        function checkLogin() {
-            const p = document.getElementById('password').value;
-            // Simple Password
-            if (p === 'xR3%wK#U&x6v') {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                initDashboard();
-            } else {
-                document.getElementById('login-msg').innerText = 'Incorrect password';
+        function checkAuth() {
+            if (TOKEN) {
+                document.getElementById('auth-screen').style.display = 'none';
+                fetchData();
             }
         }
-
-        function logout() {
-            location.reload();
-        }
-
-        // --- DASHBOARD LOGIC ---
-        // Load deep copy of global data
-        let DB = {
-            status: 'open',
-            news: { text: '', visible: false },
-            works: [],
-            mix: [],
-            orig: [],
-            prices: {}
-        };
-
-        if (window.SIEN_DATA) {
-            DB = JSON.parse(JSON.stringify(window.SIEN_DATA));
-        } else {
-            console.error("No data.js found!");
-        }
-
-        function initDashboard() {
-            renderStatus();
-            loadVideos('works');
-            loadVideos('mix');
-            loadVideos('orig'); // Previously 'orig'
-            loadSettings();
-        }
-
-        function switchTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
-        }
-
-        // --- VIDEOS (Card UI) ---
-        function loadVideos(category) {
-            const grid = document.getElementById(`grid-${category}`);
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            const list = DB[category] || [];
-            list.sort((a, b) => a.priority - b.priority);
-
-            list.forEach((item, idx) => {
-                if (!item.id) item.id = '';
-                const card = createCard(item, category, idx);
-                grid.appendChild(card);
-            });
-        }
-
-        function createCard(item, category, idx) {
-            const div = document.createElement('div');
-            div.className = 'video-card';
-
-            const cleanId = extractYouTubeId(item.id);
-            let previewHtml = '<div style="height:100%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">No Video</div>';
-
-            if (cleanId) {
-                previewHtml = `<iframe src="https://www.youtube.com/embed/${cleanId}" frameborder="0" allowfullscreen></iframe>`;
-            }
-
-            div.innerHTML = `
-                <div class="card-preview" id="preview-${category}-${idx}">
-                    ${previewHtml}
-                </div>
-                
-                <div>
-                    <div class="card-label">YouTube URL / ID</div>
-                    <input type="text" class="card-input inp-url" value="${item.id}" 
-                           oninput="updatePreview(this, '${category}', ${idx})" 
-                           onchange="updateDB('${category}', ${idx}, 'id', this.value)"
-                           placeholder="https://youtu.be/...">
-                </div>
-
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1">
-                        <div class="card-label">Priority</div>
-                        <input type="number" class="card-input" value="${item.priority}" 
-                               onchange="updateDB('${category}', ${idx}, 'priority', this.value)" placeholder="1">
-                    </div>
-                     <div style="flex:1">
-                        <div class="card-label">Plan / Label</div>
-                        <input type="text" class="card-input" value="${item.plan_name || ''}" 
-                               onchange="updateDB('${category}', ${idx}, 'plan_name', this.value)" placeholder="MIX Standard">
-                    </div>
-                </div>
-
-                <div>
-                    <div class="card-label">Comment / Title</div>
-                    <input type="text" class="card-input" value="${item.comment || ''}" 
-                           onchange="updateDB('${category}', ${idx}, 'comment', this.value)" placeholder="Song Title">
-                </div>
-
-                <div class="card-actions">
-                    <button class="btn-delete" onclick="deleteItem('${category}', ${idx})">Delete</button>
-                    <span style="font-size:11px; color:#aaa; margin-left:auto;">Saved to memory</span>
-                </div>
-            `;
-            return div;
-        }
-
-        // --- ACTIONS ---
-        function extractYouTubeId(raw) {
-            if (!raw) return null;
-            const url = raw.trim();
-            if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function updatePreview(input, cat, idx) {
-            const clean = extractYouTubeId(input.value);
-            const container = document.getElementById(`preview-${cat}-${idx}`);
-            if (clean) {
-                container.innerHTML = `<iframe src="https://www.youtube.com/embed/${clean}" frameborder="0" allowfullscreen></iframe>`;
-            }
-        }
-
-        function updateDB(cat, idx, key, val) {
-            if (key === 'priority') val = parseInt(val) || 0;
-            DB[cat][idx][key] = val;
-        }
-
-        function addItem(category) {
-            if (!DB[category]) DB[category] = [];
-            DB[category].push({ id: '', priority: 99, plan_name: '', comment: '', category: category });
-            loadVideos(category);
-        }
-
-        function deleteItem(category, idx) {
-            if (!confirm('Delete this item?')) return;
-            DB[category].splice(idx, 1);
-            loadVideos(category);
-        }
-
-        // --- SETTINGS ---
-        function loadSettings() {
-            const p = DB.prices || {};
-            const container = document.getElementById('price-editor');
-            if (container) {
-                container.innerHTML = '';
-                const niceNames = {
-                    'mix_std': 'Mix Standard', 'mix_one': 'Mix One Chorus', 'mix_short': 'Mix Short',
-                    'mix_speed': 'Mix Speed', 'mix_super': 'Mix Super Speed', 'mix_collab': 'Mix Collab',
-                    'orig_std': 'Original Standard', 'orig_lyrics': 'Orig Lyrics', 'opt_live': 'Live Option'
-                };
-                const keys = [
-                    'mix_std', 'mix_one', 'mix_short', 'mix_speed', 'mix_super', 'mix_collab',
-                    'orig_std', 'orig_lyrics', 'opt_live'
-                ];
-                keys.forEach(k => {
-                    const val = p[k] || '';
-                    const div = document.createElement('div');
-                    div.className = 'price-group';
-                    div.innerHTML = `<label>${niceNames[k] || k}</label>
-                                     <input type="text" value="${val}" onchange="updatePrice('${k}', this.value)">`;
-                    container.appendChild(div);
-                });
-            }
-
-            // Status
-            if (DB.status) setStatusUI(DB.status);
-
-            // News
-            if (document.getElementById('newsText') && DB.news) {
-                document.getElementById('newsText').value = DB.news.text || '';
-                document.getElementById('newsVisible').checked = DB.news.visible || false;
-            }
-        }
-
-        function updatePrice(key, val) {
-            if (!DB.prices) DB.prices = {};
-            DB.prices[key] = val;
-        }
-
-        function setStatus(s) {
-            DB.status = s;
-            setStatusUI(s);
-        }
-
-        function setStatusUI(s) {
-            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-            const map = { 'open': 'btnOpen', 'consult': 'btnConsult', 'closed': 'btnStop' };
-            if (map[s] && document.getElementById(map[s])) {
-                document.getElementById(map[s]).classList.add('active');
-            }
-            const badge = document.getElementById('status-badge');
-            if (badge) badge.innerText = s.toUpperCase();
-        }
-
-        function savePrices() {
-            alert('Prices updated in memory. Please click "Data Export" to save.');
-        }
-
-        function saveNews() {
-            if (DB.news) {
-                DB.news.text = document.getElementById('newsText').value;
-                DB.news.visible = document.getElementById('newsVisible').checked;
-                alert('News updated in memory. Please click "Data Export" to save.');
-            }
-        }
-
-        // --- EXPORT ---
-        function exportData() {
-            // Clean
-            ['works', 'mix', 'orig'].forEach(c => {
-                if (DB[c]) {
-                    DB[c].forEach(item => {
-                        const clean = extractYouTubeId(item.id);
-                        if (clean) item.id = clean;
-                    });
+        async function login() {
+            const pass = document.getElementById('auth-pass').value;
+            if (!pass) return;
+            try {
+                const res = await fetch('/api/admin', { headers: { 'x-admin-password': pass } });
+                if (res.ok) {
+                    TOKEN = pass;
+                    localStorage.setItem('admin_token', pass);
+                    checkAuth();
+                } else {
+                    document.getElementById('auth-msg').innerText = "パスワードが正しくありません";
                 }
+            } catch (e) { alert("Network Error"); }
+        }
+        function logout() { localStorage.removeItem('admin_token'); location.reload(); }
+
+        // --- FETCH ---
+        async function fetchData() {
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                const res = await fetch('/api/admin', { headers: { 'x-admin-password': TOKEN } });
+                if (res.status === 401) return logout();
+                DATA = await res.json();
+
+                renderOrders();
+                renderPortfolio();
+                renderPrices();
+
+                // Update Counts
+                document.getElementById('count-all').innerText = DATA.orders.length;
+                document.getElementById('count-new').innerText = DATA.orders.filter(o => o.status === '未着手').length;
+
+            } catch (e) { console.error(e); }
+            finally { document.getElementById('loading').style.display = 'none'; }
+        }
+
+        // --- TABS ---
+        function switchTab(id) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            // Assuming order matches: 0=orders, 1=pf, 2=prices
+            const idx = id === 'orders' ? 0 : id === 'portfolio' ? 1 : 2;
+            document.querySelectorAll('.nav-item')[idx].classList.add('active');
+        }
+
+        // --- ORDERS UI ---
+        let currentStatusFilter = 'all';
+        function filterOrders(status, btn) {
+            currentStatusFilter = status;
+            if (btn) {
+                document.querySelectorAll('#tab-orders .filter-chip').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            renderOrders();
+        }
+        function searchOrders(query) {
+            renderOrders(query);
+        }
+
+        function renderOrders(query = '') {
+            const tbody = document.getElementById('order-list');
+            tbody.innerHTML = '';
+
+            const list = [...DATA.orders].reverse().filter(o => {
+                const matchesStatus = currentStatusFilter === 'all' || o.status === currentStatusFilter;
+                const matchesSearch = !query || JSON.stringify(o).toLowerCase().includes(query.toLowerCase());
+                return matchesStatus && matchesSearch;
             });
 
-            const json = JSON.stringify(DB, null, 4);
-            const content = `// Sien-Official Static Data\nwindow.SIEN_DATA = ${json};`;
+            list.forEach(o => {
+                const date = new Date(o.date).toLocaleDateString('ja-JP');
+                const badgeClass = getStatusClass(o.status);
 
-            navigator.clipboard.writeText(content).then(() => {
-                alert('【コピー完了】\n\n1. "data.js" を開いて全て削除\n2. 貼り付けて保存\n3. Netlifyへアップロード');
-            }).catch(() => {
-                console.log(content);
-                alert('クリップボードへのコピーに失敗しました。F12でConsoleを確認してください。');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><div class="text-sm font-bold text-gray">${date}</div></td>
+                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;">${o['曲名']}</div></td>
+                    <td><div class="user-cell"><span class="user-name">${o['ご依頼者名']}</span><span class="user-sub">${o['TwitterID(任意)']}</span></div></td>
+                    <td><span class="text-sm">${o['プラン']}</span></td>
+                    <td>
+                        ${o.paymentLink ? `<a href="${o.paymentLink}" target="_blank" class="btn btn-ghost btn-sm" style="color:#0ea5e9;">¥ 支払いリンク</a>` : `<button class="btn btn-ghost btn-sm text-gray" onclick="setPayLink('${o.id}')">未設定</button>`}
+                    </td>
+                    <td><span class="text-sm text-gray">未設定</span></td>
+                    <td>
+                        <select class="status-badge ${badgeClass}" style="border:none; cursor:pointer;" onchange="updateStatus('${o.id}', this.value)">
+                            ${['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了', 'キャンセル'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
         }
+        function getStatusClass(s) {
+            if (s === '未着手') return 'bg-gray-100';
+            if (s === '支払い待ち') return 'bg-orange-100';
+            if (s === '全て入金済み') return 'bg-green-100';
+            if (s === '取引終了') return 'bg-gray-100';
+            if (s === 'キャンセル') return 'bg-red-100';
+            return 'bg-blue-100';
+        }
+        async function updateStatus(id, val) {
+            await postAPI('update_order_status', { orderId: id, updates: { status: val } });
+            fetchData();
+        }
+        async function setPayLink(id) {
+            const l = prompt("支払いリンク (Stripe/Square URL) を入力:");
+            if (l) {
+                await postAPI('update_order_status', { orderId: id, updates: { paymentLink: l } });
+                fetchData();
+            }
+        }
+
+        // --- PORTFOLIO UI ---
+        function switchPfCat(cat, btn) {
+            activePfCat = cat;
+            document.querySelectorAll('#tab-portfolio .filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+
+            ['works', 'mix', 'orig'].forEach(k => document.getElementById(`pf-${k}`).classList.add('hidden'));
+            document.getElementById(`pf-${cat}`).classList.remove('hidden');
+        }
+
+        function renderPortfolio() {
+            renderPfGrid('works', DATA.works);
+            renderPfGrid('mix', DATA.mix);
+            renderPfGrid('orig', DATA.orig);
+        }
+
+        function renderPfGrid(cat, items) {
+            const el = document.getElementById(`pf-${cat}`);
+            el.innerHTML = '';
+            (items || []).forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.innerHTML = `
+                    <div class="pf-thumb"><iframe src="https://www.youtube.com/embed/${item.id}"></iframe></div>
+                    <div class="pf-body">
+                        <label class="form-label">YouTube ID</label>
+                        <input class="form-input" value="${item.id}" onchange="updatePfData('${cat}', ${idx}, 'id', this.value)">
+                        <label class="form-label">Title / Comment</label>
+                        <input class="form-input" value="${item.title || ''}" onchange="updatePfData('${cat}', ${idx}, 'title', this.value)">
+                        <div class="text-right">
+                            <button class="btn btn-danger btn-sm" onclick="delPf('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i> 削除</button>
+                        </div>
+                    </div>
+                `;
+                el.appendChild(div);
+            });
+        }
+        function updatePfData(cat, idx, key, val) { DATA[cat][idx][key] = val; }
+        function addPfItem() {
+            if (!DATA[activePfCat]) DATA[activePfCat] = [];
+            DATA[activePfCat].push({ id: '', title: '' });
+            renderPortfolio();
+        }
+        function delPf(cat, idx) {
+            if (confirm("削除しますか？")) { DATA[cat].splice(idx, 1); renderPortfolio(); }
+        }
+        async function savePortfolio() {
+            document.getElementById('loading').style.display = 'flex';
+            await postAPI('update_portfolio', { category: 'works', items: DATA.works });
+            await postAPI('update_portfolio', { category: 'mix', items: DATA.mix });
+            await postAPI('update_portfolio', { category: 'orig', items: DATA.orig });
+            document.getElementById('loading').style.display = 'none';
+            alert("保存しました");
+        }
+
+        // --- PRICES UI ---
+        function renderPrices() {
+            const el = document.getElementById('price-form');
+            el.innerHTML = '';
+            const labels = {
+                'mix_std': 'MIX スタンダード', 'mix_one': 'MIX ワンコーラス', 'mix_short': 'MIX ショート',
+                'mix_speed': 'MIX スピード', 'mix_super': 'MIX 超スピード', 'mix_collab': 'MIX コラボ',
+                'orig_std': 'Original スタンダード', 'orig_lyrics': 'Original 作詞持ち込み', 'opt_live': 'Option 生演奏'
+            };
+            Object.entries(labels).forEach(([k, label]) => {
+                const val = DATA.prices[k] || '';
+                el.innerHTML += `
+                    <div class="price-row">
+                        <label class="font-bold">${label}</label>
+                        <input class="form-input" value="${val}" onchange="DATA.prices['${k}'] = this.value">
+                    </div>
+                `;
+            });
+        }
+        async function savePrices() {
+            document.getElementById('loading').style.display = 'flex';
+            await postAPI('update_prices', DATA.prices);
+            document.getElementById('loading').style.display = 'none';
+            alert("料金を保存しました");
+        }
+
+        // --- API UTILS ---
+        async function postAPI(action, data) {
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': TOKEN },
+                body: JSON.stringify({ action, data })
+            });
+        }
+
+        // Init
+        checkAuth();
+
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </body>
 
 </html>
