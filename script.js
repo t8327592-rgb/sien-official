@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("SCRIPT V5 - Final Static Mode");
+    console.log("SCRIPT - UI Control Mode");
 
     // --- 1. Navbar & UI Effects ---
     const navToggle = document.getElementById('nav-toggle');
@@ -22,10 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.section-title, .hero h1, .hero-sub, .hero-scroll').forEach(el => {
         if (el.classList.contains('section-title') || el.closest('.hero')) {
-            // For hero elements, they might check fade-in classes logic in css, 
-            // but here we ensure observer finds them if needed. 
-            // Actually css handles .fade-in animation on load for hero, 
-            // observer mainly for scroll sections.
+            // Hero fade-in handled by CSS usually, but this ensures observer catches them if needed
         }
         if (el.classList.contains('section-title')) {
             el.style.opacity = '0';
@@ -57,19 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const requiredInputs = orderForm.querySelectorAll('[required]');
             requiredInputs.forEach(input => {
-                // Check value (handle checkbox separately vs text)
                 const isChecksum = input.type === 'checkbox' ? !input.checked : !input.value.trim();
 
                 if (isChecksum) {
                     isValid = false;
                     input.classList.add('input-error');
 
-                    // Create Error Message
                     const msg = document.createElement('span');
                     msg.className = 'error-message';
                     msg.innerText = 'この項目は入力必須です';
 
-                    // Insert message
                     if (input.type === 'checkbox') {
                         input.parentElement.parentElement.appendChild(msg);
                     } else {
@@ -81,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!isValid) {
-                // Scroll to first error
                 if (firstInvalidInput) {
                     firstInvalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     firstInvalidInput.focus();
@@ -89,74 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 3. Netlify Submission (AJAX)
-            const btn = orderForm.querySelector('button[type="submit"]');
-            const originalBtnText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
-            btn.disabled = true;
+            // 3. API Submission (Placeholder for new Vercel KV system)
+            // TODO: Implement new submission logic here
+            console.log("Form submitted (Waiting for new API implementation)");
 
-            const formData = new FormData(orderForm);
-
-            // --- Value Mapping for Auto-Reply Email ---
-            // Map internal values to Japanese display text
-            const mappings = {
-                '希望する連絡手段': {
-                    'twitter_dm': 'Twitter DM',
-                    'email': 'メール'
-                },
-                'プラン': {
-                    'standard': 'スタンダードプラン',
-                    'one_chorus': 'ワンコーラスプラン',
-                    'short': 'ショート動画用MIX',
-                    'speed': 'スピードプラン',
-                    'super_speed': '超スピードプラン',
-                    'collab': 'コラボ・合唱プラン',
-                    'original_std': 'オリジナル楽曲 スタンダード',
-                    'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
-                    'other': 'その他・ご相談'
-                },
-                'キー変更': {
-                    '0': '原キー (±0)'
-                    // numbers like +1, -1 are fine as is
-                },
-                'お支払い方法': {
-                    'bank_transfer': '銀行振込',
-                    'credit_card': 'クレジットカード'
-                }
-            };
-
-            // Apply mappings
-            for (const [fieldName, mapObj] of Object.entries(mappings)) {
-                const val = formData.get(fieldName);
-                if (val && mapObj[val]) {
-                    formData.set(fieldName, mapObj[val]);
-                }
-            }
-
-            // Remove internal field 'form-name' so it doesn't appear in the email
-            formData.delete('form-name');
-
-            fetch('https://ssgform.com/s/oUyPUuSmLYCq', {
-                method: 'POST',
-                mode: 'no-cors', // Important: SSGform likely redirects or doesn't support CORS JSON, so we use no-cors to allow submission without error
-                body: formData
-            })
-                .then(() => {
-                    // Hide entire input area (form + notice + status)
-                    const inputArea = document.getElementById('input-area');
-                    if (inputArea) inputArea.style.display = 'none';
-
-                    // Show success
-                    successMessage.classList.remove('hidden');
-                    orderForm.reset();
-                    window.scrollTo(0, 0);
-                })
-                .catch((error) => {
-                    alert('送信に失敗しました。時間をおいて再度お試しください。');
-                    console.error('Submission error:', error);
-                    btn.innerHTML = originalBtnText;
-                    btn.disabled = false;
-                });
+            // Temporary UI feedback for testing interactions
+            // const btn = orderForm.querySelector('button[type="submit"]');
+            // btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+            // btn.disabled = true;
         });
     }
 
@@ -197,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 activeAudio = newAudio;
 
-                // Mute state for visual consistency (though we only play one)
+                // Mute state for visual consistency
                 audioBefore.muted = (newType !== 'before');
                 audioAfter.muted = (newType !== 'after');
             };
@@ -213,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Play/Pause
             btn.addEventListener('click', () => {
                 if (activeAudio.paused) {
-                    // Stop others logic if needed (optional, keeping simple for mobile)
+                    // Stop others
                     document.querySelectorAll('audio').forEach(a => {
                         if (a !== audioBefore && a !== audioAfter) {
                             a.pause();
@@ -243,16 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             audioBefore.addEventListener('loadedmetadata', onMetadataLoaded);
-            // In case already loaded
             if (audioBefore.readyState >= 1) onMetadataLoaded();
 
-            // Time Update (only update UI if from active track)
+            // Time Update
             const onTimeUpdate = (e) => {
                 if (e.target !== activeAudio) return;
                 const t = activeAudio.currentTime;
-                // Avoid seek fighting
-                // Only update if not currently dragging? 
-                // Using 'input' event for drag usually handles this naturally if updates are frequent.
                 seekBar.value = t;
                 currTimeText.innerText = formatTime(t);
             };
@@ -264,10 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
             seekBar.addEventListener('input', () => {
                 const seekTo = parseFloat(seekBar.value);
                 activeAudio.currentTime = seekTo;
-                // Silently sync the other one
                 const other = activeAudio === audioBefore ? audioAfter : audioBefore;
                 other.currentTime = seekTo;
-
                 currTimeText.innerText = formatTime(seekTo);
             });
 
@@ -275,13 +202,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const onEnd = () => {
                 isPlaying = false;
                 btn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                activeAudio.currentTime = 0; // Use activeAudio
+                activeAudio.currentTime = 0;
                 const other = activeAudio === audioBefore ? audioAfter : audioBefore;
                 other.currentTime = 0;
-
                 activeAudio.pause();
-                other.pause(); // Ensure both pause
-
+                other.pause();
                 seekBar.value = 0;
                 currTimeText.innerText = "0:00";
             };
@@ -298,87 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // --- 4. Portfolio Data & Rendering ---
-
-    // Mix Videos Data
-    const portfolioVideos = [
-        { id: 'olpsRfUFdjw', title: '[歌ってみた]Campus mode!!/初星学園 ❴ぽぷ・にゃーちふぃんど/月見ひひと/純粋なの/re;BON❵' },
-        { id: 'voTuWFmcbeI', title: 'いーあるふぁんくらぶ / ぷりあま Cover【歌ってみた】' },
-        { id: 'Le84jUtbRwo', title: '【子ﾗｲｵﾝ♀が】けっかおーらい/ヴィジランテOP【描いて歌ってみた】VTuber Cover' },
-        { id: 'E6bS-n2nx0g', title: '【歌ってみた】天才 / SMITH(すみす)' },
-        { id: 'u4rAEKOKeZA', title: '火ノ要鎮 / 平田義久 - じょん【歌ってみた】' },
-        { id: 'tDUgj37HhOw', title: '白い雪のプリンセスは Covered by 草刈七海' },
-        { id: 'yRFFBglbLWo', title: 'キラー（Cover）/とうにこ' },
-        { id: 'ZYCwYSK0RK4', title: '【歌ってみた】ダーリンゲームオーバーラブ / ウルハシスティー' },
-        { id: 'P06mDQyOs14', title: 'きゅうくらりん / 田中バター【歌ってみた】' }
-    ];
-
-    // Original Videos Data
-    const originalVideos = [
-        { id: 'Rc531IszCes', title: '【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】' },
-        { id: 'zTxvMNXaFoA', title: '【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】' },
-        { id: 'Ke1HAX8Z49I', title: '週末を待て。『SODA』Music Video' }
-    ];
-
-    const createVideoItem = (video) => {
-        const item = document.createElement('div');
-        item.className = 'work-item';
-        item.innerHTML = `
-            <div class="video-container">
-                <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
-            </div>
-            <p class="work-title">${video.title}</p>
-        `;
-        return item;
-    };
-
-
-    // >>>> Logic for MIX Page (mix.html)
-    const portfolioContainer = document.getElementById('mix-portfolio');
-    const showMoreBtn = document.getElementById('show-more-btn');
-
-    if (portfolioContainer && showMoreBtn) {
-        let loadedCount = 0;
-        const loadStep = 3;
-
-        const loadMore = () => {
-            const nextBatch = portfolioVideos.slice(loadedCount, loadedCount + loadStep);
-            nextBatch.forEach(vid => {
-                portfolioContainer.appendChild(createVideoItem(vid));
-            });
-            loadedCount += nextBatch.length;
-            if (loadedCount >= portfolioVideos.length) {
-                showMoreBtn.style.display = 'none';
-            }
-        };
-        loadMore();
-        showMoreBtn.addEventListener('click', loadMore);
-    }
-
-    // >>>> Logic for ORIGINAL Page (original.html)
-    const originalPortfolioContainer = document.getElementById('original-portfolio');
-    if (originalPortfolioContainer) {
-        originalVideos.forEach(video => {
-            originalPortfolioContainer.appendChild(createVideoItem(video));
-        });
-    }
-
-    // >>>> Logic for WORKS Page (works.html) - New!
-    const worksMixContainer = document.getElementById('works-mix-container');
-    const worksOriginalContainer = document.getElementById('works-original-container');
-
-    if (worksMixContainer) {
-        portfolioVideos.forEach(video => {
-            worksMixContainer.appendChild(createVideoItem(video));
-        });
-    }
-    if (worksOriginalContainer) {
-        originalVideos.forEach(video => {
-            worksOriginalContainer.appendChild(createVideoItem(video));
-        });
-    }
-
-    // --- Works Page Tab Logic ---
+    // --- 4. Works Page Tab Logic (UI Only) ---
     const tabBtns = document.querySelectorAll('.tab-btn');
     const catMix = document.getElementById('category-mix');
     const catOriginal = document.getElementById('category-original');
@@ -387,12 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabBtns.length > 0) {
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // 1. Remove active class
                 tabBtns.forEach(b => b.classList.remove('active'));
-                // 2. Add active class
                 btn.classList.add('active');
 
-                // 3. Filter
                 const tab = btn.getAttribute('data-tab');
 
                 if (tab === 'all') {
@@ -412,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 6. Hero Background Video Cycle ---
+    // --- 5. Hero Background Video Cycle ---
     const bgVideos = document.querySelectorAll('.video-slide');
     if (bgVideos.length > 1) {
         let currentVidIdx = 0;
@@ -422,4 +264,88 @@ document.addEventListener('DOMContentLoaded', () => {
             bgVideos[currentVidIdx].classList.add('active');
         }, 7000);
     }
+
+    // --- 6. Dynamic Data Loading (Public API) ---
+    const loadPublicData = async () => {
+        try {
+            const res = await fetch('/api/admin?type=public');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // 1. Render Portfolios
+            if (data.works) renderPublicPortfolio('works-mix-container', data.works);
+            renderPublicPortfolio('mix-portfolio', data.mix);
+            renderPublicPortfolio('original-portfolio', data.orig);
+            renderPublicPortfolio('works-original-container', data.orig);
+
+            // 2. Update Prices
+            if (data.prices) {
+                Object.keys(data.prices).forEach(key => {
+                    const el = document.getElementById(`price_${key}`);
+                    if (el) el.innerText = data.prices[key];
+                });
+            }
+        } catch (e) { console.error("Data load error", e); }
+    };
+
+    const renderPublicPortfolio = (containerId, list) => {
+        const container = document.getElementById(containerId);
+        if (!container || !list) return;
+        container.innerHTML = '';
+
+        list.forEach(video => {
+            const item = document.createElement('div');
+            item.className = 'work-item';
+            item.innerHTML = `
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <p class="work-title">${video.title || video.comment || ''}</p>
+            `;
+            container.appendChild(item);
+        });
+    };
+
+    loadPublicData();
+
+    // --- 7. Form Submission (API) ---
+    if (orderForm) {
+        orderForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputs = orderForm.querySelectorAll('[required]');
+            let valid = true;
+            inputs.forEach(i => { if (!i.value) valid = false; });
+            if (!valid) return alert('必須項目を入力してください');
+
+            const btn = orderForm.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+            btn.disabled = true;
+
+            try {
+                const formData = new FormData(orderForm);
+                const jsonData = Object.fromEntries(formData.entries());
+
+                const res = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData)
+                });
+
+                if (res.ok) {
+                    document.getElementById('input-area').style.display = 'none';
+                    successMessage.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                } else {
+                    throw new Error('Server returned error');
+                }
+            } catch (err) {
+                alert('送信に失敗しました。時間をおいて再度お試しください。');
+                console.error(err);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+
 });

@@ -62,7 +62,18 @@ export default async function handler(request, response) {
             */
 
             if (action === 'update_portfolio') {
-                await kv.set(`portfolio_${data.category}`, data.items);
+                // Sanitize: ensure only IDs are stored
+                const cleanItems = (data.items || []).map(item => {
+                    let cleanId = item.id.trim();
+                    // Regex for YouTube ID extraction
+                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                    const match = cleanId.match(regExp);
+                    if (match && match[2].length === 11) {
+                        cleanId = match[2];
+                    }
+                    return { ...item, id: cleanId };
+                });
+                await kv.set(`portfolio_${data.category}`, cleanItems);
                 return response.status(200).json({ success: true });
             }
 
