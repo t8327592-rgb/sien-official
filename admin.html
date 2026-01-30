@@ -824,16 +824,39 @@
         function renderPrices() {
             const el = document.getElementById('price-form');
             el.innerHTML = '';
-            const labels = {
-                'mix_std': 'MIX スタンダード', 'mix_one': 'MIX ワンコーラス', 'mix_short': 'MIX ショート',
-                'mix_speed': 'MIX スピード', 'mix_super': 'MIX 超スピード', 'mix_collab': 'MIX コラボ',
-                'orig_std': 'Original スタンダード', 'orig_lyrics': 'Original 作詞持ち込み', 'opt_live': 'Option 生演奏'
+
+            // Mix Plans
+            el.innerHTML += `<h4 class="font-bold mt-4 mb-2" style="color:var(--accent-blue);">ミックス・マスタリング</h4>`;
+            const mixLabels = {
+                'mix_std': 'スタンダードプラン',
+                'mix_one': 'ワンコーラスプラン',
+                'mix_short': 'ショート動画用MIX',
+                'mix_speed': 'スピードプラン',
+                'mix_super': '超スピードプラン',
+                'mix_collab': 'コラボ・合唱プラン'
             };
-            Object.entries(labels).forEach(([k, label]) => {
+            Object.entries(mixLabels).forEach(([k, label]) => {
                 const val = DATA.prices[k] || '';
                 el.innerHTML += `
                     <div class="price-row">
-                        <label class="font-bold">${label}</label>
+                        <label>${label}</label>
+                        <input class="form-input" value="${val}" onchange="DATA.prices['${k}'] = this.value">
+                    </div>
+                `;
+            });
+
+            // Original Plans
+            el.innerHTML += `<h4 class="font-bold mt-4 mb-2" style="color:var(--accent-blue);">オリジナル楽曲制作</h4>`;
+            const origLabels = {
+                'orig_std': 'スタンダードプラン',
+                'orig_lyrics': '作詞持ち込みプラン',
+                'opt_live': 'オプション：生楽器演奏追加'
+            };
+            Object.entries(origLabels).forEach(([k, label]) => {
+                const val = DATA.prices[k] || '';
+                el.innerHTML += `
+                    <div class="price-row">
+                        <label>${label}</label>
                         <input class="form-input" value="${val}" onchange="DATA.prices['${k}'] = this.value">
                     </div>
                 `;

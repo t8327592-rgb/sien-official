@@ -265,20 +265,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 7000);
     }
 
-    // --- 6. Dynamic Data Loading (Public API) ---
+    // --- 6. Dynamic Data Loading (Public API) & Show More Logic ---
+    let allWorks = []; // Store for pagination
+    let shownCount = 0;
+    const SHOW_STEP = 3;
+
     const loadPublicData = async () => {
         try {
             const res = await fetch('/api/admin?type=public');
             if (!res.ok) return;
             const data = await res.json();
 
-            // 1. Render Portfolios
+            // 1. Store Works for Pagination (Index Page)
+            allWorks = data.works || [];
+
+            // 2. Render Index Page Works (Paged)
+            const indexContainer = document.getElementById('works-grid');
+            const showMoreBtn = document.getElementById('index-works-more-btn');
+
+            if (indexContainer && showMoreBtn) {
+                renderPagedWorks(indexContainer, showMoreBtn);
+                showMoreBtn.addEventListener('click', () => {
+                    renderPagedWorks(indexContainer, showMoreBtn);
+                });
+            }
+
+            // 3. Render Other Pages (Full List)
+            // If on works.html, we might want to show all or specific categories
+            // Existing logic:
             if (data.works) renderPublicPortfolio('works-mix-container', data.works);
             renderPublicPortfolio('mix-portfolio', data.mix);
             renderPublicPortfolio('original-portfolio', data.orig);
             renderPublicPortfolio('works-original-container', data.orig);
 
-            // 2. Update Prices
+            // 4. Update Prices
             if (data.prices) {
                 Object.keys(data.prices).forEach(key => {
                     const el = document.getElementById(`price_${key}`);
@@ -288,22 +308,43 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error("Data load error", e); }
     };
 
+    // Pagination Rendering
+    const renderPagedWorks = (container, btn) => {
+        const nextBatch = allWorks.slice(shownCount, shownCount + SHOW_STEP);
+
+        nextBatch.forEach(video => {
+            container.appendChild(createWorkItem(video));
+        });
+
+        shownCount += nextBatch.length;
+
+        // Button Visibility
+        if (shownCount >= allWorks.length) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = 'block';
+        }
+    };
+
+    // Shared Item Creator
+    const createWorkItem = (video) => {
+        const item = document.createElement('div');
+        item.className = 'work-item';
+        item.innerHTML = `
+            <div class="video-container">
+                <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <p class="work-title">${video.title || video.comment || ''}</p>
+        `;
+        return item;
+    };
+
+    // Legacy/Full Render
     const renderPublicPortfolio = (containerId, list) => {
         const container = document.getElementById(containerId);
         if (!container || !list) return;
         container.innerHTML = '';
-
-        list.forEach(video => {
-            const item = document.createElement('div');
-            item.className = 'work-item';
-            item.innerHTML = `
-                <div class="video-container">
-                    <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
-                </div>
-                <p class="work-title">${video.title || video.comment || ''}</p>
-            `;
-            container.appendChild(item);
-        });
+        list.forEach(video => container.appendChild(createWorkItem(video)));
     };
 
     loadPublicData();
