@@ -330,14 +330,41 @@ document.addEventListener('DOMContentLoaded', () => {
             new PagedSection(data.orig, 'original-portfolio', null);
 
 
-            // 5. Update Prices
+            // 5. Update Dynamic Plans (New System)
             if (data.prices) {
-                Object.keys(data.prices).forEach(key => {
-                    const el = document.getElementById(`price_${key}`);
-                    if (el) el.innerText = data.prices[key];
-                });
+                renderPublicPlans(data.prices.mix, 'plan-list-mix');
+                renderPublicPlans(data.prices.orig, 'plan-list-orig');
             }
+
         } catch (e) { console.error("Data load error", e); }
+    };
+
+    const renderPublicPlans = (plans, containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container || !plans || !Array.isArray(plans)) return;
+
+        container.innerHTML = '';
+        plans.forEach(plan => {
+            const card = document.createElement('div');
+            card.className = 'price-card';
+            // Logic to highlight recommended plans if we add that flag later
+            if (plan.recommended) card.style.border = '2px solid var(--accent-blue)';
+
+            card.innerHTML = `
+                <div class="price-header">
+                    <h4>${plan.title}</h4>
+                    <p class="price">${plan.price}</p>
+                </div>
+                <div class="price-body">
+                    <p class="desc">${plan.desc || ''}</p>
+                    <div class="price-meta">
+                        <span><i class="fa-regular fa-clock"></i> 納期: ${plan.period}</span>
+                        <span><i class="fa-solid fa-rotate-right"></i> 修正: ${plan.revisions || plan.limit}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
     };
 
     // Shared Item Creator

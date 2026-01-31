@@ -737,6 +737,66 @@ h5 {
     font-weight: 400;
 }
 
+/* Dynamic Price Card Styles */
+.price-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.price-header h4 {
+    font-size: 1.3rem;
+    color: var(--accent-blue);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.price-header .price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.price-body .desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    min-height: 50px;
+    /* Align cards */
+}
+
+.price-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    background: var(--bg-gray);
+    padding: 10px;
+    border-radius: 8px;
+    color: var(--text-main);
+}
+
+.price-card.recommended {
+    border: 2px solid var(--accent-blue);
+    position: relative;
+}
+
+.price-card.recommended::after {
+    content: 'RECOMMENDED';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-blue);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 12px;
+    border-radius: 0 0 10px 10px;
+    font-weight: bold;
+}
+
 /* Validation Styles */
 .input-error {
     border-color: #dc2626 !important;
