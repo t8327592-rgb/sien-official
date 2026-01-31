@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 3. Render Other Pages (Full List)
             // If on works.html, we might want to show all or specific categories
             // Existing logic:
-            if (data.works) renderPublicPortfolio('works-mix-container', data.works);
+            if (data.mix) renderPublicPortfolio('works-mix-container', data.mix);
             renderPublicPortfolio('mix-portfolio', data.mix);
             renderPublicPortfolio('original-portfolio', data.orig);
             renderPublicPortfolio('works-original-container', data.orig);
