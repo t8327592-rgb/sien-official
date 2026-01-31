@@ -757,10 +757,55 @@
                 if (res.status === 401) return logout();
                 DATA = await res.json();
 
-                // Ensure Prices Structure (Migration from Old Data)
-                if (!DATA.prices || typeof DATA.prices !== 'object') DATA.prices = {};
-                if (!Array.isArray(DATA.prices.mix)) DATA.prices.mix = [];
-                if (!Array.isArray(DATA.prices.orig)) DATA.prices.orig = [];
+                // --- DATA MIGRATION CHECK ---
+                // If prices is empty or old format (flat object), migration to new structure
+                if (!DATA.prices || typeof DATA.prices !== 'object' || !Array.isArray(DATA.prices.mix)) {
+                    console.log("Migrating Prices Data...");
+                    const old = DATA.prices || {};
+                    const newPrices = { mix: [], orig: [] };
+
+                    // 1. MIX PLANS
+                    const mixDefs = [
+                        { k: 'standard', t: 'スタンダードプラン', p: '5,000円', d: '7日', l: '2回', desc: 'フルコーラスのMix。ピッチ・リズム補正、マスタリングまで含みます。' },
+                        { k: 'one_chorus', t: 'ワンコーラスプラン', p: '3,000円', d: '7日', l: '2回', desc: '1番サビ終わりまでのMixです。' },
+                        { k: 'short', t: 'ショート動画用MIX', p: '2,000円', d: '3日', l: '2回', desc: '60秒以内の動画用（Youtube Shorts/TikTok等）。' },
+                        { k: 'collab', t: 'コラボ・合唱プラン', p: '8,000円', d: '10日', l: '2回', desc: '2名以上のボーカルMix。1名追加ごとに+料金。' },
+                        { k: 'speed', t: 'スピードプラン', p: '+3,000円', d: '3日以内', l: '1回', desc: 'お急ぎの方向け（オプション）。優先して作業します。' },
+                        { k: 'super_speed', t: '超スピードプラン', p: '+5,000円', d: '24時間', l: '1回', desc: '最優先で即日納品を目指します（要スケジュール確認）。' }
+                    ];
+
+                    mixDefs.forEach(def => {
+                        // Use existing price if available, else default
+                        const priceV = old[def.k] ? old[def.k] : def.p;
+                        newPrices.mix.push({
+                            title: def.t,
+                            price: priceV,
+                            period: def.d,
+                            revisions: def.l,
+                            desc: def.desc
+                        });
+                    });
+
+                    // 2. ORIG PLANS
+                    const origDefs = [
+                        { k: 'original_std', t: 'オリジナル楽曲制作', p: '30,000円', d: '30日', l: '3回', desc: '作編曲・Mix込みのフルパッケージ制作。' },
+                        { k: 'original_lyrics', t: '作詞持ち込み', p: '25,000円', d: '30日', l: '3回', desc: '歌詞やメロディがある状態からの制作。' }
+                    ];
+
+                    origDefs.forEach(def => {
+                        const priceV = old[def.k] ? old[def.k] : def.p;
+                        newPrices.orig.push({
+                            title: def.t,
+                            price: priceV,
+                            period: def.d,
+                            revisions: def.l,
+                            desc: def.desc
+                        });
+                    });
+
+                    DATA.prices = newPrices;
+                }
+
                 // Ensure Voices
                 if (!DATA.voices) DATA.voices = [];
 

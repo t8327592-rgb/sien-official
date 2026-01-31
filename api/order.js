@@ -38,20 +38,28 @@ export default async function handler(request, response) {
                 to: 'px.sien@gmail.com',
                 subject: `【新規依頼】${formData['ご依頼者名']}様より`,
                 text: `
-新規のご依頼がありました。
+ご依頼者名：${formData['ご依頼者名']}
 
-【基本情報】
-活動名: ${formData['ご依頼者名']}
-Email: ${formData['メールアドレス']}
-Twitter: ${formData['TwitterID(任意)']}
+メールアドレス：${formData['メールアドレス']}
 
-【依頼内容】
-プラン: ${formData['プラン']}
-曲名: ${formData['曲名']}
-キー: ${formData['キー変更']}
-支払い: ${formData['お支払い方法']}
+TwitterID(任意)：${formData['TwitterID(任意)']}
 
-詳細や素材URLは管理画面をご確認ください。
+希望する連絡手段：${formData['希望する連絡手段']}
+
+曲名：${formData['曲名']}
+
+ご依頼内容：Mix＆Mastering
+
+プラン：${formData['プラン']}
+
+レコーディング済み音源：${formData['レコーディング済み音源'] || 'なし'}
+
+キー変更：${formData['キー変更']}
+
+参考URL(任意)：${formData['参考URL(任意)'] || 'なし'}
+
+イメージ
+${formData['ご要望・ご質問・特記事項など'] || 'なし'}
                 `
             };
 

@@ -9,12 +9,13 @@ export default async function handler(request, response) {
     // Allow reading specific data without password if type=public
     if (method === 'GET' && query.type === 'public') {
         try {
-            const [worksResult, mixResult, origResult, pricesResult, newsResult] = await Promise.all([
+            const [worksResult, mixResult, origResult, pricesResult, newsResult, voicesResult] = await Promise.all([
                 kv.get('portfolio_works'),
                 kv.get('portfolio_mix'),
                 kv.get('portfolio_orig'),
                 kv.get('site_prices'),
-                kv.get('site_news')
+                kv.get('site_news'),
+                kv.get('site_voices')
             ]);
 
             const works = worksResult || [];
@@ -22,9 +23,10 @@ export default async function handler(request, response) {
             const orig = origResult || [];
             const prices = pricesResult || {};
             const news = newsResult || { text: '', visible: false };
+            const voices = voicesResult || [];
 
             return response.status(200).json({
-                works, mix, orig, prices, news
+                works, mix, orig, prices, news, voices
             });
         } catch (e) {
             return response.status(500).json({ error: 'DB Error' });
@@ -44,13 +46,14 @@ export default async function handler(request, response) {
             const limit = parseInt(query.limit) || 50;
             const skip = parseInt(query.skip) || 0;
 
-            const [ordersResult, worksResult, mixResult, origResult, pricesResult, newsResult] = await Promise.all([
+            const [ordersResult, worksResult, mixResult, origResult, pricesResult, newsResult, voicesResult] = await Promise.all([
                 kv.lrange('orders', skip, skip + limit - 1),
                 kv.get('portfolio_works'),
                 kv.get('portfolio_mix'),
                 kv.get('portfolio_orig'),
                 kv.get('site_prices'),
-                kv.get('site_news')
+                kv.get('site_news'),
+                kv.get('site_voices')
             ]);
 
             const orders = ordersResult || [];
@@ -59,20 +62,16 @@ export default async function handler(request, response) {
             const orig = origResult || [];
             const prices = pricesResult || {};
             const news = newsResult || { text: '', visible: false };
+            const voices = voicesResult || [];
 
             return response.status(200).json({
-                orders, works, mix, orig, prices, news
+                orders, works, mix, orig, prices, news, voices
             });
 
         } else if (method === 'POST') {
             const { action, data } = request.body;
 
-            /* Actions:
-               - update_portfolio: { category: 'works', items: [] }
-               - update_prices: { ... }
-               - update_news: { ... }
-               - update_order_status: { orderId: '...', status: '...', paymentLink: '...' }
-            */
+            /* ... (omitted comments) ... */
 
             if (action === 'update_portfolio') {
                 // Sanitize: ensure only IDs are stored
@@ -100,16 +99,24 @@ export default async function handler(request, response) {
                 return response.status(200).json({ success: true });
             }
 
-            if (action === 'update_order_status') {
-                // Updating an item in a list in Redis is tricky (need to find index).
-                // For simplicity in this KV setup, we'll read all, update, write all.
-                // NOTE: In high concurrency this is bad, but for a single admin it's fine.
+            if (action === 'update_voices') {
+                await kv.set('site_voices', data);
+                return response.status(200).json({ success: true });
+            }
 
+            if (action === 'update_order_status') {
                 const allOrders = await kv.lrange('orders', 0, -1);
                 const index = allOrders.findIndex(o => o.id === data.orderId);
 
                 if (index !== -1) {
-                    const updatedOrder = { ...allOrders[index], ...data.updates };
+                    // Start with existing
+                    const updates = data.updates || {};
+                    const updatedOrder = { ...allOrders[index], ...updates };
+
+                    // Specific direct fields support (if not nested in updates)
+                    if (data.status) updatedOrder.status = data.status;
+                    if (data.deadline) updatedOrder.deadline = data.deadline;
+
                     await kv.lset('orders', index, updatedOrder);
                     return response.status(200).json({ success: true });
                 } else {
