@@ -463,6 +463,78 @@
         .price-row:last-child {
             border-bottom: none;
         }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+        }
+
+        .modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f3f4f6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal:hover {
+            background: #e5e7eb;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 20px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .detail-value a {
+            color: var(--accent-blue);
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -588,6 +660,16 @@
     </main>
 
 
+    <!-- Order Detail Modal -->
+    <div id="order-detail-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="modal-title" class="page-title"
+                style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;"></h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- CORE STATE ---
@@ -679,7 +761,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><div class="text-sm font-bold text-gray">${date}</div></td>
-                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;">${o['曲名']}</div></td>
+                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;" onclick="openOrderDetail('${o.id}')">${o['曲名']}</div></td>
                     <td><div class="user-cell"><span class="user-name">${o['ご依頼者名']}</span><span class="user-sub">${o['TwitterID(任意)']}</span></div></td>
                     <td><span class="text-sm">${o['プラン']}</span></td>
                     <td>
@@ -889,6 +971,54 @@
 
         // Init
         checkAuth();
+
+        // --- MODAL UTILS ---
+        function openOrderDetail(id) {
+            const order = DATA.orders.find(o => o.id === id);
+            if (!order) return;
+
+            document.getElementById('modal-title').innerText = order['曲名'] || '詳細';
+
+            const fields = [
+                { label: 'ID', val: order.id },
+                { label: 'ご依頼者名', val: order['ご依頼者名'] },
+                { label: 'メールアドレス', val: order['メールアドレス'] },
+                { label: 'Twitter ID', val: order['TwitterID(任意)'] },
+                { label: '希望連絡手段', val: order['希望する連絡手段'] },
+                { label: 'プラン', val: order['プラン'] },
+                { label: '曲名', val: order['曲名'] },
+                { label: 'Mix & Mastering', val: 'Mix & Mastering' }, // Fixed value per request
+                { label: 'レコーディング音源', val: order['レコーディング済み音源'], type: 'link' },
+                { label: 'キー変更', val: order['キー変更'] },
+                { label: '参考URL', val: order['参考URL(任意)'], type: 'link' },
+                { label: 'ご要望・備考', val: order['ご要望・ご質問・特記事項など'] || 'なし', type: 'text' },
+                { label: 'ステータス', val: `<span class="status-badge ${getStatusClass(order.status)}">${order.status}</span>`, type: 'html' }
+            ];
+
+            const html = fields.map(f => {
+                let displayVal = f.val;
+                if (f.type === 'link' && f.val) {
+                    displayVal = `<a href="${f.val}" target="_blank">${f.val}</a>`;
+                } else if (f.type === 'text') {
+                    displayVal = `<div style="white-space: pre-wrap;">${f.val}</div>`;
+                }
+                if (!displayVal || displayVal === 'なし') displayVal = '<span style="color:#ccc;">(未入力)</span>';
+
+                return `
+                    <div class="detail-row">
+                        <div class="detail-label">${f.label}</div>
+                        <div class="detail-value">${f.type === 'html' ? f.val : displayVal}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('order-detail-modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('order-detail-modal').classList.remove('open');
+        }
 
     </script>
 </body>
