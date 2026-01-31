@@ -810,6 +810,15 @@
             alert("保存しました");
         }
 
+        // Helper: Price Formatter
+        function formatPriceInput(input) {
+            let val = input.value.replace(/[^0-9]/g, ''); // Remove non-numbers
+            if (!val) return;
+            // Format: 10,000円
+            input.value = Number(val).toLocaleString() + '円';
+            DATA.prices[input.dataset.key] = input.value;
+        }
+
         // --- PRICES UI ---
         function renderPrices() {
             const el = document.getElementById('price-form');
@@ -830,7 +839,12 @@
                 el.innerHTML += `
                     <div class="price-row">
                         <label>${label}</label>
-                        <input class="form-input" value="${val}" onchange="DATA.prices['${k}'] = this.value">
+                        <input class="form-input" 
+                               value="${val}" 
+                               data-key="${k}"
+                               onblur="formatPriceInput(this)"
+                               onfocus="this.value = this.value.replace(/[^0-9]/g, '')" 
+                               onchange="DATA.prices['${k}'] = this.value">
                     </div>
                 `;
             });
@@ -847,7 +861,12 @@
                 el.innerHTML += `
                     <div class="price-row">
                         <label>${label}</label>
-                        <input class="form-input" value="${val}" onchange="DATA.prices['${k}'] = this.value">
+                        <input class="form-input" 
+                               value="${val}" 
+                               data-key="${k}"
+                               onblur="formatPriceInput(this)"
+                               onfocus="this.value = this.value.replace(/[^0-9]/g, '')"
+                               onchange="DATA.prices['${k}'] = this.value">
                     </div>
                 `;
             });
