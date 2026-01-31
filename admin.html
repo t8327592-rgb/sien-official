@@ -785,7 +785,41 @@
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
-        // ... updateOrderCounts ...
+        // --- NAV & FILTER ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const nav = document.getElementById('nav-' + tabId);
+            if (nav) nav.classList.add('active');
+
+            if (tabId === 'orders') renderOrders();
+        }
+
+        let currentStatusFilter = 'all';
+        function setStatusFilter(status, btn) {
+            currentStatusFilter = status;
+            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderOrders();
+        }
+
+        function updateOrderCounts() {
+            if (!DATA.orders) return;
+            const counts = {
+                '未着手': 0, '支払い待ち': 0, '全て入金済み': 0,
+                '納品済み': 0, '取引終了': 0, 'キャンセル': 0
+            };
+            DATA.orders.forEach(o => {
+                if (counts[o.status] !== undefined) counts[o.status]++;
+            });
+            // Update sidebar (if badges exist) or filter chips
+            // Not strictly required if UI doesn't show sidebar badges, 
+            // but 'Archive' count might be useful.
+            // For now just basic placeholder or remove if unused in HTML.
+            // HTML likely has no badges based on current snippets.
+        }
 
         function renderOrders(query = '') {
             if (!query) query = document.getElementById('order-search') ? document.getElementById('order-search').value : '';
