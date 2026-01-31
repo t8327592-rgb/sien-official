@@ -348,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="video-container">
                 <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
             </div>
-            <p class="work-title">${video.title || video.comment || ''}</p>
+            <p class="work-title" style="margin-bottom: 5px;">${video.title || video.comment || ''}</p>
+            <p class="work-role" style="font-size: 0.8rem; color: #666; padding: 0 15px 15px;">${video.role || 'Mix / Mastering'}</p>
         `;
         return item;
     };
