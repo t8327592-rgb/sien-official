@@ -349,7 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'price-card';
             if (plan.recommended) card.classList.add('featured');
 
-            const badgeHTML = plan.recommended ? '<div class="badge">RECOMMENDED</div>' : '';
+            const badgeText = plan.badgeText || 'RECOMMENDED';
+            const badgeHTML = plan.recommended ? `<div class="badge">${badgeText}</div>` : '';
 
             card.innerHTML = `
                 ${badgeHTML}

@@ -1155,6 +1155,16 @@
                          <div class="mt-2 text-right">
                              <span class="text-sm text-gray" style="margin-right:10px;">※変更後「設定を保存」を押してください</span>
                         </div>
+                        <div class="mt-2 text-sm" style="display:flex; align-items:center; gap:10px; background:#eee; padding:5px 10px; border-radius:4px;">
+                             <label class="form-label" style="display:inline-flex; align-items:center; margin:0;">
+                                <input type="checkbox" ${plan.recommended ? 'checked' : ''} onchange="updatePlan('${cat}', ${idx}, 'recommended', this.checked)"> 
+                                <span style="margin-left:5px;">おすすめ/人気として表示</span>
+                             </label>
+                             <input class="form-input" style="width:150px; font-size:0.8rem; padding:4px;" 
+                                    placeholder="バッジ文言 (例: 人気No.1)" 
+                                    value="${plan.badgeText || ''}" 
+                                    onchange="updatePlan('${cat}', ${idx}, 'badgeText', this.value)">
+                        </div>
                     </div>
                 `;
                 container.appendChild(div);
