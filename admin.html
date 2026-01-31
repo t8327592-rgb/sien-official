@@ -559,8 +559,7 @@
         <div class="brand"><a href="index.html" target="_blank"><img src="./assets/logo.png" alt="Sien-Official"
                     style="height:35px;"></a></div>
         <div class="user-menu">
-            <span class="text-sm font-bold">Sien</span>
-            <div class="avatar"><img src="./assets/profile.jpg" alt=""></div>
+            <!-- User Info Removed -->
             <button class="btn btn-ghost btn-sm" onclick="logout()"><i
                     class="fa-solid fa-right-from-bracket"></i></button>
         </div>
@@ -586,12 +585,18 @@
             <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="flex gap-2" style="flex-wrap:wrap;">
                     <span style="font-weight:bold; margin-right:10px;">絞り込み:</span>
-                    <div class="filter-chip active" onclick="filterOrders('active', this)">進行中</div>
-                    <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手</div>
-                    <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち</div>
-                    <div class="filter-chip" onclick="filterOrders('納品済み', this)">納品済み</div>
+                    <div class="filter-chip active" onclick="filterOrders('all', this)">全て <span id="cnt-all"></span>
+                    </div>
+                    <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手 <span id="cnt-new"></span></div>
+                    <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち <span id="cnt-pay"></span>
+                    </div>
+                    <div class="filter-chip" onclick="filterOrders('全て入金済み', this)">入金済み <span id="cnt-paid"></span>
+                    </div>
+                    <div class="filter-chip" onclick="filterOrders('納品済み', this)">納品済み <span id="cnt-done"></span></div>
+                    <div class="filter-chip" onclick="filterOrders('取引終了', this)">取引終了 <span id="cnt-closed"></span>
+                    </div>
                     <div class="filter-chip" onclick="filterOrders('archive', this)"
-                        style="background:#f3f4f6; color:#999;">アーカイブ (キャンセル等)</div>
+                        style="background:#f3f4f6; color:#999;">アーカイブ (キャンセル等) <span id="cnt-arch"></span></div>
                 </div>
                 <div class="flex gap-2">
                     <input type="text" id="order-search" class="search-input" placeholder="名前/曲名で検索"
@@ -763,12 +768,27 @@
                 renderPortfolio();
                 renderPrices();
 
-                // Update Counts
-                document.getElementById('count-all').innerText = DATA.orders.length;
-                document.getElementById('count-new').innerText = DATA.orders.filter(o => o.status === '未着手').length;
+                // Update Counts (Dynamic)
+                updateOrderCounts();
 
             } catch (e) { console.error(e); }
             finally { document.getElementById('loading').style.display = 'none'; }
+        }
+
+        function updateOrderCounts() {
+            const list = DATA.orders || [];
+            const count = (status) => list.filter(o => o.status === status).length;
+            const archiveCount = list.filter(o => o.status === 'キャンセル').length;
+            // "All" excludes Cancel
+            const allCount = list.length - archiveCount;
+
+            document.getElementById('cnt-all').innerText = `(${allCount})`;
+            document.getElementById('cnt-new').innerText = `(${count('未着手')})`;
+            document.getElementById('cnt-pay').innerText = `(${count('支払い待ち')})`;
+            document.getElementById('cnt-paid').innerText = `(${count('全て入金済み')})`;
+            document.getElementById('cnt-done').innerText = `(${count('納品済み')})`;
+            document.getElementById('cnt-closed').innerText = `(${count('取引終了')})`;
+            document.getElementById('cnt-arch').innerText = `(${archiveCount})`;
         }
 
         // --- TABS ---
@@ -1021,12 +1041,17 @@
 
             // Mix Plans
             el.innerHTML += `<div class="flex justify-between items-center mt-4 mb-2">
-                                <h4 class="font-bold" style="color:var(--accent-blue);">ミックス／マスタリング (Mix Plans)</h4>
+                                <h4 class="font-bold" style="color:var(--accent-blue);">ミックス／マスタリング</h4>
                                 <button class="btn btn-sm btn-ghost" onclick="addPlan('mix')">+ プラン追加</button>
                              </div>`;
             el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
             renderPlanList('mix');
 
+            // Original Plans
+            el.innerHTML += `<div class="flex justify-between items-center mt-8 mb-2">
+                                <h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作</h4>
+                                <button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button>
+                             </div>`;
             el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
             renderPlanList('orig');
         }
@@ -1063,30 +1088,27 @@
                                 <input class="form-input" value="${plan.title || ''}" onchange="updatePlan('${cat}', ${idx}, 'title', this.value)">
                             </div>
                             <div>
-                                <label class="form-label">価格 (表示用)</label>
+                                <label class="form-label">金額 (全角は自動変換)</label>
                                 <input class="form-input" value="${plan.price || ''}" 
-                                       onchange="updatePlan('${cat}', ${idx}, 'price', this.value)"
+                                       onchange="updatePlan('${cat}', ${idx}, 'price', toHalfWidth(this.value))"
                                        onblur="this.value = formatMoney(this.value); updatePlan('${cat}', ${idx}, 'price', this.value);"
                                        onfocus="this.value = unformatMoney(this.value)">
                             </div>
                             <div>
-                                <label class="form-label">納期目安</label>
-                                <input class="form-input" value="${plan.period || ''}" onchange="updatePlan('${cat}', ${idx}, 'period', this.value)">
+                                <label class="form-label">納期 (目安)</label>
+                                <input class="form-input" value="${plan.period || ''}" placeholder="例: 7日" onchange="updatePlan('${cat}', ${idx}, 'period', this.value)">
                             </div>
                             <div>
-                                <label class="form-label">修正回数・納品形式</label>
-                                <input class="form-input" value="${plan.limit || ''}" placeholder="2回まで / wav, mp3" onchange="updatePlan('${cat}', ${idx}, 'limit', this.value)">
+                                <label class="form-label">修正回数</label>
+                                <input class="form-input" value="${plan.revisions || ''}" placeholder="例: 2回まで" onchange="updatePlan('${cat}', ${idx}, 'revisions', this.value)">
                             </div>
                         </div>
                         <div class="mt-2">
                             <label class="form-label">詳細説明 (改行可)</label>
-                            <textarea class="form-input" rows="3" onchange="updatePlan('${cat}', ${idx}, 'desc', this.value)">${plan.desc || ''}</textarea>
+                            <textarea class="form-input" rows="3" placeholder="プランの説明文..." onchange="updatePlan('${cat}', ${idx}, 'desc', this.value)">${plan.desc || ''}</textarea>
                         </div>
-                        <div class="mt-2 text-sm">
-                             <label class="form-label" style="display:inline-flex; align-items:center;">
-                                <input type="checkbox" ${plan.recommended ? 'checked' : ''} onchange="updatePlan('${cat}', ${idx}, 'recommended', this.checked)"> 
-                                <span style="margin-left:5px;">おすすめ/人気として表示</span>
-                             </label>
+                         <div class="mt-2 text-right">
+                             <span class="text-sm text-gray" style="margin-right:10px;">※変更後「設定を保存」を押してください</span>
                         </div>
                     </div>
                 `;
@@ -1109,6 +1131,12 @@
 
         function updatePlan(cat, idx, key, val) {
             DATA.prices[cat][idx][key] = val;
+        }
+
+        function toHalfWidth(str) {
+            return str.replace(/[０-９]/g, function (s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
         }
 
         // Plan DnD Logic
@@ -1152,34 +1180,46 @@
             const container = document.getElementById('voice-list');
             container.innerHTML = '';
 
-            // Add Form
+            // 1. Add New Form
             const entryForm = document.createElement('div');
             entryForm.className = 'pf-card';
             entryForm.style.border = '2px dashed #ccc';
             entryForm.innerHTML = `
-            <div class="pf-body">
-                <h4 style="margin-bottom:10px;">新規感想の追加</h4>
-                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
-                    <div>
-                        <label class="form-label">名前</label>
-                        <input id="new-voice-name" class="form-input" placeholder="例: サネル様">
+                <div class="pf-body">
+                    <h4 style="margin-bottom:10px;">新規感想の追加</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <label class="form-label">ご依頼者名</label>
+                            <input id="new-voice-name" class="form-input" placeholder="例: サネル様">
+                        </div>
+                        <div>
+                            <label class="form-label">評価 (星)</label>
+                            <select id="new-voice-rate" class="form-input">
+                                <option value="5">★★★★★ (5)</option>
+                                <option value="4">★★★★ (4)</option>
+                                <option value="3">★★★ (3)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label">アイコン (Emoji or URL)</label>
-                        <input id="new-voice-icon" class="form-input" placeholder="😊 or https://...">
+                    <div class="mt-2">
+                        <label class="form-label">紐づけ実績 (ポートフォリオ)</label>
+                        <select id="new-voice-link" class="form-input">
+                            <option value="">(紐付けなし)</option>
+                            ${getPortfolioOptions()}
+                        </select>
+                    </div>
+                    <div class="mt-2">
+                         <label class="form-label">感想テキスト</label>
+                         <textarea id="new-voice-text" class="form-input" rows="3" placeholder="コメント..."></textarea>
+                    </div>
+                    <div class="mt-2 text-right">
+                       <button class="btn btn-primary btn-sm" onclick="addVoiceItem()">追加</button>
                     </div>
                 </div>
-                <div class="mt-2">
-                    <label class="form-label">感想テキスト</label>
-                    <textarea id="new-voice-text" class="form-input" rows="3" placeholder="コメント..."></textarea>
-                </div>
-                <div class="mt-2 text-right">
-                   <button class="btn btn-primary btn-sm" onclick="addVoiceItem()">追加</button>
-                </div>
-            </div>
-        `;
+            `;
             container.appendChild(entryForm);
 
+            // 2. List
             list.forEach((v, idx) => {
                 const div = document.createElement('div');
                 div.className = 'pf-card';
@@ -1191,15 +1231,26 @@
                              <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
                         </div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div>
-                            <label class="form-label">名前</label>
+                            <label class="form-label">ご依頼者名</label>
                             <input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)">
                         </div>
                         <div>
-                            <label class="form-label">アイコン (Emoji or URL)</label>
-                            <input class="form-input" value="${v.icon || ''}" placeholder="😊 or https://..." onchange="updateVoice(${idx}, 'icon', this.value)">
+                            <label class="form-label">評価</label>
+                            <select class="form-input" onchange="updateVoice(${idx}, 'rate', this.value)">
+                                <option value="5" ${v.rate == 5 ? 'selected' : ''}>★★★★★</option>
+                                <option value="4" ${v.rate == 4 ? 'selected' : ''}>★★★★</option>
+                                <option value="3" ${v.rate == 3 ? 'selected' : ''}>★★★</option>
+                            </select>
                         </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label">紐づけ実績 (ポートフォリオ)</label>
+                        <select class="form-input" onchange="updateVoice(${idx}, 'link', this.value)">
+                            <option value="">(紐付けなし)</option>
+                            ${getPortfolioOptions(v.link)}
+                        </select>
                     </div>
                     <div class="mt-2">
                          <label class="form-label">感想</label>
@@ -1211,14 +1262,27 @@
             });
         }
 
+        function getPortfolioOptions(selectedId) {
+            let opts = '';
+            // Combine all categories
+            const all = [...(DATA.works || []), ...(DATA.mix || []), ...(DATA.orig || [])];
+            all.forEach(item => {
+                if (!item.id) return;
+                const isSel = item.id === selectedId ? 'selected' : '';
+                opts += `<option value="${item.id}" ${isSel}>${item.title || item.id} (${item.id})</option>`;
+            });
+            return opts;
+        }
+
         function addVoiceItem() {
             const name = document.getElementById('new-voice-name').value;
-            const icon = document.getElementById('new-voice-icon').value;
+            const rate = document.getElementById('new-voice-rate').value;
+            const link = document.getElementById('new-voice-link').value;
             const text = document.getElementById('new-voice-text').value;
             if (!name) return alert('名前は必須です');
 
             if (!DATA.voices) DATA.voices = [];
-            DATA.voices.push({ name, icon, text });
+            DATA.voices.push({ name, rate, link, text });
             renderVoices();
         }
 
