@@ -759,21 +759,18 @@
                 const fetched = await res.json();
                 DATA = { ...DATA, ...fetched }; // Merge to keep structure
 
-                // Ensure Arrays
-                if (!DATA.orders) DATA.orders = [];
-                if (!DATA.archive) DATA.archive = [];
-                if (!DATA.voices) DATA.voices = [];
+                // Ensure DATA structure is robust
+                DATA.orders = Array.isArray(DATA.orders) ? DATA.orders : [];
+                DATA.archive = Array.isArray(DATA.archive) ? DATA.archive : [];
+                DATA.voices = Array.isArray(DATA.voices) ? DATA.voices : [];
+                DATA.works = Array.isArray(DATA.works) ? DATA.works : [];
+                DATA.mix = Array.isArray(DATA.mix) ? DATA.mix : [];
+                DATA.orig = Array.isArray(DATA.orig) ? DATA.orig : [];
 
-                // --- DATA MIGRATION CHECK ---
-                if (!DATA.prices || typeof DATA.prices !== 'object' || !Array.isArray(DATA.prices.mix)) {
-                    // ... (Migration logic omitted for brevity, keeping existing if needed, but assuming already migrated or handled in API)
-                    // Re-implementing simplified migration if needed, or trusting API/previous run.
-                    // For safety, let's keep the migration block short or existing. 
-                    // Actually, replacing meaningful block with shorter one might lose migration logic.
-                    // I will execute a separate replacement for fetchData specifically if I want to keep migration logic intact.
-                    // For this replacement, I will assume Migration is done or I need to preserve it.
-                    // Let's use specific replacement for `const res` part only.
-                }
+                // PRICES structure check
+                if (!DATA.prices || typeof DATA.prices !== 'object') DATA.prices = { mix: [], orig: [] };
+                if (!Array.isArray(DATA.prices.mix)) DATA.prices.mix = [];
+                if (!Array.isArray(DATA.prices.orig)) DATA.prices.orig = [];
 
                 renderOrders();
                 renderPortfolio();
@@ -1070,7 +1067,12 @@
         }
 
         function renderPlanList(cat) {
-            const list = DATA.prices[cat] || [];
+            if (!DATA.prices || !DATA.prices[cat]) {
+                // Initialize if missing to prevent crash
+                if (!DATA.prices) DATA.prices = { mix: [], orig: [] };
+                if (!DATA.prices[cat]) DATA.prices[cat] = [];
+            }
+            const list = DATA.prices[cat];
             const container = document.getElementById(`plans-${cat}`);
             container.innerHTML = '';
 

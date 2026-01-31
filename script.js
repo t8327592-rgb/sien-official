@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Global Selection Function
     window.selectPlan = (planName) => {
-        sessionStorage.setItem('selectedPlan', planName);
+        localStorage.setItem('selectedPlan', planName);
         updatePlanUI(planName);
 
         // Update Buttons Visuals
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updatePlanUI = (planName) => {
-        if (!planName) planName = sessionStorage.getItem('selectedPlan');
+        if (!planName) planName = localStorage.getItem('selectedPlan');
         if (!planName) return;
 
         // Header Badge
@@ -453,7 +453,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // User Requirement: Clear after reflecting (Consume Once)
                 if (found) {
-                    sessionStorage.removeItem('selectedPlan');
+                    // Consume Once - but keep for visual if needed?
+                    // User requested "Consume Once" for form, but maybe keep for buttons?
+                    // "Remove after reflecting".
+                    localStorage.removeItem('selectedPlan');
                 }
             }
         } else {
@@ -461,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // If we found a plan select, we assume we are ON the order page.
             // If not found, we are on another page (Mix, Works, Top).
             // Clear session to prevent sticky selection potentially confusing users later.
-            sessionStorage.removeItem('selectedPlan');
+            localStorage.removeItem('selectedPlan');
             const badge = document.getElementById('plan-select-badge');
             if (badge) badge.style.display = 'none';
             const widget = document.getElementById('plan-float-widget');
@@ -516,6 +519,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             container.appendChild(card);
         });
+
+        // RE-APPLY SELECTION STATE after render
+        const current = localStorage.getItem('selectedPlan');
+        if (current) updatePlanUI(current);
     };
 
     // Shared Item Creator
