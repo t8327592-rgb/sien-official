@@ -803,19 +803,36 @@
         }
 
         function updateOrderCounts() {
-            if (!DATA.orders) return;
+            if (!DATA.orders && !DATA.archive) return;
             const counts = {
-                '未着手': 0, '支払い待ち': 0, '全て入金済み': 0,
-                '納品済み': 0, '取引終了': 0, 'キャンセル': 0
+                'all': 0, '未着手': 0, '支払い待ち': 0, '全て入金済み': 0,
+                '納品済み': 0, '取引終了': 0, 'archive': 0
             };
-            DATA.orders.forEach(o => {
+
+            // Count Active Orders
+            (DATA.orders || []).forEach(o => {
+                counts['all']++;
                 if (counts[o.status] !== undefined) counts[o.status]++;
             });
-            // Update sidebar (if badges exist) or filter chips
-            // Not strictly required if UI doesn't show sidebar badges, 
-            // but 'Archive' count might be useful.
-            // For now just basic placeholder or remove if unused in HTML.
-            // HTML likely has no badges based on current snippets.
+
+            // Count Archive
+            if (DATA.archive) {
+                counts['archive'] = DATA.archive.length;
+            }
+
+            // Update UI
+            const setCnt = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = `(${val})`;
+            };
+
+            setCnt('cnt-all', counts['all']);
+            setCnt('cnt-new', counts['未着手']);
+            setCnt('cnt-pay', counts['支払い待ち']);
+            setCnt('cnt-paid', counts['全て入金済み']);
+            setCnt('cnt-done', counts['納品済み']);
+            setCnt('cnt-closed', counts['取引終了']);
+            setCnt('cnt-arch', counts['archive']);
         }
 
         function renderOrders(query = '') {
@@ -1195,6 +1212,9 @@
         function delVoice(idx) { if (confirm('Del?')) { DATA.voices.splice(idx, 1); renderVoices(); } }
 
         async function saveVoices() {
+            if (!DATA.voices) DATA.voices = [];
+            // Optional: Backup fetch before save? No, rely on clean flow.
+
             document.getElementById('loading').style.display = 'flex';
             await postAPI('update_voices', DATA.voices);
             document.getElementById('loading').style.display = 'none';
