@@ -366,6 +366,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // --- 7. PLAN SYNC & SELECTION LOGIC ---
+
+    // Global Selection Function
+    window.selectPlan = (planName) => {
+        sessionStorage.setItem('selectedPlan', planName);
+        updatePlanUI(planName);
+    };
+
+    const updatePlanUI = (planName) => {
+        if (!planName) planName = sessionStorage.getItem('selectedPlan');
+        if (!planName) return;
+
+        // Header Badge
+        let badge = document.getElementById('plan-select-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = 'plan-select-badge';
+            badge.className = 'plan-badge';
+            document.body.appendChild(badge);
+        }
+        badge.innerHTML = `<i class="fa-solid fa-check"></i> 選択中: ${planName}`;
+        badge.style.display = 'flex';
+        badge.onclick = () => { window.location.href = 'order.html'; }; // Quick link
+        badge.style.cursor = 'pointer';
+
+        // Floating Widget
+        let widget = document.getElementById('plan-float-widget');
+        if (!widget) {
+            widget = document.createElement('div');
+            widget.id = 'plan-float-widget';
+            widget.className = 'plan-float-widget text-center';
+            document.body.appendChild(widget);
+        }
+        widget.innerHTML = `
+            <div class="plan-float-header">現在選択中のプラン</div>
+            <div class="plan-float-title">${planName}</div>
+            <a href="order.html" class="btn btn-primary btn-sm" style="width:100%;">ご依頼へ進む</a>
+        `;
+        widget.style.display = 'block';
+    };
+
+    // Auto-Run Check
+    const checkPlanState = () => {
+        // 1. Order Form Auto-Fill
+        const planSelect = document.querySelector('select[name="plan"]') || document.getElementById('plan');
+        if (planSelect) {
+            const saved = sessionStorage.getItem('selectedPlan');
+            if (saved) {
+                for (let i = 0; i < planSelect.options.length; i++) {
+                    if (planSelect.options[i].text.includes(saved) || planSelect.options[i].value.includes(saved)) {
+                        planSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        // 2. Restore UI
+        const saved = sessionStorage.getItem('selectedPlan');
+        if (saved && !window.location.pathname.includes('order.html')) {
+            updatePlanUI(saved);
+        }
+    };
+    // Call immediately
+    checkPlanState();
+
     const renderPublicPlans = (plans, containerId) => {
         const container = document.getElementById(containerId);
         if (!container || !plans || !Array.isArray(plans)) return;
@@ -375,6 +440,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'price-card';
             if (plan.recommended) card.classList.add('featured');
+
+            // Interactive
+            card.style.cursor = 'pointer';
+            card.onclick = (e) => {
+                if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+                selectPlan(plan.title);
+                document.querySelectorAll('.price-card').forEach(c => c.style.borderColor = '');
+                card.style.borderColor = 'var(--accent-blue)';
+            };
 
             const badgeText = plan.badgeText || '人気';
             const badgeHTML = plan.recommended ? `<div class="badge">${badgeText}</div>` : '';
@@ -394,6 +468,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span><i class="fa-solid fa-rotate-right"></i> リテイク</span>
                         <span>${plan.revisions || plan.limit}</span>
                     </div>
+                </div>
+                <!-- Selection Button -->
+                <div style="margin-top:15px; text-align:center;">
+                     <button class="btn btn-outline btn-sm" style="width:100%; border-radius:20px;" onclick="selectPlan('${plan.title}')">このプランを選択</button>
                 </div>
             `;
             container.appendChild(card);

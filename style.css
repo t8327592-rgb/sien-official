@@ -1555,8 +1555,8 @@ textarea {
 }
 
 .eq-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    /* transform: translateY(-5px); REMOVED per user request */
+    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); REMOVED */
 }
 
 .eq-icon {
@@ -1565,22 +1565,70 @@ textarea {
     margin-bottom: 20px;
 }
 
-.eq-item h3 {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    font-weight: 700;
-}
-
-.eq-item p {
-    font-size: 0.9rem;
-    color: var(--text-main);
-    line-height: 1.7;
+/* Purpose Card (Static version of Price Card) */
+.purpose-card {
+    background: white;
+    padding: 30px;
+    padding-top: 50px;
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    /* No hover effect */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 /* Voice Card Styles matching pf-card but specific tweaks if needed */
 #voice-list-home .pf-card {
     border: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Plan Sync Widgets */
+.plan-badge {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: var(--accent-blue);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.5s;
+}
+
+.plan-float-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 1px solid var(--accent-blue);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    width: 250px;
+    animation: slideUp 0.5s;
+    display: block;
+    /* Toggled by JS */
+}
+
+.plan-float-header {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.plan-float-title {
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin-bottom: 10px;
+    font-size: 1rem;
 }
 
 /* =========================================
@@ -1592,12 +1640,20 @@ textarea {
     flex-direction: column;
 }
 
+.work-item:hover {
+    /* Removed hover effects */
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
 /* Push the last element (role/date) to the bottom */
 .work-role,
 .pf-card .text-sm,
 .pf-card .price-desc+div {
     margin-top: auto;
 }
+
+/* ... existing structure ... */
 
 /* Strict Right Alignment for Header/Footer Nav */
 @media (min-width: 769px) {
