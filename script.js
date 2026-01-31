@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'price-card';
             if (plan.recommended) card.classList.add('featured');
 
-            const badgeText = plan.badgeText || 'RECOMMENDED';
+            const badgeText = plan.badgeText || '人気';
             const badgeHTML = plan.recommended ? `<div class="badge">${badgeText}</div>` : '';
 
             card.innerHTML = `
