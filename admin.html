@@ -657,18 +657,26 @@
             </div>
         </div>
 
+        <!-- Tab: Order Detail -->
+        <div id="tab-order-detail" class="tab-pane hidden">
+            <div class="mb-4">
+                <button class="btn btn-ghost btn-sm" onclick="backToOrders()"><i class="fa-solid fa-arrow-left"></i>
+                    依頼一覧に戻る</button>
+            </div>
+            <div class="page-title">
+                依頼詳細
+            </div>
+            <div class="price-container" style="max-width:100%;">
+                <div id="detail-content">
+                    <!-- JS Render -->
+                </div>
+            </div>
+        </div>
+
     </main>
 
 
-    <!-- Order Detail Modal -->
-    <div id="order-detail-modal" class="modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="modal-title" class="page-title"
-                style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;"></h2>
-            <div id="modal-body"></div>
-        </div>
-    </div>
+
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
@@ -761,9 +769,9 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><div class="text-sm font-bold text-gray">${date}</div></td>
-                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;" onclick="openOrderDetail('${o.id}')">${o['曲名']}</div></td>
+                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;" onclick="showOrderDetail('${o.id}')">${o['曲名']}</div></td>
                     <td><div class="user-cell"><span class="user-name">${o['ご依頼者名']}</span><span class="user-sub">${o['TwitterID(任意)']}</span></div></td>
-                    <td><span class="text-sm">${o['プラン']}</span></td>
+                    <td><span class="text-sm">${PLAN_MAP[o['プラン']] || o['プラン']}</span></td>
                     <td>
                         ${o.paymentLink ? `<a href="${o.paymentLink}" target="_blank" class="btn btn-ghost btn-sm" style="color:#0ea5e9;">¥ 支払いリンク</a>` : `<button class="btn btn-ghost btn-sm text-gray" onclick="setPayLink('${o.id}')">未設定</button>`}
                     </td>
@@ -934,8 +942,8 @@
             // Original Plans
             el.innerHTML += `<h4 class="font-bold mt-4 mb-2" style="color:var(--accent-blue);">オリジナル楽曲制作</h4>`;
             const origLabels = {
-                'orig_std': 'スタンダードプラン',
-                'orig_lyrics': '作詞持ち込みプラン',
+                'orig_std': 'オリジナル楽曲 スタンダード',
+                'orig_lyrics': 'オリジナル楽曲 作詞持ち込み',
                 'opt_live': 'オプション：生楽器演奏追加'
             };
             Object.entries(origLabels).forEach(([k, label]) => {
@@ -1020,6 +1028,82 @@
             document.getElementById('order-detail-modal').classList.remove('open');
         }
 
+
+        // --- PLAN MAPPING ---
+        const PLAN_MAP = {
+            'standard': 'スタンダードプラン',
+            'one_chorus': 'ワンコーラスプラン',
+            'short': 'ショート動画用MIX',
+            'speed': 'スピードプラン',
+            'super_speed': '超スピードプラン',
+            'collab': 'コラボ・合唱プラン',
+            'original_std': 'オリジナル楽曲 スタンダード',
+            'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
+            'other': 'その他・ご相談'
+        };
+        const PAY_MAP = {
+            'bank_transfer': '銀行振込',
+            'credit_card': 'クレジットカード'
+        };
+
+        // --- ORDER DETAIL PAGE ---
+        function showOrderDetail(id) {
+            const order = DATA.orders.find(o => o.id === id);
+            if (!order) return;
+
+            // Switch View
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-order-detail').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            // Container
+            const container = document.getElementById('detail-content');
+
+            const fields = [
+                { label: '受注ID', val: order.id },
+                { label: 'ご依頼日', val: new Date(order.date).toLocaleString('ja-JP') },
+                { label: 'ステータス', val: `<span class="status-badge ${getStatusClass(order.status)}">${order.status}</span>`, type: 'html' },
+                { separator: true },
+                { label: 'ご依頼者名', val: order['ご依頼者名'] },
+                { label: 'メールアドレス', val: order['メールアドレス'] },
+                { label: 'Twitter ID', val: order['TwitterID(任意)'] },
+                { label: '希望連絡手段', val: order['希望する連絡手段'] },
+                { separator: true },
+                { label: 'プラン', val: PLAN_MAP[order['プラン']] || order['プラン'] },
+                { label: '曲名', val: order['曲名'] },
+                { label: 'オプション', val: order['オプション'] || 'なし' },
+                { label: '歌唱キー', val: order['キー変更'] },
+                { label: 'お支払い方法', val: PAY_MAP[order['お支払い方法']] || order['お支払い方法'] },
+                { separator: true },
+                { label: '参考URL', val: order['参考URL(任意)'], type: 'link' },
+                { label: 'レコーディング音源', val: order['レコーディング済み音源'], type: 'link' },
+                { label: 'ご要望・特記事項', val: order['ご要望・ご質問・特記事項など'] || 'なし', type: 'text' }
+            ];
+
+            container.innerHTML = fields.map(f => {
+                if (f.separator) return '<hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">';
+
+                let displayVal = f.val;
+                if (!displayVal || displayVal === 'なし') {
+                    displayVal = '<span style="color:#ccc;">(未入力/なし)</span>';
+                } else if (f.type === 'link') {
+                    displayVal = `<a href="${f.val}" target="_blank">${f.val}</a>`;
+                } else if (f.type === 'text') {
+                    displayVal = `<div style="white-space: pre-wrap; background:#f9fafb; padding:10px; border-radius:6px;">${f.val}</div>`;
+                }
+
+                return `
+                    <div class="detail-row" style="grid-template-columns: 200px 1fr;">
+                        <div class="detail-label">${f.label}</div>
+                        <div class="detail-value">${f.type === 'html' ? f.val : displayVal}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function backToOrders() {
+            switchTab('orders');
+        }
     </script>
 </body>
 
