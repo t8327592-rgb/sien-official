@@ -556,7 +556,8 @@
 
     <!-- Header -->
     <header class="admin-header">
-        <div class="brand"><span>></span>Studio</div>
+        <div class="brand"><a href="index.html" target="_blank"><img src="./assets/logo.png" alt="Sien-Official"
+                    style="height:35px;"></a></div>
         <div class="user-menu">
             <span class="text-sm font-bold">Sien</span>
             <div class="avatar"><img src="./assets/profile.jpg" alt=""></div>
@@ -579,15 +580,18 @@
         <!-- Tab: Orders -->
         <div id="tab-orders" class="tab-pane">
             <div class="page-title">
-                依頼管理 <span class="text-sm text-gray" style="font-weight:400;">(Rank: Pro)</span>
+                依頼管理
             </div>
 
             <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="flex gap-2">
-                    <span style="font-weight:bold; margin-right:10px;">Filter:</span>
-                    <div class="filter-chip active" onclick="filterOrders('all', this)">全て</div>
+                <div class="flex gap-2" style="flex-wrap:wrap;">
+                    <span style="font-weight:bold; margin-right:10px;">絞り込み:</span>
+                    <div class="filter-chip active" onclick="filterOrders('active', this)">進行中</div>
                     <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手</div>
                     <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち</div>
+                    <div class="filter-chip" onclick="filterOrders('納品済み', this)">納品済み</div>
+                    <div class="filter-chip" onclick="filterOrders('archive', this)"
+                        style="background:#f3f4f6; color:#999;">アーカイブ (キャンセル等)</div>
                 </div>
                 <div class="flex gap-2">
                     <input type="text" id="order-search" class="search-input" placeholder="名前/曲名で検索"
@@ -633,8 +637,8 @@
             <div class="mb-4">
                 <div class="filter-bar" style="display:inline-flex;">
                     <div class="filter-chip active" onclick="switchPfCat('works', this)">制作実績 (Works)</div>
-                    <div class="filter-chip" onclick="switchPfCat('mix', this)">Mix Samples</div>
-                    <div class="filter-chip" onclick="switchPfCat('orig', this)">Original Songs</div>
+                    <div class="filter-chip" onclick="switchPfCat('mix', this)">ミックス／マスタリング</div>
+                    <div class="filter-chip" onclick="switchPfCat('orig', this)">オリジナル楽曲制作</div>
                 </div>
             </div>
 
@@ -1000,7 +1004,7 @@
 
             // Mix Plans
             el.innerHTML += `<div class="flex justify-between items-center mt-4 mb-2">
-                                <h4 class="font-bold" style="color:var(--accent-blue);">ミックス・マスタリング (Mix Plans)</h4>
+                                <h4 class="font-bold" style="color:var(--accent-blue);">ミックス／マスタリング (Mix Plans)</h4>
                                 <button class="btn btn-sm btn-ghost" onclick="addPlan('mix')">+ プラン追加</button>
                              </div>`;
             el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
@@ -1011,8 +1015,10 @@
                                 <h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作 (Original Plans)</h4>
                                 <button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button>
                              </div>`;
-            el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
             renderPlanList('orig');
+        }
+        el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
+        renderPlanList('orig');
         }
 
         function renderPlanList(cat) {
@@ -1136,63 +1142,92 @@
             const container = document.getElementById('voice-list');
             container.innerHTML = '';
 
+            // Add Form
+            const entryForm = document.createElement('div');
+            entryForm.className = 'pf-card';
+            entryForm.style.border = '2px dashed #ccc';
+            entryForm.innerHTML = `
+            <div class="pf-body">
+                <h4 style="margin-bottom:10px;">新規感想の追加</h4>
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
+                    <div>
+                        <label class="form-label">名前</label>
+                        <input id="new-voice-name" class="form-input" placeholder="例: サネル様">
+                    </div>
+                    <div>
+                        <label class="form-label">アイコン (Emoji or URL)</label>
+                        <input id="new-voice-icon" class="form-input" placeholder="😊 or https://...">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">感想テキスト</label>
+                    <textarea id="new-voice-text" class="form-input" rows="3" placeholder="コメント..."></textarea>
+                </div>
+                <div class="mt-2 text-right">
+                   <button class="btn btn-primary btn-sm" onclick="addVoiceItem()">追加</button>
+                </div>
+            </div>
+        `;
+            container.appendChild(entryForm);
+
             list.forEach((v, idx) => {
                 const div = document.createElement('div');
                 div.className = 'pf-card';
                 div.innerHTML = `
-                     <div class="pf-body" style="background:#f9fafb;">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-gray">#${idx + 1}</span>
-                            <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                 <div class="pf-body" style="background:#f9fafb;">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-gray">#${idx + 1}</span>
+                        <div class="action-bar" style="padding:0; border:none; background:transparent;">
+                             <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
                         </div>
-                        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
-                            <div>
-                                <label class="form-label">名前</label>
-                                <input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)">
-                            </div>
-                            <div>
-                                <label class="form-label">アイコン (Emoji or URL)</label>
-                                <input class="form-input" value="${v.icon || ''}" placeholder="😊 or https://..." onchange="updateVoice(${idx}, 'icon', this.value)">
-                            </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
+                        <div>
+                            <label class="form-label">名前</label>
+                            <input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)">
                         </div>
-                        <div class="mt-2">
-                                <label class="form-label">感想コメント</label>
-                                <textarea class="form-input" rows="2" onchange="updateVoice(${idx}, 'text', this.value)">${v.text || ''}</textarea>
+                        <div>
+                            <label class="form-label">アイコン (Emoji or URL)</label>
+                            <input class="form-input" value="${v.icon || ''}" placeholder="😊 or https://..." onchange="updateVoice(${idx}, 'icon', this.value)">
                         </div>
-                     </div>
-                `;
+                    </div>
+                    <div class="mt-2">
+                         <label class="form-label">感想</label>
+                         <textarea class="form-input" rows="3" onchange="updateVoice(${idx}, 'text', this.value)">${v.text || ''}</textarea>
+                    </div>
+                </div>
+            `;
                 container.appendChild(div);
             });
         }
 
-        function addVoice() {
+        function addVoiceItem() {
+            const name = document.getElementById('new-voice-name').value;
+            const icon = document.getElementById('new-voice-icon').value;
+            const text = document.getElementById('new-voice-text').value;
+            if (!name) return alert('名前は必須です');
+
             if (!DATA.voices) DATA.voices = [];
-            DATA.voices.push({ name: 'User', text: '感想...', icon: '😊' });
+            DATA.voices.push({ name, icon, text });
             renderVoices();
         }
 
         function updateVoice(idx, key, val) {
             DATA.voices[idx][key] = val;
         }
-
         function delVoice(idx) {
             if (confirm('削除しますか？')) {
                 DATA.voices.splice(idx, 1);
                 renderVoices();
             }
         }
-
         async function saveVoices() {
             document.getElementById('loading').style.display = 'flex';
-            // We use generic update logic. Need to add 'update_voices' to api? 
-            // Or just reuse update_prices logic? No, update_prices updates site_prices kv.
-            // We need a way to save voices. 
-            // api/admin.js supports: update_pf (DATA.works/mix/orig), update_prices (DATA.prices).
-            // We need update_voices.
             await postAPI('update_voices', DATA.voices);
             document.getElementById('loading').style.display = 'none';
-            alert("声を保存しました");
+            alert('感想を保存しました');
         }
+
 
         // --- API UTILS ---
         async function postAPI(action, data) {
@@ -1262,9 +1297,10 @@
                 { label: '受注ID', val: order.id },
                 { label: 'ご依頼日', val: new Date(order.date).toLocaleString('ja-JP') },
                 { label: 'ステータス', val: `<span class="status-badge ${getStatusClass(order.status)}">${order.status}</span>`, type: 'html' },
+                { label: '納期設定', val: `<input type="date" class="form-input" style="width:auto;" value="${order.deadline || ''}" onchange="updateDeadline('${order.id}', this.value)">`, type: 'html' },
                 { separator: true },
                 { label: 'ご依頼者名', val: order['ご依頼者名'] },
-                { label: 'メールアドレス', val: order['メールアドレス'] },
+                { label: 'メールアドレス', val: `<a href="mailto:${order['メールアドレス']}">${order['メールアドレス']}</a>`, type: 'html' },
                 { label: 'Twitter ID', val: order['TwitterID(任意)'] },
                 { label: '希望連絡手段', val: order['希望する連絡手段'] },
                 { separator: true },
@@ -1298,6 +1334,15 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        async function updateDeadline(id, date) {
+            const order = DATA.orders.find(o => o.id === id);
+            if (order) {
+                order.deadline = date;
+                // Save immediately
+                await postAPI('update_order_status', { orderId: id, status: order.status, deadline: date });
+            }
         }
 
         function backToOrders() {
