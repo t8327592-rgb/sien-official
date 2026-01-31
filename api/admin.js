@@ -9,13 +9,19 @@ export default async function handler(request, response) {
     // Allow reading specific data without password if type=public
     if (method === 'GET' && query.type === 'public') {
         try {
-            const [works, mix, orig, prices, news] = await Promise.all([
-                kv.get('portfolio_works') || [],
-                kv.get('portfolio_mix') || [],
-                kv.get('portfolio_orig') || [],
-                kv.get('site_prices') || {},
-                kv.get('site_news') || { text: '', visible: false }
+            const [worksResult, mixResult, origResult, pricesResult, newsResult] = await Promise.all([
+                kv.get('portfolio_works'),
+                kv.get('portfolio_mix'),
+                kv.get('portfolio_orig'),
+                kv.get('site_prices'),
+                kv.get('site_news')
             ]);
+
+            const works = worksResult || [];
+            const mix = mixResult || [];
+            const orig = origResult || [];
+            const prices = pricesResult || {};
+            const news = newsResult || { text: '', visible: false };
 
             return response.status(200).json({
                 works, mix, orig, prices, news
@@ -38,14 +44,21 @@ export default async function handler(request, response) {
             const limit = parseInt(query.limit) || 50;
             const skip = parseInt(query.skip) || 0;
 
-            const [orders, works, mix, orig, prices, news] = await Promise.all([
+            const [ordersResult, worksResult, mixResult, origResult, pricesResult, newsResult] = await Promise.all([
                 kv.lrange('orders', skip, skip + limit - 1),
-                kv.get('portfolio_works') || [],
-                kv.get('portfolio_mix') || [],
-                kv.get('portfolio_orig') || [],
-                kv.get('site_prices') || {},
-                kv.get('site_news') || { text: '', visible: false }
+                kv.get('portfolio_works'),
+                kv.get('portfolio_mix'),
+                kv.get('portfolio_orig'),
+                kv.get('site_prices'),
+                kv.get('site_news')
             ]);
+
+            const orders = ordersResult || [];
+            const works = worksResult || [];
+            const mix = mixResult || [];
+            const orig = origResult || [];
+            const prices = pricesResult || {};
+            const news = newsResult || { text: '', visible: false };
 
             return response.status(200).json({
                 orders, works, mix, orig, prices, news
