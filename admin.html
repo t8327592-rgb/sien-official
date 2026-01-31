@@ -570,6 +570,7 @@
         <div class="nav-item active" onclick="switchTab('orders')">依頼管理</div>
         <div class="nav-item" onclick="switchTab('portfolio')">ポートフォリオ</div>
         <div class="nav-item" onclick="switchTab('prices')">プラン・料金設定</div>
+        <div class="nav-item" onclick="switchTab('voices')">お客様の声</div>
     </nav>
 
     <!-- Main Content -->
@@ -581,17 +582,24 @@
                 依頼管理 <span class="text-sm text-gray" style="font-weight:400;">(Rank: Pro)</span>
             </div>
 
-            <div class="filter-bar">
-                <div class="filter-chip active" onclick="filterOrders('all', this)">全て (<span id="count-all">0</span>)
+            <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="flex gap-2">
+                    <span style="font-weight:bold; margin-right:10px;">Filter:</span>
+                    <div class="filter-chip active" onclick="filterOrders('all', this)">全て</div>
+                    <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手</div>
+                    <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち</div>
                 </div>
-                <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手 (<span id="count-new">0</span>)</div>
-                <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち</div>
-                <div class="filter-chip" onclick="filterOrders('全て入金済み', this)">入金済み</div>
-                <div class="filter-chip" onclick="filterOrders('取引終了', this)">取引終了</div>
-                <div class="filter-chip" onclick="filterOrders('キャンセル', this)">キャンセル</div>
-                <input type="text" class="search-input" placeholder="依頼者名で絞り込み" onkeyup="searchOrders(this.value)">
-                <button class="btn btn-primary btn-sm" onclick="fetchData()"><i
-                        class="fa-solid fa-rotate-right"></i></button>
+                <div class="flex gap-2">
+                    <input type="text" id="order-search" class="search-input" placeholder="名前/曲名で検索"
+                        onkeyup="renderOrders(this.value)" style="width:200px;">
+                    <select id="order-sort" class="form-input" style="width:auto; margin:0;" onchange="renderOrders()">
+                        <option value="newest">新着順</option>
+                        <option value="deadline">納期が近い順</option>
+                        <option value="status">ステータス順</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="fetchData()"><i
+                            class="fa-solid fa-rotate-right"></i></button>
+                </div>
             </div>
 
             <div class="data-card">
@@ -670,8 +678,15 @@
                 <div id="detail-content">
                     <!-- JS Render -->
                 </div>
-            </div>
-        </div>
+                <!-- Tab: Voices -->
+                <div id="tab-voices" class="tab-pane hidden">
+                    <div class="page-title">お客様の声 管理</div>
+                    <div class="mb-4 text-right">
+                        <button class="btn btn-primary" onclick="addVoice()">+ 感想を追加</button>
+                        <button class="btn btn-primary" onclick="saveVoices()">保存</button>
+                    </div>
+                    <div id="voice-list" class="pf-grid" style="grid-template-columns: 1fr;"></div>
+                </div>
 
     </main>
 
@@ -682,7 +697,7 @@
     <script>
         // --- CORE STATE ---
         let TOKEN = localStorage.getItem('admin_token') || '';
-        let DATA = { orders: [], works: [], mix: [], orig: [], prices: {} };
+        let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] }, voices: [] };
         let activePfCat = 'works';
 
         // --- AUTH ---
@@ -733,9 +748,11 @@
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${id}`).classList.remove('hidden');
-            // Assuming order matches: 0=orders, 1=pf, 2=prices
-            const idx = id === 'orders' ? 0 : id === 'portfolio' ? 1 : 2;
-            document.querySelectorAll('.nav-item')[idx].classList.add('active');
+            // Assuming order matches: 0=orders, 1=pf, 2=prices, 3=voices
+            const idx = id === 'orders' ? 0 : id === 'portfolio' ? 1 : id === 'prices' ? 2 : 3;
+            if (document.querySelectorAll('.nav-item')[idx]) {
+                document.querySelectorAll('.nav-item')[idx].classList.add('active');
+            }
         }
 
         // --- ORDERS UI ---
@@ -748,19 +765,36 @@
             }
             renderOrders();
         }
-        function searchOrders(query) {
-            renderOrders(query);
-        }
 
         function renderOrders(query = '') {
+            if (!query) query = document.getElementById('order-search') ? document.getElementById('order-search').value : '';
             const tbody = document.getElementById('order-list');
             tbody.innerHTML = '';
 
-            const list = [...DATA.orders].reverse().filter(o => {
+            let list = [...DATA.orders];
+
+            // 1. Filter
+            list = list.filter(o => {
                 const matchesStatus = currentStatusFilter === 'all' || o.status === currentStatusFilter;
-                const matchesSearch = !query || JSON.stringify(o).toLowerCase().includes(query.toLowerCase());
+                const matchesSearch = !query ||
+                    (o['曲名'] && o['曲名'].toLowerCase().includes(query.toLowerCase())) ||
+                    (o['ご依頼者名'] && o['ご依頼者名'].toLowerCase().includes(query.toLowerCase()));
                 return matchesStatus && matchesSearch;
             });
+
+            // 2. Sort
+            const sortMode = document.getElementById('order-sort') ? document.getElementById('order-sort').value : 'newest';
+            if (sortMode === 'deadline') {
+                // Assuming deadline is text YYYY-MM-DD or similiar, simple sort might work or need parse
+                list.sort((a, b) => (a['納期'] || '99999') > (b['納期'] || '99999') ? 1 : -1);
+            } else if (sortMode === 'status') {
+                list.sort((a, b) => a.status.localeCompare(b.status));
+            } else {
+                // Newest (Date compare?) Assuming default pushed order is oldest->newest or newest->oldest?
+                // KV lrange returns index 0 to N. Usually push pushes to tail. So 0 is oldest.
+                // Reversing gives newest first.
+                list.reverse();
+            }
 
             list.forEach(o => {
                 const date = new Date(o.date).toLocaleDateString('ja-JP');
@@ -941,67 +975,205 @@
             DATA.prices[input.dataset.key] = input.value;
         }
 
-        // --- PRICES UI ---
+        // --- PLANS UI (Dynamic) ---
         function renderPrices() {
             const el = document.getElementById('price-form');
             el.innerHTML = '';
 
             // Mix Plans
-            el.innerHTML += `<h4 class="font-bold mt-4 mb-2" style="color:var(--accent-blue);">ミックス・マスタリング</h4>`;
-            const mixLabels = {
-                'mix_std': 'スタンダードプラン',
-                'mix_one': 'ワンコーラスプラン',
-                'mix_short': 'ショート動画用MIX',
-                'mix_speed': 'スピードプラン',
-                'mix_super': '超スピードプラン',
-                'mix_collab': 'コラボ・合唱プラン'
-            };
-            Object.entries(mixLabels).forEach(([k, label]) => {
-                const val = DATA.prices[k] || '';
-                el.innerHTML += `
-                    <div class="price-row">
-                        <label>${label}</label>
-                        <input class="form-input" 
-                               type="text"
-                               inputmode="numeric"
-                               value="${val}" 
-                               data-key="${k}"
-                               onblur="formatPriceInput(this)"
-                               onfocus="this.value = this.value.replace(/[^0-9]/g, '')" 
-                               onchange="DATA.prices['${k}'] = this.value">
-                    </div>
-                `;
-            });
+            el.innerHTML += `<div class="flex justify-between items-center mt-4 mb-2">
+                                <h4 class="font-bold" style="color:var(--accent-blue);">ミックス・マスタリング (Mix Plans)</h4>
+                                <button class="btn btn-sm btn-ghost" onclick="addPlan('mix')">+ プラン追加</button>
+                             </div>`;
+            el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
+            renderPlanList('mix');
 
             // Original Plans
-            el.innerHTML += `<h4 class="font-bold mt-4 mb-2" style="color:var(--accent-blue);">オリジナル楽曲制作</h4>`;
-            const origLabels = {
-                'orig_std': 'オリジナル楽曲 スタンダード',
-                'orig_lyrics': 'オリジナル楽曲 作詞持ち込み',
-                'opt_live': 'オプション：生楽器演奏追加'
-            };
-            Object.entries(origLabels).forEach(([k, label]) => {
-                const val = DATA.prices[k] || '';
-                el.innerHTML += `
-                    <div class="price-row">
-                        <label>${label}</label>
-                        <input class="form-input" 
-                               type="text"
-                               inputmode="numeric"
-                               value="${val}" 
-                               data-key="${k}"
-                               onblur="formatPriceInput(this)"
-                               onfocus="this.value = this.value.replace(/[^0-9]/g, '')" 
-                               onchange="DATA.prices['${k}'] = this.value">
+            el.innerHTML += `<div class="flex justify-between items-center mt-8 mb-2">
+                                <h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作 (Original Plans)</h4>
+                                <button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button>
+                             </div>`;
+            el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
+            renderPlanList('orig');
+        }
+
+        function renderPlanList(cat) {
+            const list = DATA.prices[cat] || [];
+            const container = document.getElementById(`plans-${cat}`);
+            container.innerHTML = '';
+
+            list.forEach((plan, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.draggable = true;
+                div.style.marginBottom = '15px';
+
+                // DnD
+                div.ondragstart = (e) => dragStartPlan(e, cat, idx);
+                div.ondragover = dragOver;
+                div.ondrop = (e) => dragDropPlan(e, cat, idx);
+                div.ondragend = dragEnd;
+
+                div.innerHTML = `
+                    <div class="pf-body" style="background:#f9fafb;">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-gray">#${idx + 1}</span>
+                            <div class="action-bar" style="background:transparent; border:none; padding:0;">
+                                <i class="fa-solid fa-grip-vertical mr-2" style="cursor:grab; color:#ccc;"></i>
+                                <button class="btn btn-danger btn-sm" onclick="delPlan('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <label class="form-label">プラン名</label>
+                                <input class="form-input" value="${plan.title || ''}" onchange="updatePlan('${cat}', ${idx}, 'title', this.value)">
+                            </div>
+                            <div>
+                                <label class="form-label">価格 (表示用)</label>
+                                <input class="form-input" value="${plan.price || ''}" 
+                                       onchange="updatePlan('${cat}', ${idx}, 'price', this.value)"
+                                       onblur="this.value = formatMoney(this.value); updatePlan('${cat}', ${idx}, 'price', this.value);"
+                                       onfocus="this.value = unformatMoney(this.value)">
+                            </div>
+                            <div>
+                                <label class="form-label">納期目安</label>
+                                <input class="form-input" value="${plan.period || ''}" onchange="updatePlan('${cat}', ${idx}, 'period', this.value)">
+                            </div>
+                            <div>
+                                <label class="form-label">修正回数・納品形式</label>
+                                <input class="form-input" value="${plan.limit || ''}" placeholder="2回まで / wav, mp3" onchange="updatePlan('${cat}', ${idx}, 'limit', this.value)">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="form-label">詳細説明 (改行可)</label>
+                            <textarea class="form-input" rows="3" onchange="updatePlan('${cat}', ${idx}, 'desc', this.value)">${plan.desc || ''}</textarea>
+                        </div>
+                        <div class="mt-2 text-sm">
+                             <label class="form-label" style="display:inline-flex; align-items:center;">
+                                <input type="checkbox" ${plan.recommended ? 'checked' : ''} onchange="updatePlan('${cat}', ${idx}, 'recommended', this.checked)"> 
+                                <span style="margin-left:5px;">おすすめ/人気として表示</span>
+                             </label>
+                        </div>
                     </div>
                 `;
+                container.appendChild(div);
             });
         }
+
+        function addPlan(cat) {
+            if (!DATA.prices[cat]) DATA.prices[cat] = [];
+            DATA.prices[cat].push({ title: '新しいプラン', price: '0円', period: '7日', desc: '' });
+            renderPrices();
+        }
+
+        function delPlan(cat, idx) {
+            if (confirm('削除しますか？')) {
+                DATA.prices[cat].splice(idx, 1);
+                renderPrices();
+            }
+        }
+
+        function updatePlan(cat, idx, key, val) {
+            DATA.prices[cat][idx][key] = val;
+        }
+
+        // Plan DnD Logic
+        function dragStartPlan(e, cat, idx) {
+            dragSrc = { cat, idx, type: 'plan' };
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.style.opacity = '0.4';
+        }
+
+        function dragDropPlan(e, cat, idx) {
+            if (e.stopPropagation) e.stopPropagation();
+            if (dragSrc && dragSrc.type === 'plan' && dragSrc.cat === cat && dragSrc.idx !== idx) {
+                const list = DATA.prices[cat];
+                const item = list.splice(dragSrc.idx, 1)[0];
+                list.splice(idx, 0, item);
+                renderPrices();
+            }
+            return false;
+        }
+
+        // Money Utils
+        function formatMoney(val) {
+            if (!val) return '';
+            val = val.replace(/[^0-9]/g, '');
+            return val ? Number(val).toLocaleString() + '円' : '';
+        }
+        function unformatMoney(val) {
+            return val.replace(/[^0-9]/g, '');
+        }
+
         async function savePrices() {
             document.getElementById('loading').style.display = 'flex';
             await postAPI('update_prices', DATA.prices);
             document.getElementById('loading').style.display = 'none';
-            alert("料金を保存しました");
+            alert("料金プランを保存しました");
+        }
+
+        // --- VOICES UI ---
+        function renderVoices() {
+            const list = DATA.voices || [];
+            const container = document.getElementById('voice-list');
+            container.innerHTML = '';
+
+            list.forEach((v, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.innerHTML = `
+                     <div class="pf-body" style="background:#f9fafb;">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-gray">#${idx + 1}</span>
+                            <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px;">
+                            <div>
+                                <label class="form-label">名前</label>
+                                <input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)">
+                            </div>
+                            <div>
+                                <label class="form-label">アイコン (Emoji or URL)</label>
+                                <input class="form-input" value="${v.icon || ''}" placeholder="😊 or https://..." onchange="updateVoice(${idx}, 'icon', this.value)">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                                <label class="form-label">感想コメント</label>
+                                <textarea class="form-input" rows="2" onchange="updateVoice(${idx}, 'text', this.value)">${v.text || ''}</textarea>
+                        </div>
+                     </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addVoice() {
+            if (!DATA.voices) DATA.voices = [];
+            DATA.voices.push({ name: 'User', text: '感想...', icon: '😊' });
+            renderVoices();
+        }
+
+        function updateVoice(idx, key, val) {
+            DATA.voices[idx][key] = val;
+        }
+
+        function delVoice(idx) {
+            if (confirm('削除しますか？')) {
+                DATA.voices.splice(idx, 1);
+                renderVoices();
+            }
+        }
+
+        async function saveVoices() {
+            document.getElementById('loading').style.display = 'flex';
+            // We use generic update logic. Need to add 'update_voices' to api? 
+            // Or just reuse update_prices logic? No, update_prices updates site_prices kv.
+            // We need a way to save voices. 
+            // api/admin.js supports: update_pf (DATA.works/mix/orig), update_prices (DATA.prices).
+            // We need update_voices.
+            await postAPI('update_voices', DATA.voices);
+            document.getElementById('loading').style.display = 'none';
+            alert("声を保存しました");
         }
 
         // --- API UTILS ---
