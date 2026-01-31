@@ -719,8 +719,8 @@ h5 {
 }
 
 .price-card:hover {
-    border-color: var(--accent-blue);
-    transform: translateY(-5px);
+    /* border-color: var(--accent-blue); REMOVED */
+    /* transform: translateY(-5px); REMOVED */
 }
 
 .price-card h3 {
@@ -883,11 +883,9 @@ h5 {
 }
 
 .work-item:hover {
-    transform: translateY(-5px);
-    border-color: var(--accent-blue);
-    /* Added border hover effect */
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
-    /* Optional: Enhance shadow like typical hover states */
+    /* transform: translateY(-5px); REMOVED */
+    /* border-color: var(--accent-blue); REMOVED */
+    /* box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15); REMOVED */
 }
 
 .video-container {
