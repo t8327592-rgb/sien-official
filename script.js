@@ -266,9 +266,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 6. Dynamic Data Loading (Public API) & Show More Logic ---
-    let allWorks = []; // Store for pagination
-    let shownCount = 0;
     const SHOW_STEP = 3;
+
+    class PagedSection {
+        constructor(works, containerId, btnId, isAutoInit = true) {
+            this.works = works || [];
+            this.container = document.getElementById(containerId);
+            this.btn = document.getElementById(btnId);
+            this.shownCount = 0;
+
+            if (this.container) {
+                this.container.innerHTML = ''; // Clear initial
+                if (this.btn) {
+                    this.btn.addEventListener('click', () => this.showNext());
+                    if (isAutoInit) this.showNext();
+                } else {
+                    // Fallback: Show all if no button (Legacy support for mix.html/original.html)
+                    this.renderFull();
+                }
+            }
+        }
+
+        showNext() {
+            const nextBatch = this.works.slice(this.shownCount, this.shownCount + SHOW_STEP);
+            nextBatch.forEach(video => {
+                this.container.appendChild(createWorkItem(video));
+            });
+            this.shownCount += nextBatch.length;
+            this.updateButton();
+        }
+
+        updateButton() {
+            if (this.shownCount >= this.works.length) {
+                this.btn.style.display = 'none';
+            } else {
+                this.btn.style.display = 'inline-block';
+            }
+        }
+
+        renderFull() {
+            this.works.forEach(video => this.container.appendChild(createWorkItem(video)));
+        }
+    }
 
     const loadPublicData = async () => {
         try {
@@ -276,29 +315,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) return;
             const data = await res.json();
 
-            // 1. Store Works for Pagination (Index Page)
-            allWorks = data.works || [];
+            // 1. Index Page (Combined List)
+            new PagedSection(data.works, 'works-grid', 'index-works-more-btn');
 
-            // 2. Render Index Page Works (Paged)
-            const indexContainer = document.getElementById('works-grid');
-            const showMoreBtn = document.getElementById('index-works-more-btn');
+            // 2. Works Page - Mix Category
+            new PagedSection(data.mix, 'works-mix-container', 'btn-more-mix');
 
-            if (indexContainer && showMoreBtn) {
-                renderPagedWorks(indexContainer, showMoreBtn);
-                showMoreBtn.addEventListener('click', () => {
-                    renderPagedWorks(indexContainer, showMoreBtn);
-                });
-            }
+            // 3. Works Page - Original Category
+            new PagedSection(data.orig, 'works-original-container', 'btn-more-original');
 
-            // 3. Render Other Pages (Full List)
-            // If on works.html, we might want to show all or specific categories
-            // Existing logic:
-            if (data.mix) renderPublicPortfolio('works-mix-container', data.mix);
-            renderPublicPortfolio('mix-portfolio', data.mix);
-            renderPublicPortfolio('original-portfolio', data.orig);
-            renderPublicPortfolio('works-original-container', data.orig);
+            // 4. Legacy Pages (mix.html / original.html) - Full Render
+            // These don't have the new IDs, so PagedSection will gracefully fail or we can use the old helper if needed.
+            // But PagedSection handles 'no button' by rendering full, so we can just instantiate it.
+            // mix.html uses 'mix-portfolio'
+            new PagedSection(data.mix, 'mix-portfolio', null);
+            // original.html likely uses 'original-portfolio' or similar, let's keep the manual calls just in case or map them.
+            // Check original code: renderPublicPortfolio('original-portfolio', data.orig);
+            new PagedSection(data.orig, 'original-portfolio', null);
 
-            // 4. Update Prices
+
+            // 5. Update Prices
             if (data.prices) {
                 Object.keys(data.prices).forEach(key => {
                     const el = document.getElementById(`price_${key}`);
@@ -306,24 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } catch (e) { console.error("Data load error", e); }
-    };
-
-    // Pagination Rendering
-    const renderPagedWorks = (container, btn) => {
-        const nextBatch = allWorks.slice(shownCount, shownCount + SHOW_STEP);
-
-        nextBatch.forEach(video => {
-            container.appendChild(createWorkItem(video));
-        });
-
-        shownCount += nextBatch.length;
-
-        // Button Visibility
-        if (shownCount >= allWorks.length) {
-            btn.style.display = 'none';
-        } else {
-            btn.style.display = 'block';
-        }
     };
 
     // Shared Item Creator
@@ -337,14 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="work-title">${video.title || video.comment || ''}</p>
         `;
         return item;
-    };
-
-    // Legacy/Full Render
-    const renderPublicPortfolio = (containerId, list) => {
-        const container = document.getElementById(containerId);
-        if (!container || !list) return;
-        container.innerHTML = '';
-        list.forEach(video => container.appendChild(createWorkItem(video)));
     };
 
     loadPublicData();
