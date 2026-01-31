@@ -1245,14 +1245,13 @@
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div>
                             <label class="form-label">ご依頼者名</label>
-                            <input id="new-voice-name" class="form-input" placeholder="例: サネル様">
+                            <input id="new-voice-name" class="form-input" placeholder="例: 佐藤翼様">
                         </div>
                         <div>
-                            <label class="form-label">評価 (星)</label>
-                            <select id="new-voice-rate" class="form-input">
-                                <option value="5">★★★★★ (5)</option>
-                                <option value="4">★★★★ (4)</option>
-                                <option value="3">★★★ (3)</option>
+                            <label class="form-label">担当プラン</label>
+                            <select id="new-voice-plan" class="form-input">
+                                <option value="">(プラン選択)</option>
+                                ${getPlanOptions()}
                             </select>
                         </div>
                     </div>
@@ -1292,11 +1291,10 @@
                             <input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)">
                         </div>
                         <div>
-                            <label class="form-label">評価</label>
-                            <select class="form-input" onchange="updateVoice(${idx}, 'rate', this.value)">
-                                <option value="5" ${v.rate == 5 ? 'selected' : ''}>★★★★★</option>
-                                <option value="4" ${v.rate == 4 ? 'selected' : ''}>★★★★</option>
-                                <option value="3" ${v.rate == 3 ? 'selected' : ''}>★★★</option>
+                            <label class="form-label">担当プラン</label>
+                            <select class="form-input" onchange="updateVoice(${idx}, 'plan', this.value)">
+                                <option value="">(プラン選択)</option>
+                                ${getPlanOptions(v.plan)}
                             </select>
                         </div>
                     </div>
@@ -1317,6 +1315,17 @@
             });
         }
 
+        function getPlanOptions(selectedPlan) {
+            let opts = '';
+            // Combine mix and orig plans
+            const allPlans = [...(DATA.prices.mix || []), ...(DATA.prices.orig || [])];
+            allPlans.forEach(p => {
+                const isSel = p.title === selectedPlan ? 'selected' : '';
+                opts += `<option value="${p.title}" ${isSel}>${p.title}</option>`;
+            });
+            return opts;
+        }
+
         function getPortfolioOptions(selectedId) {
             let opts = '';
             // Combine all categories
@@ -1331,13 +1340,13 @@
 
         function addVoiceItem() {
             const name = document.getElementById('new-voice-name').value;
-            const rate = document.getElementById('new-voice-rate').value;
+            const plan = document.getElementById('new-voice-plan').value;
             const link = document.getElementById('new-voice-link').value;
             const text = document.getElementById('new-voice-text').value;
             if (!name) return alert('名前は必須です');
 
             if (!DATA.voices) DATA.voices = [];
-            DATA.voices.push({ name, rate, link, text });
+            DATA.voices.push({ name, plan, link, text });
             renderVoices();
         }
 
@@ -1349,6 +1358,13 @@
                 DATA.voices.splice(idx, 1);
                 renderVoices();
             }
+        }
+
+        async function saveVoices() {
+            document.getElementById('loading').style.display = 'flex';
+            await postAPI('update_voices', DATA.voices);
+            document.getElementById('loading').style.display = 'none';
+            alert("お客様の声を保存しました");
         }
         async function saveVoices() {
             document.getElementById('loading').style.display = 'flex';

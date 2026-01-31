@@ -336,7 +336,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderPublicPlans(data.prices.orig, 'plan-list-orig');
             }
 
+            // 6. Update Voices
+            if (data.voices) {
+                renderVoicesPublic(data.voices);
+            }
+
         } catch (e) { console.error("Data load error", e); }
+    };
+
+    const renderVoicesPublic = (voices) => {
+        const container = document.getElementById('voice-list-home');
+        if (!container) return;
+        container.innerHTML = '';
+
+        voices.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'voice-card';
+            card.innerHTML = `
+                <div class="voice-body">
+                    <div class="voice-quote"><i class="fa-solid fa-quote-left"></i></div>
+                    <p class="voice-text">${v.text}</p>
+                </div>
+                <div class="voice-footer">
+                    <span class="voice-plan">${v.plan || 'Standard Plan'}</span>
+                    <span class="voice-name">${v.name}様</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
     };
 
     const renderPublicPlans = (plans, containerId) => {
