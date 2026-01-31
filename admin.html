@@ -557,6 +557,9 @@
                     style="height:35px;"></a></div>
         <div class="user-menu">
             <!-- User Info Removed -->
+            <button class="btn btn-danger btn-sm" onclick="restoreDefaults()" style="margin-right:10px;">
+                <i class="fa-solid fa-database"></i> データ復旧
+            </button>
             <button class="btn btn-ghost btn-sm" onclick="logout()"><i
                     class="fa-solid fa-right-from-bracket"></i></button>
         </div>
@@ -1304,6 +1307,47 @@
 
         // Init
         checkAuth();
+
+        // --- DATA RECOVERY UTILITY ---
+        window.restoreDefaults = async () => {
+            if (!confirm("【警告】データを初期状態にリセットします。\n現在のデータは上書きされます。\nよろしいですか？")) return;
+
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                // 1. DEFAULT PORTFOLIO
+                const defaultWorks = [
+                    { id: 'dQw4w9WgXcQ', title: 'Example Work 1' }
+                ];
+                const defaultMix = [
+                    { id: 'dQw4w9WgXcQ', title: 'Mix Sample 1' }
+                ];
+
+                // 2. DEFAULT PLANS (MIX)
+                const defaultMixPlans = [
+                    { title: 'スタンダードプラン', price: '5,000円', period: '3~5日', revisions: '2回', desc: '基本的なMixプラン', recommended: true, badgeText: '人気' },
+                    { title: 'ワンコーラスプラン', price: '3,000円', period: '2~3日', revisions: '2回', desc: '1番のみ' },
+                    { title: 'スピードプラン', price: '8,000円', period: '24時間以内', revisions: '1回', desc: 'お急ぎの方へ' }
+                ];
+                const defaultOrigPlans = [
+                    { title: 'スタンダード制作', price: '30,000円~', period: '14~20日', revisions: '2回', desc: 'オリジナル楽曲制作' },
+                    { title: '作詞持ち込み', price: '25,000円~', period: '14~20日', revisions: '2回', desc: '作詞あり' }
+                ];
+
+                const headers = { 'Content-Type': 'application/json', 'x-admin-password': TOKEN };
+
+                await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify({ action: 'update_portfolio', data: { category: 'works', items: defaultWorks } }) });
+                await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify({ action: 'update_portfolio', data: { category: 'mix', items: defaultMix } }) });
+                await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify({ action: 'update_portfolio', data: { category: 'orig', items: [] } }) });
+                await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify({ action: 'update_prices', data: { mix: defaultMixPlans, orig: defaultOrigPlans } }) });
+
+                alert("データを初期化しました。リロードします。");
+                location.reload();
+            } catch (e) {
+                alert("エラーが発生しました: " + e);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        };
     </script>
 </body>
 
