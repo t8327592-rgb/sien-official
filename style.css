@@ -712,6 +712,10 @@ h5 {
     transition: 0.3s;
     position: relative;
     overflow: hidden;
+    /* Flexbox for vertical alignment */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .price-card:hover {
@@ -720,8 +724,10 @@ h5 {
 }
 
 .price-card h3 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
     margin-bottom: 10px;
+    line-height: 1.3;
 }
 
 .price {
