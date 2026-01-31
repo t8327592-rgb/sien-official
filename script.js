@@ -349,6 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         container.innerHTML = '';
 
+        if (!voices || voices.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#999; width:100%; padding:40px;">現在集計中です...</div>';
+            return;
+        }
+
         voices.forEach(v => {
             const card = document.createElement('div');
             card.className = 'voice-card';
