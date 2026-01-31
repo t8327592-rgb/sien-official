@@ -372,6 +372,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.selectPlan = (planName) => {
         sessionStorage.setItem('selectedPlan', planName);
         updatePlanUI(planName);
+
+        // Update Buttons Visuals
+        document.querySelectorAll('.plan-select-btn').forEach(btn => {
+            if (btn.dataset.plan === planName) {
+                // Active Style
+                btn.style.background = 'var(--accent-blue)';
+                btn.style.color = 'white';
+                btn.innerHTML = '選択中';
+            } else {
+                // Reset Style
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--accent-blue)'; // btn-outline default
+                btn.innerHTML = 'このプランを選択';
+            }
+        });
     };
 
     const updatePlanUI = (planName) => {
@@ -414,18 +429,51 @@ document.addEventListener('DOMContentLoaded', () => {
         if (planSelect) {
             const saved = sessionStorage.getItem('selectedPlan');
             if (saved) {
+                // Try to find exact match first
+                let found = false;
                 for (let i = 0; i < planSelect.options.length; i++) {
-                    if (planSelect.options[i].text.includes(saved) || planSelect.options[i].value.includes(saved)) {
+                    if (planSelect.options[i].value === saved || planSelect.options[i].text === saved) {
                         planSelect.selectedIndex = i;
+                        found = true;
                         break;
+                    }
+                }
+                // Fallback to includes
+                if (!found) {
+                    for (let i = 0; i < planSelect.options.length; i++) {
+                        if (planSelect.options[i].text.includes(saved)) {
+                            planSelect.selectedIndex = i;
+                            break;
+                        }
                     }
                 }
             }
         }
-        // 2. Restore UI
-        const saved = sessionStorage.getItem('selectedPlan');
-        if (saved && !window.location.pathname.includes('order.html')) {
-            updatePlanUI(saved);
+
+        // 2. Logic: Reset selection if NOT on order page
+        if (!window.location.pathname.includes('order.html')) {
+            // But we might have just clicked "Select", so we need to see if we are currently "holding" a selection on the current page to display
+            // Actually, the request says "Reset when moving to *another* page".
+            // If we are on `mix.html`, select a plan, reload `mix.html` -> it should probably stay or unrelated?
+            // "別のページ（ミックス／マスタリング、制作実績、トップ等）に移動した瞬間に、プランの選択状態を自動で解除"
+            // This implies the session storage should be cleared on page load, *unless* we are on the order page (which needs to read it).
+            // OR if we just set it (clicked button).
+            // Let's rely on the order page reading it. If we go to Top, we clear it.
+            // BUT if we click "Select" on Top, it sets it.
+
+            // To be safe: Clear on load for all pages EXCEPT order.html. 
+            // BUT wait, if I click "Select" on mix.html, it sets session, then what?
+            // Does it redirect? No, it just updates UI.
+            // So if I reload mix.html, it clears. Correct.
+            // If I go to works.html, it clears. Correct.
+
+            // PROBLEM: checkPlanState runs on load.
+            sessionStorage.removeItem('selectedPlan');
+            // Remove UI elements
+            const badge = document.getElementById('plan-select-badge');
+            if (badge) badge.style.display = 'none';
+            const widget = document.getElementById('plan-float-widget');
+            if (widget) widget.style.display = 'none';
         }
     };
     // Call immediately
@@ -471,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <!-- Selection Button -->
                 <div style="margin-top:15px; text-align:center;">
-                     <button class="btn btn-outline btn-sm" style="width:100%; border-radius:20px;" onclick="selectPlan('${plan.title}')">このプランを選択</button>
+                     <button class="btn btn-outline btn-sm plan-select-btn" data-plan="${plan.title}" style="width:100%; border-radius:20px;" onclick="selectPlan('${plan.title}')">このプランを選択</button>
                 </div>
             `;
             container.appendChild(card);
