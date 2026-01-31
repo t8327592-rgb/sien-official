@@ -21,10 +21,9 @@
     <style>
         /* --- ADMIN DASHBOARD THEME --- */
         body {
-            background-color: #f3f4f6;
-            /* Light Gray Background */
-            font-family: 'Noto Sans JP', sans-serif;
-            color: #1f2937;
+            background-color: var(--bg-gray);
+            font-family: var(--font-body);
+            color: var(--text-main);
         }
 
         /* Utils */
@@ -65,7 +64,7 @@
         }
 
         .text-gray {
-            color: #6b7280;
+            color: var(--text-muted);
         }
 
         .font-bold {
@@ -94,35 +93,31 @@
         .auth-card {
             background: white;
             padding: 3rem;
-            border-radius: 1rem;
+            border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
             text-align: center;
         }
 
-        /* HEADER */
+        /* Nav & Headers */
         .admin-header {
             background: white;
-            border-bottom: 1px solid #e5e7eb;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 70px;
-            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            height: 64px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 40px;
         }
 
         .brand {
-            font-family: 'Jost', sans-serif;
+            font-family: var(--font-heading);
             font-weight: 700;
-            font-size: 1.5rem;
-            color: #111;
-            letter-spacing: 0.05em;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .brand span {
@@ -132,45 +127,33 @@
         .user-menu {
             display: flex;
             align-items: center;
-            gap: 15px;
-        }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            overflow: hidden;
+            gap: 16px;
         }
 
         .avatar img {
-            width: 100%;
-            height: 100%;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             object-fit: cover;
         }
 
         /* NAVIGATION */
         .nav-bar {
             background: white;
-            padding: 0 40px;
-            border-bottom: 1px solid #e5e7eb;
-            position: fixed;
-            top: 70px;
-            left: 0;
-            width: 100%;
-            z-index: 90;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
             display: flex;
-            gap: 30px;
+            gap: 24px;
         }
 
         .nav-item {
-            padding: 16px 4px;
+            padding: 16px 0;
+            font-size: 0.9rem;
             font-weight: 500;
-            color: #6b7280;
+            color: var(--text-muted);
             cursor: pointer;
-            position: relative;
-            font-size: 0.95rem;
-            transition: color 0.2s;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
         }
 
         .nav-item:hover {
@@ -179,25 +162,14 @@
 
         .nav-item.active {
             color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
         }
 
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: var(--accent-blue);
-        }
-
-        /* MAIN LAYOUT */
+        /* Main Layout */
         .main-content {
-            margin-top: 130px;
-            padding: 40px;
-            max-width: 1400px;
-            margin-left: auto;
-            margin-right: auto;
+            padding: 32px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .page-title {
@@ -772,13 +744,31 @@
                         <input class="form-input" value="${item.id}" onchange="updatePfData('${cat}', ${idx}, 'id', this.value)">
                         <label class="form-label">Title / Comment</label>
                         <input class="form-input" value="${item.title || ''}" onchange="updatePfData('${cat}', ${idx}, 'title', this.value)">
-                        <div class="text-right">
+                        
+                        <div class="action-bar" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="sort-controls" style="display:flex; gap:4px;">
+                                <button class="btn btn-ghost btn-sm" onclick="movePfItem('${cat}', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-sm" onclick="movePfItem('${cat}', ${idx}, 1)" ${idx === items.length - 1 ? 'disabled' : ''}>
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+                            </div>
                             <button class="btn btn-danger btn-sm" onclick="delPf('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i> 削除</button>
                         </div>
                     </div>
                 `;
                 el.appendChild(div);
             });
+        }
+
+        function movePfItem(cat, idx, dir) {
+            const list = DATA[cat];
+            const newIdx = idx + dir;
+            if (newIdx < 0 || newIdx >= list.length) return;
+            // Swap
+            [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
+            renderPortfolio();
         }
         // Helper to extract YouTube ID
         function extractYouTubeId(url) {
