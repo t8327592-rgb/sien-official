@@ -349,11 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         container.innerHTML = '';
 
-        if (!voices || voices.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#999; width:100%; padding:40px;">現在集計中です...</div>';
-            return;
-        }
-
         voices.forEach(v => {
             const card = document.createElement('div');
             card.className = 'voice-card';
@@ -375,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Global Selection Function
     window.selectPlan = (planName) => {
-        localStorage.setItem('selectedPlan', planName);
+        sessionStorage.setItem('selectedPlan', planName);
         updatePlanUI(planName);
 
         // Update Buttons Visuals
@@ -395,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updatePlanUI = (planName) => {
-        if (!planName) planName = localStorage.getItem('selectedPlan');
+        if (!planName) planName = sessionStorage.getItem('selectedPlan');
         if (!planName) return;
 
         // Header Badge
@@ -431,40 +426,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkPlanState = () => {
         // 1. Order Form Auto-Fill
         const planSelect = document.querySelector('select[name="プラン"]') || document.querySelector('select[name="plan"]') || document.getElementById('plan');
-
         if (planSelect) {
             const saved = sessionStorage.getItem('selectedPlan');
             if (saved) {
-                // Normalize for matching
-                const target = saved.trim().toLowerCase();
+                // Try to find exact match first
                 let found = false;
-
                 for (let i = 0; i < planSelect.options.length; i++) {
-                    const optText = planSelect.options[i].text.toLowerCase();
-                    const optVal = planSelect.options[i].value.toLowerCase();
-
-                    // Match against value (e.g. 'standard'), text (e.g. 'スタンダードプラン'), or partial text
-                    if (optVal === target || optText === target || optText.includes(target)) {
+                    if (planSelect.options[i].value === saved || planSelect.options[i].text === saved) {
                         planSelect.selectedIndex = i;
                         found = true;
                         break;
                     }
                 }
-
-                // User Requirement: Clear after reflecting (Consume Once)
-                if (found) {
-                    // Consume Once - but keep for visual if needed?
-                    // User requested "Consume Once" for form, but maybe keep for buttons?
-                    // "Remove after reflecting".
-                    localStorage.removeItem('selectedPlan');
+                // Fallback to includes
+                if (!found) {
+                    for (let i = 0; i < planSelect.options.length; i++) {
+                        if (planSelect.options[i].text.includes(saved)) {
+                            planSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
                 }
             }
-        } else {
-            // 2. Logic: Reset selection if NOT on order page
-            // If we found a plan select, we assume we are ON the order page.
-            // If not found, we are on another page (Mix, Works, Top).
-            // Clear session to prevent sticky selection potentially confusing users later.
-            localStorage.removeItem('selectedPlan');
+        }
+
+        // 2. Logic: Reset selection if NOT on order page
+        if (!window.location.pathname.includes('order.html')) {
+            // But we might have just clicked "Select", so we need to see if we are currently "holding" a selection on the current page to display
+            // Actually, the request says "Reset when moving to *another* page".
+            // If we are on `mix.html`, select a plan, reload `mix.html` -> it should probably stay or unrelated?
+            // "別のページ（ミックス／マスタリング、制作実績、トップ等）に移動した瞬間に、プランの選択状態を自動で解除"
+            // This implies the session storage should be cleared on page load, *unless* we are on the order page (which needs to read it).
+            // OR if we just set it (clicked button).
+            // Let's rely on the order page reading it. If we go to Top, we clear it.
+            // BUT if we click "Select" on Top, it sets it.
+
+            // To be safe: Clear on load for all pages EXCEPT order.html. 
+            // BUT wait, if I click "Select" on mix.html, it sets session, then what?
+            // Does it redirect? No, it just updates UI.
+            // So if I reload mix.html, it clears. Correct.
+            // If I go to works.html, it clears. Correct.
+
+            // PROBLEM: checkPlanState runs on load.
+            sessionStorage.removeItem('selectedPlan');
+            // Remove UI elements
             const badge = document.getElementById('plan-select-badge');
             if (badge) badge.style.display = 'none';
             const widget = document.getElementById('plan-float-widget');
@@ -519,10 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             container.appendChild(card);
         });
-
-        // RE-APPLY SELECTION STATE after render
-        const current = localStorage.getItem('selectedPlan');
-        if (current) updatePlanUI(current);
     };
 
     // Shared Item Creator
