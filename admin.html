@@ -704,6 +704,23 @@
         let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] }, voices: [] };
         let activePfCat = 'works';
 
+        // CONSTANTS
+        const PLAN_MAP = {
+            'standard': 'スタンダードプラン',
+            'one_chorus': 'ワンコーラスプラン',
+            'short': 'ショート動画用MIX',
+            'speed': 'スピードプラン',
+            'super_speed': '超スピードプラン',
+            'collab': 'コラボ・合唱プラン',
+            'original_std': 'オリジナル楽曲 スタンダード',
+            'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
+            'other': 'その他・ご相談'
+        };
+        const PAY_MAP = {
+            'bank_transfer': '銀行振込',
+            'credit_card': 'クレジットカード'
+        };
+
         // --- AUTH ---
         function checkAuth() {
             if (TOKEN) {
@@ -1010,15 +1027,8 @@
             el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
             renderPlanList('mix');
 
-            // Original Plans
-            el.innerHTML += `<div class="flex justify-between items-center mt-8 mb-2">
-                                <h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作 (Original Plans)</h4>
-                                <button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button>
-                             </div>`;
+            el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
             renderPlanList('orig');
-        }
-        el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
-        renderPlanList('orig');
         }
 
         function renderPlanList(cat) {
@@ -1238,47 +1248,7 @@
             });
         }
 
-        // Init
-        checkAuth();
 
-        // --- MODAL UTILS ---
-        function openOrderDetail(id) {
-            // ... (keeping exiting logic but updating if needed)
-            const order = DATA.orders.find(o => o.id === id);
-            // ...
-        }
-
-        // ...
-
-        // Updated Status Class Logic
-        function getStatusClass(s) {
-            if (s === '未着手') return 'bg-gray-100';
-            if (s === '支払い待ち') return 'bg-orange-100';
-            if (s === '全て入金済み') return 'bg-green-100';
-            if (s === '納品済み') return 'bg-blue-100'; // Added
-            if (s === '取引終了') return 'bg-gray-100';
-            if (s === 'キャンセル') return 'bg-red-100';
-            return 'bg-blue-100';
-        }
-
-        // ...
-
-        // PLAN MAPPING
-        const PLAN_MAP = {
-            'standard': 'スタンダードプラン',
-            'one_chorus': 'ワンコーラスプラン',
-            'short': 'ショート動画用MIX',
-            'speed': 'スピードプラン',
-            'super_speed': '超スピードプラン',
-            'collab': 'コラボ・合唱プラン',
-            'original_std': 'オリジナル楽曲 スタンダード',
-            'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
-            'other': 'その他・ご相談'
-        };
-        const PAY_MAP = {
-            'bank_transfer': '銀行振込',
-            'credit_card': 'クレジットカード'
-        };
 
         // --- ORDER DETAIL PAGE ---
         function showOrderDetail(id) {
@@ -1345,9 +1315,13 @@
             }
         }
 
+
         function backToOrders() {
             switchTab('orders');
         }
+
+        // Init
+        checkAuth();
     </script>
 </body>
 
