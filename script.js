@@ -318,19 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Index Page (Combined List)
             new PagedSection(data.works, 'works-grid', 'index-works-more-btn');
 
-            // 2. Works Page - Mix Category
-            new PagedSection(data.mix, 'works-mix-container', 'btn-more-mix');
+            // 2. Mix Page - Production Achievements (Pagination)
+            new PagedSection(data.mix, 'mix-portfolio', 'show-more-btn');
 
-            // 3. Works Page - Original Category
-            new PagedSection(data.orig, 'works-original-container', 'btn-more-original');
+            // 3. Works Page (Full List - Reverted)
+            // No pagination buttons anymore, so use renderFull or PagedSection with null button (which defaults to full in logic)
+            new PagedSection(data.mix, 'works-mix-container', null);
+            new PagedSection(data.orig, 'works-original-container', null);
 
-            // 4. Legacy Pages (mix.html / original.html) - Full Render
-            // These don't have the new IDs, so PagedSection will gracefully fail or we can use the old helper if needed.
-            // But PagedSection handles 'no button' by rendering full, so we can just instantiate it.
-            // mix.html uses 'mix-portfolio'
-            new PagedSection(data.mix, 'mix-portfolio', null);
-            // original.html likely uses 'original-portfolio' or similar, let's keep the manual calls just in case or map them.
-            // Check original code: renderPublicPortfolio('original-portfolio', data.orig);
+            // 4. Original Page (Full List)
             new PagedSection(data.orig, 'original-portfolio', null);
 
 
