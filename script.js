@@ -347,19 +347,24 @@ document.addEventListener('DOMContentLoaded', () => {
         plans.forEach(plan => {
             const card = document.createElement('div');
             card.className = 'price-card';
-            // Logic to highlight recommended plans if we add that flag later
-            if (plan.recommended) card.style.border = '2px solid var(--accent-blue)';
+            if (plan.recommended) card.classList.add('featured');
+
+            const badgeHTML = plan.recommended ? '<div class="badge">RECOMMENDED</div>' : '';
 
             card.innerHTML = `
-                <div class="price-header">
-                    <h4>${plan.title}</h4>
-                    <p class="price">${plan.price}</p>
-                </div>
-                <div class="price-body">
-                    <p class="desc">${plan.desc || ''}</p>
-                    <div class="price-meta">
-                        <span><i class="fa-regular fa-clock"></i> 納期: ${plan.period}</span>
-                        <span><i class="fa-solid fa-rotate-right"></i> 修正: ${plan.revisions || plan.limit}</span>
+                ${badgeHTML}
+                <h3>${plan.title}</h3>
+                <p class="price">${plan.price}</p>
+                <p class="price-desc">${plan.desc || ''}</p>
+                
+                <div style="margin-top:auto; padding-top:15px; border-top:1px dashed #eee; font-size:0.9rem; color:#666;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span><i class="fa-regular fa-clock"></i> 納期</span>
+                        <span>${plan.period}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span><i class="fa-solid fa-rotate-right"></i> リテイク</span>
+                        <span>${plan.revisions || plan.limit}</span>
                     </div>
                 </div>
             `;
