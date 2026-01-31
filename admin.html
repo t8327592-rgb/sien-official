@@ -871,12 +871,16 @@
             });
         }
 
-        async function updateStatus(idx, val) {
+        async function updateStatus(id, val) {
             if (val === 'キャンセル') {
-                if (!confirm('アーカイブに移動しますか？')) return fetchData(); // Revert if no
-                await postAPI('archive_order', { index: idx });
+                if (!confirm('アーカイブに移動しますか？')) return fetchData();
+                // Find index for archive (which uses index-based splicing in API)
+                const index = DATA.orders.findIndex(o => o.id === id);
+                if (index === -1) return alert('Error: Order not found');
+                await postAPI('archive_order', { index });
             } else {
-                await postAPI('update_order_status', { index: idx, status: val });
+                // Use ID for status update
+                await postAPI('update_order_status', { orderId: id, updates: { status: val } });
             }
             fetchData();
         }
@@ -887,7 +891,277 @@
             fetchData();
         }
 
-        // ... existing helpers ...
+        async function setPayLink(id) {
+            const l = prompt("支払いリンク (Stripe/Square URL) を入力:");
+            if (l) {
+                await postAPI('update_order_status', { orderId: id, updates: { paymentLink: l } });
+                fetchData();
+            }
+        }
+
+        // --- DRAG & DROP STATE ---
+        let dragSrc = null;
+
+        function dragStart(e, cat, idx) {
+            dragSrc = { cat, idx };
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.style.opacity = '0.4';
+        }
+
+        function dragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function dragDrop(e, cat, idx) {
+            if (e.stopPropagation) e.stopPropagation();
+            if (dragSrc && dragSrc.cat === cat && dragSrc.idx !== idx) {
+                const list = DATA[cat];
+                const item = list.splice(dragSrc.idx, 1)[0];
+                list.splice(idx, 0, item);
+                renderPortfolio();
+            }
+            return false;
+        }
+
+        function dragEnd(e) { e.target.style.opacity = '1'; }
+
+
+        // --- PORTFOLIO UI ---
+        function switchPfCat(cat, btn) {
+            activePfCat = cat;
+            document.querySelectorAll('#tab-portfolio .filter-chip').forEach(c => c.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            ['works', 'mix', 'orig'].forEach(k => document.getElementById(`pf-${k}`).classList.add('hidden'));
+            document.getElementById(`pf-${cat}`).classList.remove('hidden');
+        }
+
+        function renderPortfolio() {
+            renderPfGrid('works', DATA.works);
+            renderPfGrid('mix', DATA.mix);
+            renderPfGrid('orig', DATA.orig);
+        }
+
+        function renderPfGrid(cat, items) {
+            const el = document.getElementById(`pf-${cat}`);
+            if (!el) return;
+            el.innerHTML = '';
+            (items || []).forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.draggable = true;
+                div.ondragstart = (e) => dragStart(e, cat, idx);
+                div.ondragover = dragOver;
+                div.ondrop = (e) => dragDrop(e, cat, idx);
+                div.ondragend = dragEnd;
+
+                div.innerHTML = `
+                    <div class="pf-thumb"><iframe src="https://www.youtube.com/embed/${item.id}"></iframe></div>
+                    <div class="pf-body">
+                        <label class="form-label">YouTube ID</label>
+                        <input class="form-input" value="${item.id}" onchange="updatePfData('${cat}', ${idx}, 'id', this.value)">
+                        <label class="form-label">Title / Comment</label>
+                        <input class="form-input" value="${item.title || ''}" onchange="updatePfData('${cat}', ${idx}, 'title', this.value)">
+                        <div class="action-bar" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="sort-controls" style="color:#ccc;"><i class="fa-solid fa-grip-vertical" style="cursor:grab;"></i></div>
+                            <button class="btn btn-danger btn-sm" onclick="delPf('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                `;
+                el.appendChild(div);
+            });
+        }
+
+        function updatePfData(cat, idx, key, val) {
+            if (key === 'id') {
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = val.match(regExp);
+                val = (match && match[2].length === 11) ? match[2] : val;
+            }
+            DATA[cat][idx][key] = val;
+            if (key === 'id') renderPortfolio();
+        }
+        function addPfItem() {
+            if (!DATA[activePfCat]) DATA[activePfCat] = [];
+            DATA[activePfCat].push({ id: '', title: '' });
+            renderPortfolio();
+        }
+        function delPf(cat, idx) {
+            if (confirm("削除しますか？")) { DATA[cat].splice(idx, 1); renderPortfolio(); }
+        }
+        async function savePortfolio() {
+            document.getElementById('loading').style.display = 'flex';
+            await postAPI('update_portfolio', { category: 'works', items: DATA.works });
+            await postAPI('update_portfolio', { category: 'mix', items: DATA.mix });
+            await postAPI('update_portfolio', { category: 'orig', items: DATA.orig });
+            document.getElementById('loading').style.display = 'none';
+            alert("保存しました");
+        }
+
+
+        // --- PLANS UI ---
+        function renderPrices() {
+            const el = document.getElementById('price-form');
+            if (!el) return;
+            el.innerHTML = '';
+
+            // Mix Plans
+            el.innerHTML += `<div class="flex justify-between items-center mt-4 mb-2"><h4 class="font-bold" style="color:var(--accent-blue);">ミックス／マスタリング</h4><button class="btn btn-sm btn-ghost" onclick="addPlan('mix')">+ プラン追加</button></div>`;
+            el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
+            renderPlanList('mix');
+
+            // Orig Plans
+            el.innerHTML += `<div class="flex justify-between items-center mt-8 mb-2"><h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作</h4><button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button></div>`;
+            el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
+            renderPlanList('orig');
+        }
+
+        function renderPlanList(cat) {
+            const list = DATA.prices[cat] || [];
+            const container = document.getElementById(`plans-${cat}`);
+            container.innerHTML = '';
+
+            list.forEach((plan, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.draggable = true;
+                div.ondragstart = (e) => dragStartPlan(e, cat, idx);
+                div.ondragover = dragOver;
+                div.ondrop = (e) => dragDropPlan(e, cat, idx);
+                div.ondragend = dragEnd;
+
+                div.innerHTML = `
+                    <div class="pf-body" style="background:#f9fafb;">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-gray">#${idx + 1}</span>
+                            <div class="action-bar" style="background:transparent; border:none; padding:0;">
+                                <i class="fa-solid fa-grip-vertical mr-2" style="cursor:grab; color:#ccc;"></i>
+                                <button class="btn btn-danger btn-sm" onclick="delPlan('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div><label class="form-label">プラン名</label><input class="form-input" value="${plan.title || ''}" onchange="updatePlan('${cat}', ${idx}, 'title', this.value)"></div>
+                            <div><label class="form-label">金額</label><input class="form-input" value="${plan.price || ''}" onchange="updatePlan('${cat}', ${idx}, 'price', this.value)"></div>
+                            <div><label class="form-label">納期</label><input class="form-input" value="${plan.period || ''}" onchange="updatePlan('${cat}', ${idx}, 'period', this.value)"></div>
+                            <div><label class="form-label">修正回数</label><input class="form-input" value="${plan.revisions || ''}" onchange="updatePlan('${cat}', ${idx}, 'revisions', this.value)"></div>
+                        </div>
+                        <div class="mt-2"><label class="form-label">詳細説明</label><textarea class="form-input" rows="3" onchange="updatePlan('${cat}', ${idx}, 'desc', this.value)">${plan.desc || ''}</textarea></div>
+                        <div class="mt-2 text-sm" style="display:flex; align-items:center; gap:10px; background:#eee; padding:5px; border-radius:4px;">
+                             <label style="margin:0;"><input type="checkbox" ${plan.recommended ? 'checked' : ''} onchange="updatePlan('${cat}', ${idx}, 'recommended', this.checked)"> おすすめ表示</label>
+                             <input class="form-input" style="width:120px; font-size:0.8rem; padding:4px;" placeholder="バッジ (例: 人気)" value="${plan.badgeText || ''}" onchange="updatePlan('${cat}', ${idx}, 'badgeText', this.value)">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function addPlan(cat) {
+            if (!DATA.prices[cat]) DATA.prices[cat] = [];
+            DATA.prices[cat].push({ title: 'New Plan', price: '0円' });
+            renderPrices();
+        }
+        function delPlan(cat, idx) {
+            if (confirm('削除しますか？')) { DATA.prices[cat].splice(idx, 1); renderPrices(); }
+        }
+        function updatePlan(cat, idx, key, val) { DATA.prices[cat][idx][key] = val; }
+
+        function dragStartPlan(e, cat, idx) {
+            dragSrc = { cat, idx, type: 'plan' };
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.style.opacity = '0.4';
+        }
+        function dragDropPlan(e, cat, idx) {
+            if (e.stopPropagation) e.stopPropagation();
+            if (dragSrc && dragSrc.type === 'plan' && dragSrc.cat === cat && dragSrc.idx !== idx) {
+                const list = DATA.prices[cat];
+                const item = list.splice(dragSrc.idx, 1)[0];
+                list.splice(idx, 0, item);
+                renderPrices();
+            }
+            return false;
+        }
+
+        async function savePrices() {
+            document.getElementById('loading').style.display = 'flex';
+            await postAPI('update_prices', DATA.prices);
+            document.getElementById('loading').style.display = 'none';
+            alert("料金プランを保存しました");
+        }
+
+
+        // --- VOICES UI ---
+        function renderVoices() {
+            const list = DATA.voices || [];
+            const container = document.getElementById('voice-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Add Form
+            container.innerHTML += `
+                <div class="pf-card" style="border:2px dashed #ccc;">
+                    <div class="pf-body">
+                        <h4 style="margin-bottom:10px;">新規感想の追加</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div><label class="form-label">名前</label><input id="nv-name" class="form-input"></div>
+                            <div><label class="form-label">プラン</label><select id="nv-plan" class="form-input"><option value="">選択...</option>${getPlanOptions()}</select></div>
+                        </div>
+                        <div class="mt-2"><label class="form-label">紐付け実績</label><select id="nv-link" class="form-input"><option value="">なし</option>${getPortfolioOptions()}</select></div>
+                        <div class="mt-2"><textarea id="nv-text" class="form-input" rows="2" placeholder="感想..."></textarea></div>
+                        <div class="mt-2 text-right"><button class="btn btn-primary btn-sm" onclick="addVoiceItem()">追加</button></div>
+                    </div>
+                </div>
+            `;
+
+            list.forEach((v, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-card';
+                div.innerHTML = `
+                 <div class="pf-body" style="background:#f9fafb;">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-gray">#${idx + 1}</span>
+                        <div class="action-bar" style="padding:0; border:none; background:transparent;">
+                             <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div><label class="form-label">名前</label><input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)"></div>
+                        <div><label class="form-label">プラン</label><select class="form-input" onchange="updateVoice(${idx}, 'plan', this.value)"><option value="">選択...</option>${getPlanOptions(v.plan)}</select></div>
+                    </div>
+                    <div class="mt-2"><label class="form-label">実績リンク</label><select class="form-input" onchange="updateVoice(${idx}, 'link', this.value)"><option value="">なし</option>${getPortfolioOptions(v.link)}</select></div>
+                    <div class="mt-2"><textarea class="form-input" rows="2" onchange="updateVoice(${idx}, 'text', this.value)">${v.text || ''}</textarea></div>
+                </div>
+            `;
+                container.appendChild(div);
+            });
+        }
+
+        function getPlanOptions(sel) {
+            let opts = '';
+            [...(DATA.prices.mix || []), ...(DATA.prices.orig || [])].forEach(p => {
+                opts += `<option value="${p.title}" ${p.title === sel ? 'selected' : ''}>${p.title}</option>`;
+            });
+            return opts;
+        }
+        function getPortfolioOptions(sel) {
+            let opts = '';
+            [...(DATA.works || []), ...(DATA.mix || []), ...(DATA.orig || [])].forEach(i => {
+                if (i.id) opts += `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${i.title || i.id}</option>`;
+            });
+            return opts;
+        }
+        function addVoiceItem() {
+            const name = document.getElementById('nv-name').value;
+            const plan = document.getElementById('nv-plan').value;
+            const link = document.getElementById('nv-link').value;
+            const text = document.getElementById('nv-text').value;
+            if (!name) return alert('Input Name');
+            DATA.voices.push({ name, plan, link, text });
+            renderVoices();
+        }
+        function updateVoice(idx, k, v) { DATA.voices[idx][k] = v; }
+        function delVoice(idx) { if (confirm('Del?')) { DATA.voices.splice(idx, 1); renderVoices(); } }
 
         async function saveVoices() {
             document.getElementById('loading').style.display = 'flex';
@@ -895,7 +1169,6 @@
             document.getElementById('loading').style.display = 'none';
             alert("お客様の声を保存しました");
         }
-
 
         // --- API UTILS ---
         async function postAPI(action, data) {
