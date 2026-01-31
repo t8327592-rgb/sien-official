@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-Run Check
     const checkPlanState = () => {
         // 1. Order Form Auto-Fill
-        const planSelect = document.querySelector('select[name="plan"]') || document.getElementById('plan');
+        const planSelect = document.querySelector('select[name="プラン"]') || document.querySelector('select[name="plan"]') || document.getElementById('plan');
         if (planSelect) {
             const saved = sessionStorage.getItem('selectedPlan');
             if (saved) {
