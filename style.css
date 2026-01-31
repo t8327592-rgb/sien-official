@@ -1516,3 +1516,49 @@ textarea {
     border: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
+
+/* =========================================
+   17. Refinements (Vertical Alignment)
+   ========================================= */
+.work-item,
+.pf-card {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Push the last element (role/date) to the bottom */
+.work-role,
+.pf-card .text-sm,
+.pf-card .price-desc+div {
+    margin-top: auto;
+}
+
+/* Strict Right Alignment for Header/Footer Nav */
+@media (min-width: 769px) {
+    .nav-links {
+        margin-right: -20px;
+        /* Micro adjustment if needed, but flex-end should work */
+        justify-content: flex-end;
+    }
+
+    .nav-menu ul {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-menu li {
+        margin-left: 30px;
+    }
+
+    .header {
+        justify-content: space-between;
+    }
+
+    /* Ensure the last item (CTA button or link) hits the edge */
+    .nav-menu li:last-child {
+        margin-right: 0;
+    }
+}

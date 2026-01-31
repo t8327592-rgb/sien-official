@@ -731,6 +731,13 @@
                 if (res.status === 401) return logout();
                 DATA = await res.json();
 
+                // Ensure Prices Structure (Migration from Old Data)
+                if (!DATA.prices || typeof DATA.prices !== 'object') DATA.prices = {};
+                if (!Array.isArray(DATA.prices.mix)) DATA.prices.mix = [];
+                if (!Array.isArray(DATA.prices.orig)) DATA.prices.orig = [];
+                // Ensure Voices
+                if (!DATA.voices) DATA.voices = [];
+
                 renderOrders();
                 renderPortfolio();
                 renderPrices();
@@ -775,7 +782,18 @@
 
             // 1. Filter
             list = list.filter(o => {
-                const matchesStatus = currentStatusFilter === 'all' || o.status === currentStatusFilter;
+                // Archive feature: Exclude 'キャンセル' from 'all'
+                const isCancelled = o.status === 'キャンセル';
+                let matchesStatus = false;
+
+                if (currentStatusFilter === 'all') {
+                    matchesStatus = !isCancelled;
+                } else if (currentStatusFilter === 'キャンセル') {
+                    matchesStatus = isCancelled;
+                } else {
+                    matchesStatus = o.status === currentStatusFilter;
+                }
+
                 const matchesSearch = !query ||
                     (o['曲名'] && o['曲名'].toLowerCase().includes(query.toLowerCase())) ||
                     (o['ご依頼者名'] && o['ご依頼者名'].toLowerCase().includes(query.toLowerCase()));

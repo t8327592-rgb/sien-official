@@ -344,12 +344,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const createWorkItem = (video) => {
         const item = document.createElement('div');
         item.className = 'work-item';
+        // Ensure flex column layout in CSS for vertical alignment
         item.innerHTML = `
             <div class="video-container">
                 <iframe src="https://www.youtube.com/embed/${video.id}" frameborder="0" allowfullscreen></iframe>
             </div>
             <p class="work-title" style="margin-bottom: 5px;">${video.title || video.comment || ''}</p>
-            <p class="work-role" style="font-size: 0.8rem; color: #666; padding: 0 15px 15px;">${video.role || 'Mix / Mastering'}</p>
+            <p class="work-role" style="font-size: 0.8rem; color: #666; padding: 0 15px 15px; margin-top: auto;">${video.role || 'ミックス／マスタリング'}</p>
         `;
         return item;
     };
