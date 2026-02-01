@@ -82,14 +82,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 3. API Submission (Placeholder for new Vercel KV system)
-            // TODO: Implement new submission logic here
-            console.log("Form submitted (Waiting for new API implementation)");
+            // 3. API Submission
+            const submitBtn = orderForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
+            submitBtn.disabled = true;
 
-            // Temporary UI feedback for testing interactions
-            // const btn = orderForm.querySelector('button[type="submit"]');
-            // btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 送信中...';
-            // btn.disabled = true;
+            const formData = new FormData(orderForm);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+
+            fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        orderForm.reset();
+                        document.getElementById('input-area').style.display = 'none';
+                        successMessage.classList.remove('hidden');
+                        successMessage.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        alert('送信に失敗しました。時間をおいて再度お試しください。');
+                        submitBtn.innerHTML = originalBtnText;
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('送信エラーが発生しました。');
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                });
         });
     }
 
