@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Favicon -->
+    <link rel="icon" href="./assets/favicon.ico">
+
     <style>
         :root {
             /* Copied from style.css */
@@ -83,12 +86,6 @@
             color: var(--text-main);
             text-decoration: none;
             font-family: var(--font-heading);
-        }
-
-        .brand span {
-            color: var(--text-muted);
-            font-size: 1rem;
-            font-weight: 400;
         }
 
         .brand img {
@@ -487,18 +484,13 @@
         .admin-footer {
             background: var(--bg-dark);
             color: #d1d5db;
-            padding: 60px 0;
-            margin-top: auto;
+            padding: 20px 0;
             font-size: 0.9rem;
+            text-align: center;
         }
 
         .footer-cols {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 40px;
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 40px;
+            display: none;
         }
 
         .footer-col h4 {
@@ -585,14 +577,8 @@
     <header class="admin-header">
         <a href="#" class="brand">
             <img src="./assets/logo.png" alt="Logo">
-            <span>|</span>
-            <span>Studio</span>
         </a>
         <div class="user-menu">
-            <span style="font-size:0.9rem;">Admin User</span>
-            <div class="user-avatar">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="User">
-            </div>
             <button onclick="logout()" class="btn btn-sm" style="background:#eee;">Logout</button>
         </div>
     </header>
@@ -614,7 +600,6 @@
             <div id="tab-orders" class="tab-pane active">
                 <div class="page-header">
                     <div class="page-title">依頼管理</div>
-                    <span class="badge-rank">クリエイターランク：シルバー 🥈</span>
                 </div>
 
                 <div class="filter-section">
@@ -649,7 +634,6 @@
                             <th>曲名</th>
                             <th>ご依頼者名</th>
                             <th>プラン</th>
-                            <th>支払いリンク</th>
                             <th>納期 <i class="fa-solid fa-gear" style="color:var(--primary);"></i></th>
                             <th>納品完了/キャンセル</th>
                             <th>ステータス</th>
@@ -696,28 +680,7 @@
     </main>
 
     <footer class="admin-footer">
-        <div class="footer-cols">
-            <div class="footer-col">
-                <h4>カテゴリー一覧</h4>
-                <ul>
-                    <li><a href="#">Mix & Mastering</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>プラン一覧</h4>
-                <ul>
-                    <li><a href="#">スタンダードプラン</a></li>
-                </ul>
-            </div>
-            <div class="footer-col" style="grid-column: span 2;">
-                <div style="background:white; color:#333; padding:20px; border-radius:4px;">
-                    <p style="font-weight:bold; margin-bottom:10px;">運営へのご意見・要望</p>
-                    <textarea style="width:100%; border:1px solid #ddd; padding:10px; height:80px;"></textarea>
-                    <button class="btn btn-primary" style="width:100%; margin-top:10px;">送信する</button>
-                </div>
-            </div>
-        </div>
-        <div style="text-align:center; margin-top:40px; border-top:1px solid #374151; padding-top:20px;">
+        <div style="text-align:center;">
             Copyright (c) 2026 Sien-Official. All Rights Reserved.
         </div>
     </footer>
@@ -819,6 +782,7 @@
 
             list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+            // Update Counts
             const counts = { 'archive': (DATA.archive || []).length };
             (DATA.orders || []).forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
 
@@ -837,13 +801,9 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${new Date(order.date).toLocaleDateString('ja-JP')}</td>
-                    <td class="client-name">${order['曲名']}</td>
+                    <td class="client-name" onclick="showDetail('${order.id}')">${order['曲名']}</td>
                     <td>${order['ご依頼者名']}</td>
                     <td class="plan-name">${order['プラン']}</td>
-                    <td>
-                        <a href="#" class="pay-link" onclick="promptPayLink('${order.id}')">¥ 支払いリンク</a> 
-                        <span style="font-size:0.8em; margin-left:5px;">${order.paymentLink ? '<i class="fa-solid fa-check" style="color:var(--primary);"></i>' : '未'}</span>
-                    </td>
                     <td>
                         <input type="date" value="${order.deadline || ''}" 
                             style="border:none; background:transparent; font-family:inherit; cursor:pointer; color:#666;"
@@ -869,14 +829,63 @@
             });
         }
 
-        async function promptPayLink(id) {
+        function showDetail(id) {
             const order = [...(DATA.orders || []), ...(DATA.archive || [])].find(o => o.id === id);
             if (!order) return;
-            const link = prompt("支払いリンクを入力:", order.paymentLink || "");
+
+            document.getElementById('tab-orders').classList.remove('active');
+            document.getElementById('tab-order-detail').classList.add('active');
+
+            const content = document.getElementById('detail-content');
+            content.innerHTML = `
+                <div style="background:#f9fafb; padding:20px; border-radius:8px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <h3 style="font-size:1.2rem;">${order['曲名']}</h3>
+                        <span class="status-badge" style="background:white;">${order.status}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.9rem;">
+                        <div><strong>ご依頼者:</strong> ${order['ご依頼者名']}</div>
+                        <div><strong>Email:</strong> ${order['email'] || '-'}</div>
+                        <div><strong>プラン:</strong> ${order['プラン']}</div>
+                        <div><strong>ご依頼日:</strong> ${new Date(order.date).toLocaleDateString('ja-JP')}</div>
+                        <div><strong>納期:</strong> ${order.deadline || '未設定'}</div>
+                        <div><strong>支払いリンク:</strong> <input value="${order.paymentLink || ''}" placeholder="Payment Link" 
+                            onchange="promptPayLink('${order.id}', this.value)" style="padding:4px; border:1px solid #ddd; border-radius:4px; width:200px;"></div>
+                    </div>
+                </div>
+
+                <div style="background:white; border:1px solid #eee; padding:20px; border-radius:8px;">
+                     <h4 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">メッセージ / 詳細</h4>
+                     <p style="white-space:pre-wrap; color:#444;">${order['要望・相談'] || 'メッセージなし'}</p>
+                     
+                     <div style="margin-top:20px;">
+                        <strong>参考ファイル/URL:</strong>
+                        <div style="margin-top:5px; padding:10px; background:#f0f9ff; color:#0369a1; border-radius:4px;">
+                            ${order['参考音源'] || 'なし'}
+                        </div>
+                     </div>
+                </div>
+            `;
+        }
+
+        function closeDetail() {
+            document.getElementById('tab-order-detail').classList.remove('active');
+            document.getElementById('tab-orders').classList.add('active');
+        }
+
+        // Updated promptPayLink to accept direct value if provided, or prompt
+        async function promptPayLink(id, val = null) {
+            let link = val;
+            if (link === null) {
+                const order = [...(DATA.orders || []), ...(DATA.archive || [])].find(o => o.id === id);
+                if (!order) return;
+                link = prompt("支払いリンクを入力:", order.paymentLink || "");
+            }
             if (link !== null) {
                 await postAPI('update_order_status', { orderId: id, updates: { paymentLink: link } });
-                order.paymentLink = link;
-                renderOrders();
+                const order = [...(DATA.orders || []), ...(DATA.archive || [])].find(o => o.id === id);
+                if (order) order.paymentLink = link;
+                if (document.getElementById('tab-orders').classList.contains('active')) renderOrders();
             }
         }
 
