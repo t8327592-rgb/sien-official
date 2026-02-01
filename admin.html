@@ -4,726 +4,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creator Dashboard | Sien-Official</title>
-    <link rel="icon" type="image/png" href="./assets/favicon.png">
-
+    <title>Admin Dashboard | Sien-Official</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap"
         rel="stylesheet">
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Global Style -->
-    <link rel="stylesheet" href="style.css">
-
     <style>
-        /* --- ADMIN DASHBOARD THEME --- */
+        :root {
+            --primary: #4A90E2;
+            --bg-color: #f3f4f6;
+            --text-main: #333;
+            --text-muted: #666;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Jost', 'Noto Sans JP', sans-serif;
+        }
+
         body {
-            background-color: var(--bg-gray);
-            font-family: var(--font-body);
+            background-color: var(--bg-color);
             color: var(--text-main);
-        }
-
-        /* Utils */
-        .hidden {
-            display: none !important;
-        }
-
-        .flex {
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
         }
 
-        .items-center {
-            align-items: center;
-        }
-
-        .justify-between {
-            justify-content: space-between;
-        }
-
-        .gap-2 {
-            gap: 0.5rem;
-        }
-
-        .gap-4 {
-            gap: 1rem;
-        }
-
-        .mt-4 {
-            margin-top: 1rem;
-        }
-
-        .mb-4 {
-            margin-bottom: 1rem;
-        }
-
-        .text-sm {
-            font-size: 0.875rem;
-        }
-
-        .text-gray {
-            color: var(--text-muted);
-        }
-
-        .font-bold {
-            font-weight: 700;
-        }
-
-        .w-full {
-            width: 100%;
-        }
-
-        /* Auth Screen */
-        #auth-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .auth-card {
-            background: white;
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        /* Nav & Headers */
+        /* HEADER */
         .admin-header {
-            background: white;
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 24px;
-            height: 64px;
+            background: var(--white);
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .brand {
-            font-family: var(--font-heading);
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
+            letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            color: #000;
+            text-decoration: none;
         }
 
         .brand span {
-            color: var(--accent-blue);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .brand img {
+            height: 24px;
         }
 
         .user-menu {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 15px;
         }
 
-        .avatar img {
+        .user-avatar {
             width: 32px;
             height: 32px;
+            background: #ddd;
             border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
 
-        /* NAVIGATION */
-        .nav-bar {
-            background: white;
+        /* SUB NAV */
+        .sub-nav {
+            background: var(--white);
             border-bottom: 1px solid var(--border-color);
-            padding: 0 24px;
+            padding: 0 40px;
             display: flex;
-            gap: 24px;
+            gap: 30px;
         }
 
-        .nav-item {
-            padding: 16px 0;
+        .nav-tab {
+            padding: 15px 5px;
             font-size: 0.9rem;
-            font-weight: 500;
             color: var(--text-muted);
             cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.2s;
+            position: relative;
+            transition: color 0.2s;
         }
 
-        .nav-item:hover {
-            color: var(--accent-blue);
+        .nav-tab:hover {
+            color: var(--primary);
         }
 
-        .nav-item.active {
-            color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
+        .nav-tab.active {
+            color: var(--primary);
+            font-weight: 600;
         }
 
-        /* Main Layout */
-        .main-content {
-            padding: 32px 24px;
-            max-width: 1200px;
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        /* MAIN */
+        .main-container {
+            flex: 1;
+            padding: 30px 40px;
+            max-width: 1400px;
             margin: 0 auto;
+            width: 100%;
+        }
+
+        .breadcrumb {
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb span {
+            color: var(--text-muted);
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .page-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin-bottom: 2rem;
+        }
+
+        .badge-rank {
+            font-size: 0.8rem;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .content-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            min-height: 600px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* FILTER */
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .search-row {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        /* FILTER BAR */
-        .filter-bar {
+        .search-input-group {
             display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            background: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .filter-chip {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .filter-chip:hover {
-            background: #f3f4f6;
-        }
-
-        .filter-chip.active {
-            background: #eff6ff;
-            color: var(--accent-blue);
-            font-weight: 600;
-        }
-
-        .search-input {
-            margin-left: auto;
-            border: 1px solid #e5e7eb;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            width: 250px;
-        }
-
-        /* DATA TABLE */
-        .data-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid #ddd;
+            border-radius: 4px;
             overflow: hidden;
-            border: 1px solid #e5e7eb;
+            width: 300px;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th {
-            background: #f9fafb;
-            padding: 16px 24px;
-            text-align: left;
+        .search-prefix {
+            background: var(--primary);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.9rem;
             font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: #6b7280;
-            letter-spacing: 0.05em;
-        }
-
-        .data-table td {
-            padding: 16px 24px;
-            border-top: 1px solid #f3f4f6;
-            vertical-align: middle;
-            color: #374151;
-        }
-
-        .data-table tr:hover {
-            background: #f9fafb;
-            transition: background 0.1s;
-        }
-
-        .user-cell {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .user-sub {
-            font-size: 0.8rem;
-            color: #9ca3af;
-        }
-
-        /* STATUS BADGES */
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
             white-space: nowrap;
         }
 
-        .bg-gray-100 {
-            background: #f3f4f6;
-            color: #4b5563;
+        .search-input {
+            border: none;
+            padding: 8px 12px;
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
         }
 
-        .bg-orange-100 {
-            background: #fff7ed;
-            color: #c2410c;
+        .status-tabs {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
         }
 
-        .bg-green-100 {
-            background: #ecfdf5;
-            color: #047857;
+        .status-tab {
+            cursor: pointer;
+            position: relative;
+            padding-bottom: 5px;
         }
 
-        .bg-blue-100 {
-            background: #eff6ff;
-            color: #1e40af;
+        .status-tab:hover {
+            color: var(--primary);
         }
 
-        .bg-red-100 {
-            background: #fef2f2;
-            color: #b91c1c;
+        .status-tab.active {
+            color: var(--primary);
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary);
         }
 
-        /* PORTFOLIO GRID */
+        .count-badge {
+            margin-left: 4px;
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        /* TABLE */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 12px 10px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+
+        .admin-table td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #f9f9f9;
+            vertical-align: middle;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .plan-name {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .pay-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .pay-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-btn {
+            background: #9ca3af;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .status-btn.done {
+            background: #888;
+        }
+
+        .status-btn.active {
+            background: var(--primary);
+        }
+
+        .status-badge {
+            border: 1px solid #ddd;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* PF GRID */
         .pf-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
+            gap: 20px;
         }
 
-        .pf-card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
+        .pf-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
             overflow: hidden;
-            transition: transform 0.2s;
+            background: #fff;
         }
-
-
 
         .pf-thumb {
-            aspect-ratio: 16/9;
-            background: #111;
+            height: 170px;
+            background: #000;
             position: relative;
         }
 
         .pf-thumb iframe {
             width: 100%;
             height: 100%;
-            opacity: 0.8;
-            pointer-events: none;
-        }
-
-        .pf-body {
-            padding: 16px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #6b7280;
-            margin-bottom: 4px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-            transition: border 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .action-bar {
-            border-top: 1px solid #f3f4f6;
-            padding: 10px 16px;
-            display: flex;
-            justify-content: flex-end;
-            background: #f9fafb;
-        }
-
-        /* BUTTONS */
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
             border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
         }
 
-        .btn-primary {
-            background: var(--accent-blue);
-            color: white;
+        .pf-inputs {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .btn-primary:hover {
-            background: var(--accent-dark);
+        .pf-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            font-size: 0.85rem;
         }
 
-        .btn-danger {
-            background: white;
-            color: #ef4444;
-            border: 1px solid #ef4444;
-        }
-
-        .btn-danger:hover {
-            background: #fef2f2;
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: #6b7280;
-        }
-
-        .btn-ghost:hover {
-            background: #f3f4f6;
-            color: #111;
-        }
-
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 0.8rem;
-        }
-
-        .loading-spinner {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #111;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Price Form */
-        .price-container {
+        /* PRICES */
+        .price-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
             max-width: 800px;
             margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
+        }
+
+        .price-group {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 30px;
         }
 
         .price-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
         }
 
-        .price-row:last-child {
-            border-bottom: none;
-        }
-
-        /* MODAL */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .price-input-lg {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 8px;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.2s;
         }
 
-        .modal.open {
-            opacity: 1;
-            pointer-events: auto;
+        /* FOOTER */
+        .admin-footer {
+            background: #1f2937;
+            color: #d1d5db;
+            padding: 40px;
+            margin-top: auto;
+            font-size: 0.85rem;
         }
 
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            border-radius: 12px;
-            overflow-y: auto;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            position: relative;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #f3f4f6;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-modal:hover {
-            background: #e5e7eb;
-        }
-
-        .detail-row {
+        .footer-cols {
             display: grid;
-            grid-template-columns: 140px 1fr;
-            gap: 20px;
-            padding: 12px 0;
-            border-bottom: 1px solid #f3f4f6;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-col h4 {
+            color: white;
+            margin-bottom: 15px;
             font-size: 0.9rem;
         }
 
-        .detail-label {
-            font-weight: 600;
-            color: var(--text-muted);
+        .footer-col ul {
+            list-style: none;
         }
 
-        .detail-value a {
-            color: var(--accent-blue);
-            text-decoration: underline;
+        .footer-col li {
+            margin-bottom: 8px;
+        }
+
+        .footer-col a {
+            color: #9ca3af;
+            text-decoration: none;
+        }
+
+        .footer-col a:hover {
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 
 <body>
-
-    <!-- Loading Indicator -->
-    <div id="loading" class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Saving...</div>
-
-    <!-- Auth Screen -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h2 class="brand mb-4"><span>></span>Sien-Official</h2>
-            <p class="text-gray mb-4">管理パスワードを入力してください</p>
-            <input type="password" id="auth-pass" class="form-input" style="text-align: center;" placeholder="Password">
-            <button class="btn btn-primary w-full mt-4" onclick="login()">ダッシュボードにログイン</button>
-            <p id="auth-msg" class="text-sm mt-4" style="color:#ef4444;"></p>
+    <!-- AUTH -->
+    <div id="auth-screen"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f3f4f6; z-index:9999; display:flex; align-items:center; justify-content:center;">
+        <div
+            style="background:white; padding:40px; border-radius:8px; width:350px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+            <h2 style="font-weight:700; margin-bottom:20px;">Sien-Official</h2>
+            <input type="password" id="auth-pass" placeholder="Password"
+                style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+            <button onclick="login()" class="btn btn-primary" style="width:100%;">Login</button>
         </div>
     </div>
 
-    <!-- Header -->
     <header class="admin-header">
-        <div class="brand"><a href="index.html" target="_blank"><img src="./assets/logo.png" alt="Sien-Official"
-                    style="height:35px;"></a></div>
+        <a href="#" class="brand">
+            <img src="./assets/logo.png" alt="Logo">
+            <span>|</span>
+            <span>Studio</span>
+        </a>
         <div class="user-menu">
-            <!-- User Info Removed -->
-            <button class="btn btn-ghost btn-sm" onclick="logout()"><i
-                    class="fa-solid fa-right-from-bracket"></i></button>
+            <span style="font-size:0.9rem;">Admin User</span>
+            <div class="user-avatar">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="User">
+            </div>
+            <button onclick="logout()" class="btn btn-sm" style="background:#eee;">Logout</button>
         </div>
     </header>
 
-    <!-- Nav -->
-    <nav class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('orders')">依頼管理</div>
-        <div class="nav-item" onclick="switchTab('portfolio')">ポートフォリオ</div>
-        <div class="nav-item" onclick="switchTab('prices')">プラン・料金設定</div>
-        <div class="nav-item" onclick="switchTab('voices')">お客様の声</div>
+    <nav class="sub-nav">
+        <div class="nav-tab active" onclick="switchTab('orders', this)">依頼管理</div>
+        <div class="nav-tab" onclick="switchTab('portfolio', this)">ポートフォリオ</div>
+        <div class="nav-tab" onclick="switchTab('prices', this)">プラン・料金設定</div>
+        <div class="nav-tab" onclick="switchTab('account', this)">アカウント設定</div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-container">
+        <div class="breadcrumb">
+            マイページTOP > <span id="page-crumb">依頼管理</span>
+        </div>
 
-        <!-- Tab: Orders -->
-        <div id="tab-orders" class="tab-pane">
-            <div class="page-title">
-                依頼管理
-            </div>
-
-            <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="flex gap-2" style="flex-wrap:wrap;">
-                    <span style="font-weight:bold; margin-right:10px;">絞り込み:</span>
-                    <div class="filter-chip active" onclick="filterOrders('all', this)">全て <span id="cnt-all"></span>
-                    </div>
-                    <div class="filter-chip" onclick="filterOrders('未着手', this)">未着手 <span id="cnt-new"></span></div>
-                    <div class="filter-chip" onclick="filterOrders('支払い待ち', this)">支払い待ち <span id="cnt-pay"></span>
-                    </div>
-                    <div class="filter-chip" onclick="filterOrders('全て入金済み', this)">入金済み <span id="cnt-paid"></span>
-                    </div>
-                    <div class="filter-chip" onclick="filterOrders('納品済み', this)">納品済み <span id="cnt-done"></span></div>
-                    <div class="filter-chip" onclick="filterOrders('取引終了', this)">取引終了 <span id="cnt-closed"></span>
-                    </div>
-                    <div class="filter-chip" onclick="filterOrders('archive', this)"
-                        style="background:#f3f4f6; color:#999;">アーカイブ (キャンセル等) <span id="cnt-arch"></span></div>
+        <section class="content-card">
+            <!-- ORDERS TAB -->
+            <div id="tab-orders" class="tab-pane active">
+                <div class="page-header">
+                    <div class="page-title">依頼管理</div>
+                    <span class="badge-rank">クリエイターランク：シルバー 🥈</span>
                 </div>
-                <div class="flex gap-2">
-                    <input type="text" id="order-search" class="search-input" placeholder="名前/曲名で検索"
-                        onkeyup="renderOrders(this.value)" style="width:200px;">
-                    <select id="order-sort" class="form-input" style="width:auto; margin:0;" onchange="renderOrders()">
-                        <option value="newest">新着順</option>
-                        <option value="deadline">納期が近い順</option>
-                        <option value="status">ステータス順</option>
-                    </select>
-                    <button class="btn btn-primary btn-sm" onclick="fetchData()"><i
-                            class="fa-solid fa-rotate-right"></i></button>
-                </div>
-            </div>
 
-            <div class="data-card">
-                <table class="data-table">
+                <div class="filter-section">
+                    <div class="search-row">
+                        <div class="search-input-group">
+                            <div class="search-prefix"><i class="fa-solid fa-folder"></i> = まとめて依頼</div>
+                            <input type="text" class="search-input" placeholder="依頼者名で絞り込み"
+                                onkeyup="renderOrders(this.value)">
+                        </div>
+                    </div>
+                    <div class="status-tabs">
+                        <div class="status-tab active" onclick="setFilter('all', this)">全て(<span id="cnt-all">0</span>)
+                        </div>
+                        <div class="status-tab" onclick="setFilter('未着手', this)">未着手(<span id="cnt-new">0</span>)</div>
+                        <div class="status-tab" onclick="setFilter('支払い待ち', this)">支払い待ち(<span id="cnt-pay">0</span>)
+                        </div>
+                        <div class="status-tab" onclick="setFilter('全て入金済み', this)">入金済み(<span id="cnt-paid">0</span>)
+                        </div>
+                        <div class="status-tab" onclick="setFilter('納品済み', this)">納品済み(<span id="cnt-done">0</span>)
+                        </div>
+                        <div class="status-tab" onclick="setFilter('取引終了', this)">取引終了(<span id="cnt-closed">0</span>)
+                        </div>
+                        <div class="status-tab" onclick="setFilter('archive', this)">キャンセル(<span
+                                id="cnt-cancel">0</span>)</div>
+                    </div>
+                </div>
+
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>ご依頼日</th>
                             <th>曲名</th>
                             <th>ご依頼者名</th>
                             <th>プラン</th>
-                            <th>支払い</th>
-                            <th>納期</th>
+                            <th>支払いリンク</th>
+                            <th>納期 <i class="fa-solid fa-gear" style="color:var(--primary);"></i></th>
+                            <th>納品完了/キャンセル</th>
                             <th>ステータス</th>
                         </tr>
                     </thead>
-                    <tbody id="order-list">
-                        <!-- JS Insert -->
-                    </tbody>
+                    <tbody id="order-tbody"></tbody>
                 </table>
             </div>
-        </div>
 
-        <!-- Tab: Portfolio -->
-        <div id="tab-portfolio" class="tab-pane hidden">
-            <div class="flex justify-between items-center mb-4">
-                <div class="page-title" style="margin:0;">ポートフォリオ</div>
-                <button class="btn btn-primary" onclick="savePortfolio()"><i class="fa-solid fa-cloud-arrow-up"></i>
-                    変更を保存</button>
+            <!-- PORTFOLIO TAB -->
+            <div id="tab-portfolio" class="tab-pane">
+                <div class="page-header" style="justify-content:space-between;">
+                    <div class="page-title">ポートフォリオ設定</div>
+                    <button class="btn btn-primary" onclick="savePf()">保存する</button>
+                </div>
+                <div class="mb-4">
+                    <button class="btn" style="background:#eee;" onclick="addPf()">+ 追加</button>
+                    <select id="pf-cat-select" onchange="renderPf()" style="padding:5px; margin-left:10px;">
+                        <option value="works">制作実績 (Works)</option>
+                        <option value="mix">ミックス (Mix)</option>
+                        <option value="orig">オリジナル (Original)</option>
+                    </select>
+                </div>
+                <div id="pf-container" class="pf-grid"></div>
             </div>
 
-            <div class="mb-4">
-                <div class="filter-bar" style="display:inline-flex;">
-                    <div class="filter-chip active" onclick="switchPfCat('works', this)">制作実績 (Works)</div>
-                    <div class="filter-chip" onclick="switchPfCat('mix', this)">ミックス／マスタリング</div>
-                    <div class="filter-chip" onclick="switchPfCat('orig', this)">オリジナル楽曲制作</div>
+            <!-- PRICES TAB -->
+            <div id="tab-prices" class="tab-pane">
+                <div class="page-header" style="justify-content:space-between;">
+                    <div class="page-title">プラン・料金設定</div>
+                    <button class="btn btn-primary" onclick="savePrices()">保存する</button>
+                </div>
+                <div id="price-container" class="price-stack"></div>
+                <div style="text-align:center; margin-top:30px;">
+                    <button class="btn" style="background:#eee;" onclick="addPlan()">+ プランを追加</button>
                 </div>
             </div>
 
-            <!-- Pf Works -->
-            <div id="pf-works" class="pf-grid"></div>
-            <div id="pf-mix" class="pf-grid hidden"></div>
-            <div id="pf-orig" class="pf-grid hidden"></div>
-
-            <div class="mt-4 text-center">
-                <button class="btn btn-ghost" style="border:1px dashed #ccc; width:100%; padding:20px;"
-                    onclick="addPfItem()">+ 新規アイテムを追加</button>
+            <div id="tab-account" class="tab-pane">
+                <div class="page-title">アカウント設定</div>
+                <p>Not implemented yet.</p>
             </div>
-        </div>
-
-        <!-- Tab: Prices -->
-        <div id="tab-prices" class="tab-pane hidden">
-            <div class="page-title">プラン・料金設定</div>
-            <div class="price-container">
-                <h3 class="font-bold mb-4"
-                    style="border-bottom:2px solid var(--accent-blue); padding-bottom:10px; display:inline-block;">基本プラン
-                </h3>
-                <div id="price-form">
-                    <!-- JS Insert -->
-                </div>
-                <div class="mt-4 text-right">
-                    <button class="btn btn-primary" onclick="savePrices()">設定を保存</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab: Order Detail -->
-        <div id="tab-order-detail" class="tab-pane hidden">
-            <div class="mb-4">
-                <button class="btn btn-ghost btn-sm" onclick="backToOrders()"><i class="fa-solid fa-arrow-left"></i>
-                    依頼一覧に戻る</button>
-            </div>
-            <div class="page-title">
-                依頼詳細
-            </div>
-            <div class="price-container" style="max-width:100%;">
-                <div id="detail-content">
-                    <!-- JS Render -->
-                </div>
-                <!-- Tab: Voices -->
-                <div id="tab-voices" class="tab-pane hidden">
-                    <div class="page-title">お客様の声 管理</div>
-                    <div class="mb-4 text-right">
-                        <button class="btn btn-primary" onclick="addVoice()">+ 感想を追加</button>
-                        <button class="btn btn-primary" onclick="saveVoices()">保存</button>
-                    </div>
-                    <div id="voice-list" class="pf-grid" style="grid-template-columns: 1fr;"></div>
-                </div>
-
+        </section>
     </main>
 
+    <footer class="admin-footer">
+        <div class="footer-cols">
+            <div class="footer-col">
+                <h4>カテゴリー一覧</h4>
+                <ul>
+                    <li><a href="#">Mix & Mastering</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>プラン一覧</h4>
+                <ul>
+                    <li><a href="#">スタンダードプラン</a></li>
+                </ul>
+            </div>
+            <div class="footer-col" style="grid-column: span 2;">
+                <div style="background:white; color:#333; padding:20px; border-radius:4px;">
+                    <p style="font-weight:bold; margin-bottom:10px;">運営へのご意見・要望</p>
+                    <textarea style="width:100%; border:1px solid #ddd; padding:10px; height:80px;"></textarea>
+                    <button class="btn btn-primary" style="width:100%; margin-top:10px;">送信する</button>
+                </div>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:40px; border-top:1px solid #374151; padding-top:20px;">
+            Copyright (c) 2026 Sien-Official. All Rights Reserved.
+        </div>
+    </footer>
 
-
-
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // --- CORE STATE ---
         let TOKEN = localStorage.getItem('admin_token') || '';
-        let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] }, voices: [] };
+        let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] } };
         let activePfCat = 'works';
 
-        // CONSTANTS
-        const PLAN_MAP = {
-            'standard': 'スタンダードプラン',
-            'one_chorus': 'ワンコーラスプラン',
-            'short': 'ショート動画用MIX',
-            'speed': 'スピードプラン',
-            'super_speed': '超スピードプラン',
-            'collab': 'コラボ・合唱プラン',
-            'original_std': 'オリジナル楽曲 スタンダード',
-            'original_lyrics': 'オリジナル楽曲 作詞持ち込み',
-            'other': 'その他・ご相談'
-        };
-        const PAY_MAP = {
-            'bank_transfer': '銀行振込',
-            'credit_card': 'クレジットカード'
-        };
-
-        // --- AUTH ---
         function checkAuth() {
             if (TOKEN) {
                 document.getElementById('auth-screen').style.display = 'none';
@@ -732,476 +603,35 @@
         }
         async function login() {
             const pass = document.getElementById('auth-pass').value;
-            if (!pass) return;
             try {
                 const res = await fetch('/api/admin', { headers: { 'x-admin-password': pass } });
                 if (res.ok) {
                     TOKEN = pass;
                     localStorage.setItem('admin_token', pass);
                     checkAuth();
-                } else {
-                    document.getElementById('auth-msg').innerText = "パスワードが正しくありません";
-                }
-            } catch (e) { alert("Network Error"); }
+                } else alert("Invalid Password");
+            } catch (e) { alert("Error"); }
         }
         function logout() { localStorage.removeItem('admin_token'); location.reload(); }
 
-        // --- FETCH ---
-        // --- FETCH ---
         async function fetchData() {
-            document.getElementById('loading').style.display = 'flex';
             try {
                 const res = await fetch('/api/admin', { headers: { 'x-admin-password': TOKEN } });
-                if (res.status === 401) return logout();
-                const fetched = await res.json();
-                DATA = { ...DATA, ...fetched }; // Merge to keep structure
+                if (res.status === 401) { logout(); return; }
+                const json = await res.json();
+                DATA = { ...DATA, ...json };
 
-                // Ensure Arrays
-                if (!DATA.orders) DATA.orders = [];
+                if (Array.isArray(DATA.prices)) DATA.prices = { mix: [], orig: [] };
+                if (!DATA.prices.mix) DATA.prices.mix = [];
+                if (!DATA.prices.orig) DATA.prices.orig = [];
                 if (!DATA.archive) DATA.archive = [];
-                if (!DATA.voices) DATA.voices = [];
-
-                // --- DATA MIGRATION CHECK ---
-                if (!DATA.prices || typeof DATA.prices !== 'object' || !Array.isArray(DATA.prices.mix)) {
-                    // ... (Migration logic omitted for brevity, keeping existing if needed, but assuming already migrated or handled in API)
-                    // Re-implementing simplified migration if needed, or trusting API/previous run.
-                    // For safety, let's keep the migration block short or existing. 
-                    // Actually, replacing meaningful block with shorter one might lose migration logic.
-                    // I will execute a separate replacement for fetchData specifically if I want to keep migration logic intact.
-                    // For this replacement, I will assume Migration is done or I need to preserve it.
-                    // Let's use specific replacement for `const res` part only.
-                }
 
                 renderOrders();
-                renderPortfolio();
+                renderPf();
                 renderPrices();
-                renderVoices();
-                updateOrderCounts();
-
             } catch (e) { console.error(e); }
-            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
-        // --- NAV & FILTER ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            const nav = document.getElementById('nav-' + tabId);
-            if (nav) nav.classList.add('active');
-
-            if (tabId === 'orders') renderOrders();
-        }
-
-        let currentStatusFilter = 'all';
-        function setStatusFilter(status, btn) {
-            currentStatusFilter = status;
-            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            renderOrders();
-        }
-
-        function updateOrderCounts() {
-            if (!DATA.orders) return;
-            const counts = {
-                '未着手': 0, '支払い待ち': 0, '全て入金済み': 0,
-                '納品済み': 0, '取引終了': 0, 'キャンセル': 0
-            };
-            DATA.orders.forEach(o => {
-                if (counts[o.status] !== undefined) counts[o.status]++;
-            });
-            // Update sidebar (if badges exist) or filter chips
-            // Not strictly required if UI doesn't show sidebar badges, 
-            // but 'Archive' count might be useful.
-            // For now just basic placeholder or remove if unused in HTML.
-            // HTML likely has no badges based on current snippets.
-        }
-
-        function renderOrders(query = '') {
-            if (!query) query = document.getElementById('order-search') ? document.getElementById('order-search').value : '';
-            const tbody = document.getElementById('order-list');
-            tbody.innerHTML = '';
-
-            let list = [];
-            let isArchiveView = currentStatusFilter === 'archive';
-
-            if (isArchiveView) {
-                list = [...(DATA.archive || [])];
-            } else {
-                list = [...(DATA.orders || [])];
-                // Filter cancellation from main list if showing 'all'?
-                // Actually 'all' should usually exclude archive/cancel if they are moved to archive list.
-                // Since we moved to archive list, DATA.orders shouldn't have them.
-                // But just in case:
-                if (currentStatusFilter !== 'all') {
-                    list = list.filter(o => o.status === currentStatusFilter);
-                }
-            }
-
-            // Search
-            if (query) {
-                list = list.filter(o =>
-                    (o['曲名'] && o['曲名'].toLowerCase().includes(query.toLowerCase())) ||
-                    (o['ご依頼者名'] && o['ご依頼者名'].toLowerCase().includes(query.toLowerCase()))
-                );
-            }
-
-            // Sort
-            const sortMode = document.getElementById('order-sort') ? document.getElementById('order-sort').value : 'newest';
-            if (sortMode === 'deadline') {
-                list.sort((a, b) => (a['納期'] || '99999') > (b['納期'] || '99999') ? 1 : -1);
-            } else if (sortMode === 'status') {
-                list.sort((a, b) => a.status.localeCompare(b.status));
-            } else {
-                list.reverse(); // Newest first
-            }
-
-            list.forEach((o, idx) => { // idx here is local to sorted list, need real index?
-                // For actions like restore/archive, we need REAL index in the source array.
-                // Since we sorted/filtered, finding index is tricky.
-                // We should store original index or use ID if possible.
-                // KV lists rely on index.
-                // But wait, if we delete from DB based on index, and we have filtered list...
-                // Our API `archive_order` takes `index`. This assumes `DATA.orders` index matches DB index.
-                // Sorting/Filtering breaks this 1:1 mapping.
-
-                // CRITICAL FIX: We must pass the ORIGINAL index from the DATA.orders array.
-                // Let's find the `realIndex`.
-                let realIndex = -1;
-                if (isArchiveView) {
-                    realIndex = DATA.archive.indexOf(o);
-                } else {
-                    realIndex = DATA.orders.indexOf(o);
-                }
-
-                const date = new Date(o.date).toLocaleDateString('ja-JP');
-                const badgeClass = getStatusClass(o.status);
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><div class="text-sm font-bold text-gray">${date}</div></td>
-                    <td><div class="font-bold text-primary" style="color:var(--accent-blue); cursor:pointer;" onclick="showOrderDetail('${o.id}')">${o['曲名']}</div></td>
-                    <td><div class="user-cell"><span class="user-name">${o['ご依頼者名']}</span><span class="user-sub">${o['TwitterID(任意)']}</span></div></td>
-                    <td><span class="text-sm">${PLAN_MAP[o['プラン']] || o['プラン']}</span></td>
-                    <td>
-                         ${o.paymentLink ? `<a href="${o.paymentLink}" target="_blank" class="btn btn-ghost btn-sm" style="color:#0ea5e9;">¥ 支払いリンク</a>` : `<button class="btn btn-ghost btn-sm text-gray" onclick="setPayLink('${o.id}')">未設定</button>`}
-                    </td>
-                    <td><span class="text-sm text-gray">未設定</span></td>
-                    <td>
-                        ${isArchiveView ?
-                        `<button class="btn btn-primary btn-sm" onclick="restoreOrder(${realIndex})"><i class="fa-solid fa-trash-arrow-up"></i> 復元</button>`
-                        :
-                        `<select class="status-badge ${badgeClass}" style="border:none; cursor:pointer;" onchange="updateStatus(${realIndex}, this.value)">
-                                ${['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了', 'キャンセル'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
-                             </select>`
-                    }
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function updateStatus(id, val) {
-            if (val === 'キャンセル') {
-                if (!confirm('アーカイブに移動しますか？')) return fetchData();
-                // Find index for archive (which uses index-based splicing in API)
-                const index = DATA.orders.findIndex(o => o.id === id);
-                if (index === -1) return alert('Error: Order not found');
-                await postAPI('archive_order', { index });
-            } else {
-                // Use ID for status update
-                await postAPI('update_order_status', { orderId: id, updates: { status: val } });
-            }
-            fetchData();
-        }
-
-        async function restoreOrder(idx) {
-            if (!confirm('未着手として復元しますか？')) return;
-            await postAPI('restore_order', { index: idx });
-            fetchData();
-        }
-
-        async function setPayLink(id) {
-            const l = prompt("支払いリンク (Stripe/Square URL) を入力:");
-            if (l) {
-                await postAPI('update_order_status', { orderId: id, updates: { paymentLink: l } });
-                fetchData();
-            }
-        }
-
-        // --- DRAG & DROP STATE ---
-        let dragSrc = null;
-
-        function dragStart(e, cat, idx) {
-            dragSrc = { cat, idx };
-            e.dataTransfer.effectAllowed = 'move';
-            e.target.style.opacity = '0.4';
-        }
-
-        function dragOver(e) {
-            if (e.preventDefault) e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            return false;
-        }
-
-        function dragDrop(e, cat, idx) {
-            if (e.stopPropagation) e.stopPropagation();
-            if (dragSrc && dragSrc.cat === cat && dragSrc.idx !== idx) {
-                const list = DATA[cat];
-                const item = list.splice(dragSrc.idx, 1)[0];
-                list.splice(idx, 0, item);
-                renderPortfolio();
-            }
-            return false;
-        }
-
-        function dragEnd(e) { e.target.style.opacity = '1'; }
-
-
-        // --- PORTFOLIO UI ---
-        function switchPfCat(cat, btn) {
-            activePfCat = cat;
-            document.querySelectorAll('#tab-portfolio .filter-chip').forEach(c => c.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-
-            ['works', 'mix', 'orig'].forEach(k => document.getElementById(`pf-${k}`).classList.add('hidden'));
-            document.getElementById(`pf-${cat}`).classList.remove('hidden');
-        }
-
-        function renderPortfolio() {
-            renderPfGrid('works', DATA.works);
-            renderPfGrid('mix', DATA.mix);
-            renderPfGrid('orig', DATA.orig);
-        }
-
-        function renderPfGrid(cat, items) {
-            const el = document.getElementById(`pf-${cat}`);
-            if (!el) return;
-            el.innerHTML = '';
-            (items || []).forEach((item, idx) => {
-                const div = document.createElement('div');
-                div.className = 'pf-card';
-                div.draggable = true;
-                div.ondragstart = (e) => dragStart(e, cat, idx);
-                div.ondragover = dragOver;
-                div.ondrop = (e) => dragDrop(e, cat, idx);
-                div.ondragend = dragEnd;
-
-                div.innerHTML = `
-                    <div class="pf-thumb"><iframe src="https://www.youtube.com/embed/${item.id}"></iframe></div>
-                    <div class="pf-body">
-                        <label class="form-label">YouTube ID</label>
-                        <input class="form-input" value="${item.id}" onchange="updatePfData('${cat}', ${idx}, 'id', this.value)">
-                        <label class="form-label">Title / Comment</label>
-                        <input class="form-input" value="${item.title || ''}" onchange="updatePfData('${cat}', ${idx}, 'title', this.value)">
-                        <div class="action-bar" style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="sort-controls" style="color:#ccc;"><i class="fa-solid fa-grip-vertical" style="cursor:grab;"></i></div>
-                            <button class="btn btn-danger btn-sm" onclick="delPf('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i></button>
-                        </div>
-                    </div>
-                `;
-                el.appendChild(div);
-            });
-        }
-
-        function updatePfData(cat, idx, key, val) {
-            if (key === 'id') {
-                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                const match = val.match(regExp);
-                val = (match && match[2].length === 11) ? match[2] : val;
-            }
-            DATA[cat][idx][key] = val;
-            if (key === 'id') renderPortfolio();
-        }
-        function addPfItem() {
-            if (!DATA[activePfCat]) DATA[activePfCat] = [];
-            DATA[activePfCat].push({ id: '', title: '' });
-            renderPortfolio();
-        }
-        function delPf(cat, idx) {
-            if (confirm("削除しますか？")) { DATA[cat].splice(idx, 1); renderPortfolio(); }
-        }
-        async function savePortfolio() {
-            document.getElementById('loading').style.display = 'flex';
-            await postAPI('update_portfolio', { category: 'works', items: DATA.works });
-            await postAPI('update_portfolio', { category: 'mix', items: DATA.mix });
-            await postAPI('update_portfolio', { category: 'orig', items: DATA.orig });
-            document.getElementById('loading').style.display = 'none';
-            alert("保存しました");
-        }
-
-
-        // --- PLANS UI ---
-        function renderPrices() {
-            const el = document.getElementById('price-form');
-            if (!el) return;
-            el.innerHTML = '';
-
-            // Mix Plans
-            el.innerHTML += `<div class="flex justify-between items-center mt-4 mb-2"><h4 class="font-bold" style="color:var(--accent-blue);">ミックス／マスタリング</h4><button class="btn btn-sm btn-ghost" onclick="addPlan('mix')">+ プラン追加</button></div>`;
-            el.innerHTML += `<div id="plans-mix" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
-            renderPlanList('mix');
-
-            // Orig Plans
-            el.innerHTML += `<div class="flex justify-between items-center mt-8 mb-2"><h4 class="font-bold" style="color:var(--accent-blue);">オリジナル楽曲制作</h4><button class="btn btn-sm btn-ghost" onclick="addPlan('orig')">+ プラン追加</button></div>`;
-            el.innerHTML += `<div id="plans-orig" class="pf-grid" style="grid-template-columns: 1fr;"></div>`;
-            renderPlanList('orig');
-        }
-
-        function renderPlanList(cat) {
-            const list = DATA.prices[cat] || [];
-            const container = document.getElementById(`plans-${cat}`);
-            container.innerHTML = '';
-
-            list.forEach((plan, idx) => {
-                const div = document.createElement('div');
-                div.className = 'pf-card';
-                div.draggable = true;
-                div.ondragstart = (e) => dragStartPlan(e, cat, idx);
-                div.ondragover = dragOver;
-                div.ondrop = (e) => dragDropPlan(e, cat, idx);
-                div.ondragend = dragEnd;
-
-                div.innerHTML = `
-                    <div class="pf-body" style="background:#f9fafb;">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-gray">#${idx + 1}</span>
-                            <div class="action-bar" style="background:transparent; border:none; padding:0;">
-                                <i class="fa-solid fa-grip-vertical mr-2" style="cursor:grab; color:#ccc;"></i>
-                                <button class="btn btn-danger btn-sm" onclick="delPlan('${cat}', ${idx})"><i class="fa-regular fa-trash-can"></i></button>
-                            </div>
-                        </div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                            <div><label class="form-label">プラン名</label><input class="form-input" value="${plan.title || ''}" onchange="updatePlan('${cat}', ${idx}, 'title', this.value)"></div>
-                            <div><label class="form-label">金額</label><input class="form-input" value="${plan.price || ''}" onchange="updatePlan('${cat}', ${idx}, 'price', this.value)"></div>
-                            <div><label class="form-label">納期</label><input class="form-input" value="${plan.period || ''}" onchange="updatePlan('${cat}', ${idx}, 'period', this.value)"></div>
-                            <div><label class="form-label">修正回数</label><input class="form-input" value="${plan.revisions || ''}" onchange="updatePlan('${cat}', ${idx}, 'revisions', this.value)"></div>
-                        </div>
-                        <div class="mt-2"><label class="form-label">詳細説明</label><textarea class="form-input" rows="3" onchange="updatePlan('${cat}', ${idx}, 'desc', this.value)">${plan.desc || ''}</textarea></div>
-                        <div class="mt-2 text-sm" style="display:flex; align-items:center; gap:10px; background:#eee; padding:5px; border-radius:4px;">
-                             <label style="margin:0;"><input type="checkbox" ${plan.recommended ? 'checked' : ''} onchange="updatePlan('${cat}', ${idx}, 'recommended', this.checked)"> おすすめ表示</label>
-                             <input class="form-input" style="width:120px; font-size:0.8rem; padding:4px;" placeholder="バッジ (例: 人気)" value="${plan.badgeText || ''}" onchange="updatePlan('${cat}', ${idx}, 'badgeText', this.value)">
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-        function addPlan(cat) {
-            if (!DATA.prices[cat]) DATA.prices[cat] = [];
-            DATA.prices[cat].push({ title: 'New Plan', price: '0円' });
-            renderPrices();
-        }
-        function delPlan(cat, idx) {
-            if (confirm('削除しますか？')) { DATA.prices[cat].splice(idx, 1); renderPrices(); }
-        }
-        function updatePlan(cat, idx, key, val) { DATA.prices[cat][idx][key] = val; }
-
-        function dragStartPlan(e, cat, idx) {
-            dragSrc = { cat, idx, type: 'plan' };
-            e.dataTransfer.effectAllowed = 'move';
-            e.target.style.opacity = '0.4';
-        }
-        function dragDropPlan(e, cat, idx) {
-            if (e.stopPropagation) e.stopPropagation();
-            if (dragSrc && dragSrc.type === 'plan' && dragSrc.cat === cat && dragSrc.idx !== idx) {
-                const list = DATA.prices[cat];
-                const item = list.splice(dragSrc.idx, 1)[0];
-                list.splice(idx, 0, item);
-                renderPrices();
-            }
-            return false;
-        }
-
-        async function savePrices() {
-            document.getElementById('loading').style.display = 'flex';
-            await postAPI('update_prices', DATA.prices);
-            document.getElementById('loading').style.display = 'none';
-            alert("料金プランを保存しました");
-        }
-
-
-        // --- VOICES UI ---
-        function renderVoices() {
-            const list = DATA.voices || [];
-            const container = document.getElementById('voice-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            // Add Form
-            container.innerHTML += `
-                <div class="pf-card" style="border:2px dashed #ccc;">
-                    <div class="pf-body">
-                        <h4 style="margin-bottom:10px;">新規感想の追加</h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                            <div><label class="form-label">名前</label><input id="nv-name" class="form-input"></div>
-                            <div><label class="form-label">プラン</label><select id="nv-plan" class="form-input"><option value="">選択...</option>${getPlanOptions()}</select></div>
-                        </div>
-                        <div class="mt-2"><label class="form-label">紐付け実績</label><select id="nv-link" class="form-input"><option value="">なし</option>${getPortfolioOptions()}</select></div>
-                        <div class="mt-2"><textarea id="nv-text" class="form-input" rows="2" placeholder="感想..."></textarea></div>
-                        <div class="mt-2 text-right"><button class="btn btn-primary btn-sm" onclick="addVoiceItem()">追加</button></div>
-                    </div>
-                </div>
-            `;
-
-            list.forEach((v, idx) => {
-                const div = document.createElement('div');
-                div.className = 'pf-card';
-                div.innerHTML = `
-                 <div class="pf-body" style="background:#f9fafb;">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-gray">#${idx + 1}</span>
-                        <div class="action-bar" style="padding:0; border:none; background:transparent;">
-                             <button class="btn btn-danger btn-sm" onclick="delVoice(${idx})"><i class="fa-regular fa-trash-can"></i></button>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div><label class="form-label">名前</label><input class="form-input" value="${v.name || ''}" onchange="updateVoice(${idx}, 'name', this.value)"></div>
-                        <div><label class="form-label">プラン</label><select class="form-input" onchange="updateVoice(${idx}, 'plan', this.value)"><option value="">選択...</option>${getPlanOptions(v.plan)}</select></div>
-                    </div>
-                    <div class="mt-2"><label class="form-label">実績リンク</label><select class="form-input" onchange="updateVoice(${idx}, 'link', this.value)"><option value="">なし</option>${getPortfolioOptions(v.link)}</select></div>
-                    <div class="mt-2"><textarea class="form-input" rows="2" onchange="updateVoice(${idx}, 'text', this.value)">${v.text || ''}</textarea></div>
-                </div>
-            `;
-                container.appendChild(div);
-            });
-        }
-
-        function getPlanOptions(sel) {
-            let opts = '';
-            [...(DATA.prices.mix || []), ...(DATA.prices.orig || [])].forEach(p => {
-                opts += `<option value="${p.title}" ${p.title === sel ? 'selected' : ''}>${p.title}</option>`;
-            });
-            return opts;
-        }
-        function getPortfolioOptions(sel) {
-            let opts = '';
-            [...(DATA.works || []), ...(DATA.mix || []), ...(DATA.orig || [])].forEach(i => {
-                if (i.id) opts += `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${i.title || i.id}</option>`;
-            });
-            return opts;
-        }
-        function addVoiceItem() {
-            const name = document.getElementById('nv-name').value;
-            const plan = document.getElementById('nv-plan').value;
-            const link = document.getElementById('nv-link').value;
-            const text = document.getElementById('nv-text').value;
-            if (!name) return alert('Input Name');
-            DATA.voices.push({ name, plan, link, text });
-            renderVoices();
-        }
-        function updateVoice(idx, k, v) { DATA.voices[idx][k] = v; }
-        function delVoice(idx) { if (confirm('Del?')) { DATA.voices.splice(idx, 1); renderVoices(); } }
-
-        async function saveVoices() {
-            document.getElementById('loading').style.display = 'flex';
-            await postAPI('update_voices', DATA.voices);
-            document.getElementById('loading').style.display = 'none';
-            alert("お客様の声を保存しました");
-        }
-
-        // --- API UTILS ---
         async function postAPI(action, data) {
             await fetch('/api/admin', {
                 method: 'POST',
@@ -1210,79 +640,237 @@
             });
         }
 
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-pane').forEach(d => d.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
 
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
 
-        // --- ORDER DETAIL PAGE ---
-        function showOrderDetail(id) {
-            const order = DATA.orders.find(o => o.id === id);
-            if (!order) return;
-
-            // Switch View
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-order-detail').classList.remove('hidden');
-            window.scrollTo(0, 0);
-
-            // Container
-            const container = document.getElementById('detail-content');
-
-            const fields = [
-                { label: '受注ID', val: order.id },
-                { label: 'ご依頼日', val: new Date(order.date).toLocaleString('ja-JP') },
-                { label: 'ステータス', val: `<span class="status-badge ${getStatusClass(order.status)}">${order.status}</span>`, type: 'html' },
-                { label: '納期設定', val: `<input type="date" class="form-input" style="width:auto;" value="${order.deadline || ''}" onchange="updateDeadline('${order.id}', this.value)">`, type: 'html' },
-                { separator: true },
-                { label: 'ご依頼者名', val: order['ご依頼者名'] },
-                { label: 'メールアドレス', val: `<a href="mailto:${order['メールアドレス']}">${order['メールアドレス']}</a>`, type: 'html' },
-                { label: 'Twitter ID', val: order['TwitterID(任意)'] },
-                { label: '希望連絡手段', val: order['希望する連絡手段'] },
-                { separator: true },
-                { label: 'プラン', val: PLAN_MAP[order['プラン']] || order['プラン'] },
-                { label: '曲名', val: order['曲名'] },
-                { label: 'オプション', val: order['オプション'] || 'なし' },
-                { label: '歌唱キー', val: order['キー変更'] },
-                { label: 'お支払い方法', val: PAY_MAP[order['お支払い方法']] || order['お支払い方法'] },
-                { separator: true },
-                { label: '参考URL', val: order['参考URL(任意)'], type: 'link' },
-                { label: 'レコーディング音源', val: order['レコーディング済み音源'], type: 'link' },
-                { label: 'ご要望・特記事項', val: order['ご要望・ご質問・特記事項など'] || 'なし', type: 'text' }
-            ];
-
-            container.innerHTML = fields.map(f => {
-                if (f.separator) return '<hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">';
-
-                let displayVal = f.val;
-                if (!displayVal || displayVal === 'なし') {
-                    displayVal = '<span style="color:#ccc;">(未入力/なし)</span>';
-                } else if (f.type === 'link') {
-                    displayVal = `<a href="${f.val}" target="_blank">${f.val}</a>`;
-                } else if (f.type === 'text') {
-                    displayVal = `<div style="white-space: pre-wrap; background:#f9fafb; padding:10px; border-radius:6px;">${f.val}</div>`;
-                }
-
-                return `
-                    <div class="detail-row" style="grid-template-columns: 200px 1fr;">
-                        <div class="detail-label">${f.label}</div>
-                        <div class="detail-value">${f.type === 'html' ? f.val : displayVal}</div>
-                    </div>
-                `;
-            }).join('');
+            const map = { 'orders': '依頼管理', 'portfolio': 'ポートフォリオ', 'prices': 'プラン設定', 'account': 'アカウント' };
+            document.getElementById('page-crumb').innerText = map[tabId];
         }
 
-        async function updateDeadline(id, date) {
-            const order = DATA.orders.find(o => o.id === id);
-            if (order) {
-                order.deadline = date;
-                // Save immediately
-                await postAPI('update_order_status', { orderId: id, status: order.status, deadline: date });
+        // --- ORDERS LOGIC ---
+        let filterStatus = 'all';
+
+        function setFilter(stat, el) {
+            filterStatus = stat;
+            document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderOrders();
+        }
+
+        function renderOrders(query = '') {
+            const tbody = document.getElementById('order-tbody');
+            tbody.innerHTML = '';
+
+            let list = [];
+            let isArchive = (filterStatus === 'archive' || filterStatus === 'cancel');
+
+            if (isArchive) {
+                const archived = DATA.archive || [];
+                const cancelled = (DATA.orders || []).filter(o => o.status === 'キャンセル');
+                list = [...archived, ...cancelled];
+            } else {
+                list = DATA.orders || [];
+                if (filterStatus !== 'all') {
+                    list = list.filter(o => o.status === filterStatus);
+                } else {
+                    list = list.filter(o => o.status !== 'キャンセル' && o.status !== 'archived');
+                }
+            }
+
+            if (query) {
+                list = list.filter(o => (o['ご依頼者名'] || '').includes(query) || (o['曲名'] || '').includes(query));
+            }
+
+            list.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const counts = { 'archive': (DATA.archive || []).length };
+            (DATA.orders || []).forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
+
+            ['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了'].forEach(k => {
+                const el = document.getElementById('cnt-' + (k === '全て入金済み' ? 'paid' : k === '未着手' ? 'new' : k === '支払い待ち' ? 'pay' : k === '納品済み' ? 'done' : 'closed'));
+                if (el) el.innerText = counts[k] || 0;
+            });
+            document.getElementById('cnt-all').innerText = (DATA.orders || []).length;
+            document.getElementById('cnt-cancel').innerText = (counts['キャンセル'] || 0) + (counts['archive'] || 0);
+
+            list.forEach(order => {
+                const realIndex = (DATA.orders || []).findIndex(o => o.id === order.id);
+                const archiveIndex = (DATA.archive || []).findIndex(a => a.id === order.id);
+                const isItemArchived = Boolean(DATA.archive && DATA.archive.find(a => a.id === order.id));
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(order.date).toLocaleDateString('ja-JP')}</td>
+                    <td class="client-name">${order['曲名']}</td>
+                    <td>${order['ご依頼者名']}</td>
+                    <td class="plan-name">${order['プラン']}</td>
+                    <td>
+                        <a href="#" class="pay-link" onclick="promptPayLink('${order.id}')">¥ 支払いリンク</a> 
+                        <span style="font-size:0.8em; margin-left:5px;">${order.paymentLink ? '<i class="fa-solid fa-check" style="color:var(--primary);"></i>' : '未'}</span>
+                    </td>
+                    <td>
+                        <input type="date" value="${order.deadline || ''}" 
+                            style="border:none; background:transparent; font-family:inherit; cursor:pointer; color:#666;"
+                            onchange="updateDeadline('${order.id}', this.value)">
+                    </td>
+                     <td>
+                        ${isItemArchived ?
+                        `<button class="status-btn active" onclick="restoreOrder(${archiveIndex}, '${order.id}')">復元</button>` :
+                        `<button class="status-btn" onclick="archiveOrder(${realIndex}, '${order.id}')">終了/キャンセル</button>`
+                    }
+                    </td>
+                    <td>
+                         ${isItemArchived ? '<span class="count-badge">アーカイブ</span>' :
+                        `<select onchange="updateStatus('${order.id}', this.value)" class="status-badge" style="background:#fff;">
+                              ${['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了', 'キャンセル'].map(s =>
+                            `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`
+                        ).join('')}
+                           </select>`
+                    }
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function promptPayLink(id) {
+            const order = [...(DATA.orders || []), ...(DATA.archive || [])].find(o => o.id === id);
+            if (!order) return;
+            const link = prompt("支払いリンクを入力:", order.paymentLink || "");
+            if (link !== null) {
+                await postAPI('update_order_status', { orderId: id, updates: { paymentLink: link } });
+                order.paymentLink = link;
+                renderOrders();
             }
         }
 
-
-        function backToOrders() {
-            switchTab('orders');
+        async function updateStatus(id, status) {
+            await postAPI('update_order_status', { orderId: id, status: status });
+            const order = DATA.orders.find(o => o.id === id);
+            if (order) order.status = status;
+            renderOrders();
         }
 
-        // Init
+        async function updateDeadline(id, date) {
+            await postAPI('update_order_status', { orderId: id, deadline: date });
+            const order = DATA.orders.find(o => o.id === id);
+            if (order) order.deadline = date;
+        }
+
+        async function archiveOrder(idx, id) {
+            if (!confirm("この依頼を終了/キャンセル（アーカイブ）しますか？")) return;
+            if (idx === -1) idx = DATA.orders.findIndex(o => o.id === id);
+            if (idx === -1) return;
+
+            const item = DATA.orders.splice(idx, 1)[0];
+            item.status = 'archived';
+            DATA.archive.unshift(item);
+            renderOrders();
+
+            await postAPI('archive_order', { index: idx });
+        }
+
+        async function restoreOrder(idx, id) {
+            if (!confirm("この依頼を復元しますか？")) return;
+            if (idx === -1) idx = DATA.archive.findIndex(o => o.id === id);
+            if (idx === -1) return;
+
+            const item = DATA.archive.splice(idx, 1)[0];
+            item.status = '未着手';
+            DATA.orders.unshift(item);
+            renderOrders();
+
+            await postAPI('restore_order', { index: idx });
+        }
+
+        // --- PORTFOLIO ---
+        function renderPf() {
+            activePfCat = document.getElementById('pf-cat-select').value;
+            const list = DATA[activePfCat] || [];
+            const container = document.getElementById('pf-container');
+            container.innerHTML = '';
+
+            list.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'pf-item';
+                div.innerHTML = `
+                    <div class="pf-thumb">
+                        ${item.id ? `<iframe src="https://www.youtube.com/embed/${item.id}" loading="lazy"></iframe>` : ''}
+                    </div>
+                    <div class="pf-inputs">
+                        <input class="pf-input" placeholder="YouTube ID" value="${item.id || ''}" onchange="updatePf(${idx}, 'id', this.value)">
+                        <input class="pf-input" placeholder="Title" value="${item.title || ''}" onchange="updatePf(${idx}, 'title', this.value)">
+                         <button class="btn btn-sm" style="background:#fee; color:red;" onclick="delPf(${idx})">削除</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function updatePf(idx, k, v) {
+            if (k === 'id') {
+                const reg = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const m = v.match(reg);
+                if (m && m[2].length === 11) v = m[2];
+            }
+            DATA[activePfCat][idx][k] = v;
+            if (k === 'id') renderPf();
+        }
+        function addPf() { if (!DATA[activePfCat]) DATA[activePfCat] = []; DATA[activePfCat].push({ id: '' }); renderPf(); }
+        function delPf(idx) { DATA[activePfCat].splice(idx, 1); renderPf(); }
+        async function savePf() {
+            await postAPI('update_portfolio', { category: activePfCat, items: DATA[activePfCat] });
+            alert("Saved Portfolio");
+        }
+
+        // --- PRICES ---
+        function renderPrices() {
+            const container = document.getElementById('price-container');
+            container.innerHTML = '';
+
+            ['mix', 'orig'].forEach(cat => {
+                const header = document.createElement('h3');
+                header.innerText = cat === 'mix' ? 'ミックスプラン' : 'オリジナル制作プラン';
+                header.style.marginTop = '30px';
+                container.appendChild(header);
+
+                const list = DATA.prices[cat] || [];
+                list.forEach((plan, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'price-group';
+                    div.innerHTML = `
+                        <div class="price-row" style="justify-content:space-between;">
+                            <strong>Plan #${idx + 1}</strong>
+                            <button class="btn btn-sm" style="color:red;" onclick="delPrice('${cat}',${idx})">削除</button>
+                        </div>
+                        <input class="pf-input price-input-lg" value="${plan.title || ''}" placeholder="プラン名" onchange="updPrice('${cat}',${idx},'title',this.value)">
+                        <textarea class="pf-input" rows="3" placeholder="説明" onchange="updPrice('${cat}',${idx},'desc',this.value)">${plan.desc || ''}</textarea>
+                        <div class="price-row">
+                            <input class="pf-input" placeholder="価格" value="${plan.price || ''}" onchange="updPrice('${cat}',${idx},'price',this.value)">
+                            <input class="pf-input" placeholder="納期" value="${plan.period || ''}" onchange="updPrice('${cat}',${idx},'period',this.value)">
+                            <input class="pf-input" placeholder="修正回数" value="${plan.revisions || ''}" onchange="updPrice('${cat}',${idx},'revisions',this.value)">
+                        </div>
+                     `;
+                    container.appendChild(div);
+                });
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn';
+                addBtn.innerText = '+ ' + cat + ' プラン追加';
+                addBtn.style.marginTop = "10px";
+                addBtn.onclick = () => { DATA.prices[cat].push({ title: 'New Plan' }); renderPrices(); };
+                container.appendChild(addBtn);
+            });
+        }
+        function updPrice(cat, idx, k, v) { DATA.prices[cat][idx][k] = v; }
+        function delPrice(cat, idx) { DATA.prices[cat].splice(idx, 1); renderPrices(); }
+        async function savePrices() {
+            await postAPI('update_prices', DATA.prices);
+            alert("Saved Prices");
+        }
+
         checkAuth();
     </script>
 </body>
