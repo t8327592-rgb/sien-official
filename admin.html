@@ -12,24 +12,26 @@
         rel="stylesheet">
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- Favicon -->
     <link rel="icon" href="./assets/favicon.ico">
 
     <style>
         :root {
-            /* Copied from style.css */
-            --primary: #3b82f6;
-            /* Matching Public Site Accent */
+            /* Design Consistency */
+            --primary: #4285f4;
+            /* Site common blue */
             --bg-color: #f3f4f6;
-            /* --bg-gray */
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --text-light: #9ca3af;
+            --text-main: #333;
+            --text-muted: #666;
             --border-color: #e5e7eb;
             --white: #ffffff;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+            --status-gray: #9ca3af;
+            --status-orange: #f97316;
+            --status-green: #10b981;
+            --status-red: #ef4444;
+            /* Light red/Archive */
 
             --font-heading: 'Jost', sans-serif;
             --font-body: 'Noto Sans JP', sans-serif;
@@ -60,76 +62,52 @@
             font-weight: 500;
         }
 
-        /* HEADER */
+        /* HEADER & TABS INTEGRATION */
         .admin-header {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             height: 70px;
-            /* Matching public header height */
             display: flex;
             align-items: center;
-            justify-content: space-between;
             padding: 0 40px;
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
-            z-index: 50;
+            z-index: 100;
+            gap: 40px;
         }
 
         .brand {
             font-weight: 700;
             font-size: 1.4rem;
             letter-spacing: 0.02em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
             color: var(--text-main);
             text-decoration: none;
             font-family: var(--font-heading);
+            margin-right: auto;
         }
 
         .brand img {
             height: 28px;
+            vertical-align: middle;
         }
 
-        .user-menu {
+        .nav-tabs {
             display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: #ddd;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* SUB NAV */
-        .sub-nav {
-            background: var(--white);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 40px;
-            display: flex;
-            gap: 30px;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
         }
 
         .nav-tab {
-            padding: 16px 5px;
+            padding: 10px 15px;
             font-size: 0.95rem;
             color: var(--text-muted);
             cursor: pointer;
             position: relative;
             transition: color 0.2s;
             font-family: var(--font-heading);
+            font-weight: 500;
         }
 
         .nav-tab:hover {
@@ -144,11 +122,18 @@
         .nav-tab.active::after {
             content: '';
             position: absolute;
-            bottom: -1px;
+            bottom: -23px;
             left: 0;
             width: 100%;
-            height: 2px;
+            height: 3px;
             background: var(--primary);
+        }
+
+        .user-menu {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         /* MAIN */
@@ -156,7 +141,6 @@
             flex: 1;
             padding: 40px;
             max-width: 1200px;
-            /* Matching public container width approx */
             margin: 0 auto;
             width: 100%;
         }
@@ -177,6 +161,7 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 30px;
+            justify-content: space-between;
         }
 
         .page-title {
@@ -185,21 +170,9 @@
             letter-spacing: -0.02em;
         }
 
-        .badge-rank {
-            font-size: 0.75rem;
-            background: #eff6ff;
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 99px;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            border: 1px solid #dbeafe;
-        }
-
         .content-card {
             background: var(--white);
             border-radius: 12px;
-            /* Softer radius */
             padding: 30px;
             box-shadow: var(--shadow);
             min-height: 600px;
@@ -227,7 +200,7 @@
             }
         }
 
-        /* FILTER */
+        /* FILTER & SEARCH */
         .filter-section {
             display: flex;
             flex-direction: column;
@@ -275,6 +248,7 @@
             color: var(--text-main);
         }
 
+        /* STATUS TABS */
         .status-tabs {
             display: flex;
             gap: 24px;
@@ -342,7 +316,9 @@
 
         .client-name {
             font-weight: 600;
-            color: var(--text-main);
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
         }
 
         .plan-name {
@@ -350,54 +326,31 @@
             color: var(--text-muted);
         }
 
-        .pay-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.85rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .pay-link:hover {
-            text-decoration: underline;
-        }
-
-        .status-btn {
-            background: #9ca3af;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-
-        .status-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .status-btn.done {
-            background: #d1d5db;
-            color: #6b7280;
-        }
-
-        .status-btn.active {
-            background: var(--primary);
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-        }
-
-        .status-badge {
-            border: 1px solid var(--border-color);
+        /* STATUS SELECT */
+        .status-select {
             padding: 6px 10px;
             border-radius: 6px;
             font-size: 0.85rem;
-            color: var(--text-main);
+            border: 1px solid var(--border-color);
             cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Dynamic Status Colors via JS logic mainly, or classes if fixed */
+
+        .btn-restore {
+            background: transparent;
+            border: 1px solid var(--text-light);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-restore:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         /* PF GRID */
@@ -413,6 +366,7 @@
             overflow: hidden;
             background: #fff;
             transition: 0.2s;
+            position: relative;
         }
 
         .pf-item:hover {
@@ -426,10 +380,11 @@
             position: relative;
         }
 
-        .pf-thumb iframe {
+        .pf-thumb img {
             width: 100%;
             height: 100%;
-            border: none;
+            object-fit: cover;
+            opacity: 0.8;
         }
 
         .pf-inputs {
@@ -437,6 +392,50 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+        }
+
+        /* PRICE INPUTS WITH UNITS */
+        .price-section-divider {
+            border-top: 4px solid #eff6ff;
+            margin: 40px 0;
+            padding-top: 40px;
+        }
+
+        .price-header {
+            border-left: 4px solid var(--primary);
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .price-group {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #fff;
+        }
+
+        .input-with-unit {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-with-unit input {
+            padding-right: 40px;
+            width: 100%;
+        }
+
+        .input-unit {
+            position: absolute;
+            right: 10px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            pointer-events: none;
         }
 
         .pf-input {
@@ -453,87 +452,35 @@
             outline: none;
         }
 
-        /* PRICES */
-        .price-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .price-group {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 30px;
-        }
-
-        .price-row {
-            display: flex;
-            gap: 15px;
+        /* VOICES */
+        .voice-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
             margin-bottom: 15px;
-        }
-
-        .price-input-lg {
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding: 10px;
-            width: 100%;
+            border: 1px solid #eee;
         }
 
         /* FOOTER */
         .admin-footer {
-            background: var(--bg-dark);
-            color: #d1d5db;
+            background: var(--bg-color);
+            color: var(--text-muted);
             padding: 20px 0;
-            font-size: 0.9rem;
+            margin-top: auto;
+            font-size: 0.8rem;
             text-align: center;
+            border-top: 1px solid #eee;
         }
 
-        .footer-cols {
-            display: none;
-        }
-
-        .footer-col h4 {
-            color: white;
-            margin-bottom: 20px;
-            font-size: 1rem;
-            font-family: var(--font-heading);
-            letter-spacing: 0.05em;
-        }
-
-        .footer-col ul {
-            list-style: none;
-        }
-
-        .footer-col li {
-            margin-bottom: 10px;
-        }
-
-        .footer-col a {
-            color: #9ca3af;
-            text-decoration: none;
-            transition: 0.2s;
-        }
-
-        .footer-col a:hover {
-            color: var(--primary);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Buttons Public Style */
+        /* BUTTONS */
         .btn {
             padding: 10px 20px;
             border-radius: 8px;
-            /* Slightly rounded like public */
             border: none;
             cursor: pointer;
             font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: all 0.2s;
             font-family: var(--font-heading);
             display: inline-flex;
             align-items: center;
@@ -543,20 +490,59 @@
 
         .btn-primary {
             background: var(--primary);
-            /* Gradient? Public uses accents */
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 4px 6px rgba(66, 133, 244, 0.2);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            background: #eee;
         }
 
         .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.85rem;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 1000;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Detail View */
+        .detail-view {
+            display: none;
+        }
+
+        .detail-view.active {
+            display: block;
+            animation: fadeIn 0.3s;
         }
     </style>
 </head>
@@ -578,21 +564,27 @@
         <a href="#" class="brand">
             <img src="./assets/logo.png" alt="Logo">
         </a>
+
+        <nav class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab('orders', this)">依頼管理</div>
+            <div class="nav-tab" onclick="switchTab('portfolio', this)">ポートフォリオ</div>
+            <div class="nav-tab" onclick="switchTab('voices', this)">お客様の声</div>
+            <div class="nav-tab" onclick="switchTab('prices', this)">プラン・料金設定</div>
+            <div class="nav-tab" onclick="switchTab('account', this)">アカウント設定</div>
+        </nav>
+
         <div class="user-menu">
-            <button onclick="logout()" class="btn btn-sm" style="background:#eee;">Logout</button>
+            <button onclick="logout()" class="btn btn-sm"
+                style="background:#fff; border:1px solid #ddd;">Logout</button>
         </div>
     </header>
 
-    <nav class="sub-nav">
-        <div class="nav-tab active" onclick="switchTab('orders', this)">依頼管理</div>
-        <div class="nav-tab" onclick="switchTab('portfolio', this)">ポートフォリオ</div>
-        <div class="nav-tab" onclick="switchTab('prices', this)">プラン・料金設定</div>
-        <div class="nav-tab" onclick="switchTab('account', this)">アカウント設定</div>
-    </nav>
-
     <main class="main-container">
+        <!-- Toast Notification -->
+        <div id="toast"><i class="fa-solid fa-check-circle"></i> 保存しました</div>
+
         <div class="breadcrumb">
-            マイページTOP > <span id="page-crumb">依頼管理</span>
+            Admin Page > <span id="page-crumb">依頼管理</span>
         </div>
 
         <section class="content-card">
@@ -605,8 +597,8 @@
                 <div class="filter-section">
                     <div class="search-row">
                         <div class="search-input-group">
-                            <div class="search-prefix"><i class="fa-solid fa-folder"></i> = まとめて依頼</div>
-                            <input type="text" class="search-input" placeholder="依頼者名で絞り込み"
+                            <div class="search-prefix"><i class="fa-solid fa-search"></i></div>
+                            <input type="text" class="search-input" placeholder="依頼者名、曲名で検索..."
                                 onkeyup="renderOrders(this.value)">
                         </div>
                     </div>
@@ -634,41 +626,73 @@
                             <th>曲名</th>
                             <th>ご依頼者名</th>
                             <th>プラン</th>
-                            <th>納期 <i class="fa-solid fa-gear" style="color:var(--primary);"></i></th>
-                            <th>納品完了/キャンセル</th>
+                            <th>納期</th>
                             <th>ステータス</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="order-tbody"></tbody>
                 </table>
             </div>
 
+            <!-- ORDER DETAIL -->
+            <div id="tab-order-detail" class="tab-pane">
+                <div class="page-header">
+                    <button class="btn btn-sm" onclick="closeDetail()"
+                        style="margin-right:15px; background:#eff6ff; color:var(--primary);">&larr; 一覧に戻る</button>
+                    <div class="page-title">案件詳細</div>
+                </div>
+                <div id="detail-content" style="max-width:800px; margin:0 auto;"></div>
+            </div>
+
             <!-- PORTFOLIO TAB -->
             <div id="tab-portfolio" class="tab-pane">
-                <div class="page-header" style="justify-content:space-between;">
-                    <div class="page-title">ポートフォリオ設定</div>
-                    <button class="btn btn-primary" onclick="savePf()">保存する</button>
+                <div class="page-header">
+                    <div class="page-title">ポートフォリオ管理</div>
+                    <button class="btn btn-primary" onclick="savePf()">変更を保存する</button>
                 </div>
-                <div class="mb-4">
-                    <button class="btn" style="background:#eee;" onclick="addPf()">+ 追加</button>
-                    <select id="pf-cat-select" onchange="renderPf()" style="padding:5px; margin-left:10px;">
+                <div class="mb-4" style="margin-bottom:20px;">
+                    <select id="pf-cat-select" onchange="renderPf()"
+                        style="padding:10px; border-radius:6px; border:1px solid #ddd; margin-right:10px;">
                         <option value="works">制作実績 (Works)</option>
                         <option value="mix">ミックス (Mix)</option>
                         <option value="orig">オリジナル (Original)</option>
                     </select>
+                    <button class="btn btn-ghost" style="border:1px dashed #ccc;" onclick="addPf()">+ 動画を追加</button>
                 </div>
                 <div id="pf-container" class="pf-grid"></div>
             </div>
 
+            <!-- VOICES TAB -->
+            <div id="tab-voices" class="tab-pane">
+                <div class="page-header">
+                    <div class="page-title">お客様の声 管理</div>
+                    <button class="btn btn-primary" onclick="saveVoices()">変更を保存する</button>
+                </div>
+                <button class="btn btn-ghost" style="border:1px dashed #ccc; margin-bottom:20px;" onclick="addVoice()">+
+                    声を追加</button>
+                <div id="voice-container"></div>
+            </div>
+
             <!-- PRICES TAB -->
             <div id="tab-prices" class="tab-pane">
-                <div class="page-header" style="justify-content:space-between;">
+                <div class="page-header">
                     <div class="page-title">プラン・料金設定</div>
-                    <button class="btn btn-primary" onclick="savePrices()">保存する</button>
+                    <button class="btn btn-primary" onclick="savePrices()">変更を保存する</button>
                 </div>
-                <div id="price-container" class="price-stack"></div>
-                <div style="text-align:center; margin-top:30px;">
-                    <button class="btn" style="background:#eee;" onclick="addPlan()">+ プランを追加</button>
+
+                <div id="price-mix-area"></div>
+                <div style="text-align:center; margin-bottom: 40px;">
+                    <button class="btn btn-ghost" style="border:1px dashed #ccc;" onclick="addPlan('mix')">+
+                        ミックスプランを追加</button>
+                </div>
+
+                <div class="price-section-divider"></div>
+
+                <div id="price-orig-area"></div>
+                <div style="text-align:center;">
+                    <button class="btn btn-ghost" style="border:1px dashed #ccc;" onclick="addPlan('orig')">+
+                        オリジナルプランを追加</button>
                 </div>
             </div>
 
@@ -680,15 +704,20 @@
     </main>
 
     <footer class="admin-footer">
-        <div style="text-align:center;">
-            Copyright (c) 2026 Sien-Official. All Rights Reserved.
-        </div>
+        Copyright (c) 2026 Sien-Official. All Rights Reserved.
     </footer>
 
     <script>
         let TOKEN = localStorage.getItem('admin_token') || '';
-        let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] } };
+        let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] }, voices: [] };
         let activePfCat = 'works';
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${msg}`;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
 
         function checkAuth() {
             if (TOKEN) {
@@ -720,10 +749,12 @@
                 if (!DATA.prices.mix) DATA.prices.mix = [];
                 if (!DATA.prices.orig) DATA.prices.orig = [];
                 if (!DATA.archive) DATA.archive = [];
+                if (!DATA.voices) DATA.voices = [];
 
                 renderOrders();
                 renderPf();
                 renderPrices();
+                renderVoices();
             } catch (e) { console.error(e); }
         }
 
@@ -742,7 +773,7 @@
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
 
-            const map = { 'orders': '依頼管理', 'portfolio': 'ポートフォリオ', 'prices': 'プラン設定', 'account': 'アカウント' };
+            const map = { 'orders': '依頼管理', 'portfolio': 'ポートフォリオ', 'prices': 'プラン設定', 'account': 'アカウント', 'voices': 'お客様の声' };
             document.getElementById('page-crumb').innerText = map[tabId];
         }
 
@@ -780,23 +811,36 @@
                 list = list.filter(o => (o['ご依頼者名'] || '').includes(query) || (o['曲名'] || '').includes(query));
             }
 
-            list.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            // Update Counts
+            // Sync counts exactly
             const counts = { 'archive': (DATA.archive || []).length };
             (DATA.orders || []).forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
 
-            ['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了'].forEach(k => {
-                const el = document.getElementById('cnt-' + (k === '全て入金済み' ? 'paid' : k === '未着手' ? 'new' : k === '支払い待ち' ? 'pay' : k === '納品済み' ? 'done' : 'closed'));
-                if (el) el.innerText = counts[k] || 0;
+            const countIds = {
+                '未着手': 'cnt-new', '支払い待ち': 'cnt-pay', '全て入金済み': 'cnt-paid',
+                '納品済み': 'cnt-done', '取引終了': 'cnt-closed', 'キャンセル': 'cnt-cancel'
+            };
+            Object.keys(countIds).forEach(k => {
+                const el = document.getElementById(countIds[k]);
+                if (el) {
+                    if (k === 'キャンセル') el.innerText = (counts['キャンセル'] || 0) + counts['archive'];
+                    else el.innerText = counts[k] || 0;
+                }
             });
             document.getElementById('cnt-all').innerText = (DATA.orders || []).length;
-            document.getElementById('cnt-cancel').innerText = (counts['キャンセル'] || 0) + (counts['archive'] || 0);
+
 
             list.forEach(order => {
                 const realIndex = (DATA.orders || []).findIndex(o => o.id === order.id);
                 const archiveIndex = (DATA.archive || []).findIndex(a => a.id === order.id);
                 const isItemArchived = Boolean(DATA.archive && DATA.archive.find(a => a.id === order.id));
+
+                // Color Logic
+                let statusColor = '#333';
+                let bg = '#eee';
+                if (order.status === '未着手') { statusColor = 'var(--status-gray)'; bg = '#f3f4f6'; }
+                if (order.status === '支払い待ち') { statusColor = 'var(--status-orange)'; bg = '#fff7ed'; }
+                if (order.status === '全て入金済み') { statusColor = 'var(--status-green)'; bg = '#ecfdf5'; }
+                if (order.status === 'アーカイブ' || order.status === 'キャンセル') { statusColor = 'var(--status-red)'; bg = '#fef2f2'; }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -805,23 +849,23 @@
                     <td>${order['ご依頼者名']}</td>
                     <td class="plan-name">${order['プラン']}</td>
                     <td>
-                        <input type="date" value="${order.deadline || ''}" 
-                            style="border:none; background:transparent; font-family:inherit; cursor:pointer; color:#666;"
-                            onchange="updateDeadline('${order.id}', this.value)">
-                    </td>
-                     <td>
-                        ${isItemArchived ?
-                        `<button class="status-btn active" onclick="restoreOrder(${archiveIndex}, '${order.id}')">復元</button>` :
-                        `<button class="status-btn" onclick="archiveOrder(${realIndex}, '${order.id}')">終了/キャンセル</button>`
-                    }
+                        <div class="input-with-unit" style="width:140px;">
+                            <input type="date" value="${order.deadline || ''}" 
+                                style="border:none; background:transparent; font-family:inherit; cursor:pointer;"
+                                onchange="updateDeadline('${order.id}', this.value)">
+                        </div>
                     </td>
                     <td>
-                         ${isItemArchived ? '<span class="count-badge">アーカイブ</span>' :
-                        `<select onchange="updateStatus('${order.id}', this.value)" class="status-badge" style="background:#fff;">
+                         <select onchange="updateStatus('${order.id}', this.value)" class="status-select" style="color:${statusColor}; background:${bg}; border-color:${statusColor};">
                               ${['未着手', '支払い待ち', '全て入金済み', '納品済み', '取引終了', 'キャンセル'].map(s =>
-                            `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`
-                        ).join('')}
-                           </select>`
+                    `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`
+                ).join('')}
+                           </select>
+                    </td>
+                    <td style="text-align:right;">
+                        ${isItemArchived ?
+                        `<button class="btn-restore" onclick="restoreOrder(${archiveIndex}, '${order.id}')">復元</button>` :
+                        `<button class="btn-restore" onclick="archiveOrder(${realIndex}, '${order.id}')">Archive</button>`
                     }
                     </td>
                 `;
@@ -832,36 +876,42 @@
         function showDetail(id) {
             const order = [...(DATA.orders || []), ...(DATA.archive || [])].find(o => o.id === id);
             if (!order) return;
-
             document.getElementById('tab-orders').classList.remove('active');
             document.getElementById('tab-order-detail').classList.add('active');
 
             const content = document.getElementById('detail-content');
             content.innerHTML = `
-                <div style="background:#f9fafb; padding:20px; border-radius:8px; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <h3 style="font-size:1.2rem;">${order['曲名']}</h3>
-                        <span class="status-badge" style="background:white;">${order.status}</span>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.9rem;">
-                        <div><strong>ご依頼者:</strong> ${order['ご依頼者名']}</div>
-                        <div><strong>Email:</strong> ${order['email'] || '-'}</div>
-                        <div><strong>プラン:</strong> ${order['プラン']}</div>
-                        <div><strong>ご依頼日:</strong> ${new Date(order.date).toLocaleDateString('ja-JP')}</div>
-                        <div><strong>納期:</strong> ${order.deadline || '未設定'}</div>
-                        <div><strong>支払いリンク:</strong> <input value="${order.paymentLink || ''}" placeholder="Payment Link" 
-                            onchange="promptPayLink('${order.id}', this.value)" style="padding:4px; border:1px solid #ddd; border-radius:4px; width:200px;"></div>
+                <div style="background:#f9fafb; padding:25px; border-radius:12px; margin-bottom:20px;">
+                    <h3 style="font-size:1.5rem; margin-bottom:10px;">${order['曲名']}</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; font-size:0.95rem;">
+                        <div>
+                            <span style="color:#666; font-size:0.8rem;">CLIENT</span><br>
+                            <strong>${order['ご依頼者名']}</strong>
+                        </div>
+                        <div>
+                            <span style="color:#666; font-size:0.8rem;">PLAN</span><br>
+                            <strong>${order['プラン']}</strong>
+                        </div>
+                        <div>
+                            <span style="color:#666; font-size:0.8rem;">DATE</span><br>
+                            ${new Date(order.date).toLocaleDateString('ja-JP')}
+                        </div>
+                        <div>
+                            <span style="color:#666; font-size:0.8rem;">PAYMENT LINK</span><br>
+                            <input value="${order.paymentLink || ''}" placeholder="https://..." 
+                            onchange="promptPayLink('${order.id}', this.value)" style="padding:6px; border:1px solid #ddd; border-radius:4px; width:100%;">
+                        </div>
                     </div>
                 </div>
 
-                <div style="background:white; border:1px solid #eee; padding:20px; border-radius:8px;">
-                     <h4 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">メッセージ / 詳細</h4>
-                     <p style="white-space:pre-wrap; color:#444;">${order['要望・相談'] || 'メッセージなし'}</p>
+                <div style="background:white; border:1px solid #eee; padding:25px; border-radius:12px;">
+                     <h4 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">ご相談内容・メッセージ</h4>
+                     <p style="white-space:pre-wrap; color:#444; line-height:1.6;">${order['要望・相談'] || 'メッセージなし'}</p>
                      
-                     <div style="margin-top:20px;">
-                        <strong>参考ファイル/URL:</strong>
-                        <div style="margin-top:5px; padding:10px; background:#f0f9ff; color:#0369a1; border-radius:4px;">
-                            ${order['参考音源'] || 'なし'}
+                     <div style="margin-top:30px;">
+                        <strong>参考音源・URL</strong>
+                        <div style="margin-top:10px; padding:15px; background:#f0f9ff; color:#0369a1; border-radius:8px; display:flex; gap:10px; align-items:center;">
+                            <i class="fa-solid fa-link"></i> ${order['参考音源'] ? `<a href="${order['参考音源']}" target="_blank" style="text-decoration:underline;">${order['参考音源']}</a>` : 'なし'}
                         </div>
                      </div>
                 </div>
@@ -871,9 +921,9 @@
         function closeDetail() {
             document.getElementById('tab-order-detail').classList.remove('active');
             document.getElementById('tab-orders').classList.add('active');
+            renderOrders();
         }
 
-        // Updated promptPayLink to accept direct value if provided, or prompt
         async function promptPayLink(id, val = null) {
             let link = val;
             if (link === null) {
@@ -895,36 +945,29 @@
             if (order) order.status = status;
             renderOrders();
         }
-
         async function updateDeadline(id, date) {
             await postAPI('update_order_status', { orderId: id, deadline: date });
             const order = DATA.orders.find(o => o.id === id);
             if (order) order.deadline = date;
         }
-
         async function archiveOrder(idx, id) {
-            if (!confirm("この依頼を終了/キャンセル（アーカイブ）しますか？")) return;
+            if (!confirm("この依頼をアーカイブしますか？")) return;
             if (idx === -1) idx = DATA.orders.findIndex(o => o.id === id);
             if (idx === -1) return;
-
             const item = DATA.orders.splice(idx, 1)[0];
             item.status = 'archived';
             DATA.archive.unshift(item);
             renderOrders();
-
             await postAPI('archive_order', { index: idx });
         }
-
         async function restoreOrder(idx, id) {
-            if (!confirm("この依頼を復元しますか？")) return;
+            if (!confirm("復元しますか？")) return;
             if (idx === -1) idx = DATA.archive.findIndex(o => o.id === id);
             if (idx === -1) return;
-
             const item = DATA.archive.splice(idx, 1)[0];
             item.status = '未着手';
             DATA.orders.unshift(item);
             renderOrders();
-
             await postAPI('restore_order', { index: idx });
         }
 
@@ -938,9 +981,12 @@
             list.forEach((item, idx) => {
                 const div = document.createElement('div');
                 div.className = 'pf-item';
+                // Try to get thumbnail from ID
+                const thumbUrl = `https://img.youtube.com/vi/${item.id}/mqdefault.jpg`;
+
                 div.innerHTML = `
                     <div class="pf-thumb">
-                        ${item.id ? `<iframe src="https://www.youtube.com/embed/${item.id}" loading="lazy"></iframe>` : ''}
+                        ${item.id ? `<img src="${thumbUrl}" alt="Thumb">` : '<div style="background:#eee; width:100%; height:100%;"></div>'}
                     </div>
                     <div class="pf-inputs">
                         <input class="pf-input" placeholder="YouTube ID" value="${item.id || ''}" onchange="updatePf(${idx}, 'id', this.value)">
@@ -958,68 +1004,116 @@
                 if (m && m[2].length === 11) v = m[2];
             }
             DATA[activePfCat][idx][k] = v;
-            if (k === 'id') renderPf();
+            if (k === 'id') renderPf(); // Re-render to show new thumb
         }
         function addPf() { if (!DATA[activePfCat]) DATA[activePfCat] = []; DATA[activePfCat].push({ id: '' }); renderPf(); }
         function delPf(idx) { DATA[activePfCat].splice(idx, 1); renderPf(); }
         async function savePf() {
             await postAPI('update_portfolio', { category: activePfCat, items: DATA[activePfCat] });
-            alert("Saved Portfolio");
+            showToast("ポートフォリオを保存しました");
         }
+
+        // --- VOICES (NEW) ---
+        function renderVoices() {
+            const list = DATA.voices || [];
+            const container = document.getElementById('voice-container');
+            container.innerHTML = '';
+
+            list.forEach((v, idx) => {
+                const div = document.createElement('div');
+                div.className = 'voice-card';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <strong>Review #${idx + 1}</strong>
+                        <button class="btn btn-sm" style="color:red;" onclick="delVoice(${idx})">削除</button>
+                    </div>
+                    <div style="display:grid; gap:10px;">
+                        <input class="pf-input" placeholder="お客様名" value="${v.name || ''}" onchange="updVoice(${idx}, 'name', this.value)">
+                        <input class="pf-input" placeholder="アイコンURL (任意)" value="${v.icon || ''}" onchange="updVoice(${idx}, 'icon', this.value)">
+                        <textarea class="pf-input" rows="3" placeholder="感想・コメント" onchange="updVoice(${idx}, 'content', this.value)">${v.content || ''}</textarea>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function addVoice() { DATA.voices.push({ name: '', content: '' }); renderVoices(); }
+        function updVoice(idx, k, v) { DATA.voices[idx][k] = v; }
+        function delVoice(idx) { DATA.voices.splice(idx, 1); renderVoices(); }
+        async function saveVoices() {
+            await postAPI('update_voices', DATA.voices);
+            showToast("お客様の声を保存しました");
+        }
+
 
         // --- PRICES ---
         function renderPrices() {
-            const container = document.getElementById('price-container');
-            container.innerHTML = '';
+            renderPriceSection('mix', 'price-mix-area', 'ミックスプラン');
+            renderPriceSection('orig', 'price-orig-area', 'オリジナル制作プラン');
+        }
 
-            ['mix', 'orig'].forEach(cat => {
-                const header = document.createElement('h3');
-                header.innerText = cat === 'mix' ? 'ミックスプラン' : 'オリジナル制作プラン';
-                header.style.marginTop = '30px';
-                container.appendChild(header);
+        function renderPriceSection(cat, containerId, title) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<h3 class="price-header">${title}</h3>`;
 
-                const list = DATA.prices[cat] || [];
-                list.forEach((plan, idx) => {
-                    const div = document.createElement('div');
-                    div.className = 'price-group';
-                    div.innerHTML = `
-                        <div class="price-row" style="justify-content:space-between;">
-                            <strong>Plan #${idx + 1}</strong>
-                            <button class="btn btn-sm" style="color:red;" onclick="delPrice('${cat}',${idx})">削除</button>
-                        </div>
-                        <input class="pf-input price-input-lg" value="${plan.title || ''}" placeholder="プラン名" onchange="updPrice('${cat}',${idx},'title',this.value)">
-                        <textarea class="pf-input" rows="3" placeholder="説明" onchange="updPrice('${cat}',${idx},'desc',this.value)">${plan.desc || ''}</textarea>
-                        <div class="price-row">
-                            <input class="pf-input" placeholder="価格" value="${plan.price || ''}" 
+            const list = DATA.prices[cat] || [];
+            list.forEach((plan, idx) => {
+                const div = document.createElement('div');
+                div.className = 'price-group';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <span style="font-weight:600; color:#555;">Plan #${idx + 1}</span>
+                        <button class="btn btn-sm" style="color:red;" onclick="delPrice('${cat}',${idx})">削除</button>
+                    </div>
+                    <input class="pf-input" style="font-size:1.1rem; font-weight:700; margin-bottom:10px;" value="${plan.title || ''}" placeholder="プラン名" onchange="updPrice('${cat}',${idx},'title',this.value)">
+                    <textarea class="pf-input" rows="2" style="margin-bottom:15px;" placeholder="プラン説明" onchange="updPrice('${cat}',${idx},'desc',this.value)">${plan.desc || ''}</textarea>
+                    
+                    <div style="display:flex; gap:20px;">
+                        <div class="input-with-unit">
+                             <input class="pf-input" placeholder="価格" value="${plan.price || ''}" 
                                 onfocus="this.value = this.value.replace(/[^0-9]/g, '')"
-                                onblur="formatPriceInput(this, '${cat}', ${idx})">
-                            <input class="pf-input" placeholder="納期" value="${plan.period || ''}" onchange="updPrice('${cat}',${idx},'period',this.value)">
-                            <input class="pf-input" placeholder="修正回数" value="${plan.revisions || ''}" onchange="updPrice('${cat}',${idx},'revisions',this.value)">
+                                onblur="formatPriceInput(this, '${cat}', ${idx})"
+                             >
+                             <span class="input-unit">円</span>
                         </div>
-                     `;
-                    container.appendChild(div);
-                });
-                const addBtn = document.createElement('button');
-                addBtn.className = 'btn';
-                addBtn.innerText = '+ ' + cat + ' プラン追加';
-                addBtn.style.marginTop = "10px";
-                addBtn.onclick = () => { DATA.prices[cat].push({ title: 'New Plan' }); renderPrices(); };
-                container.appendChild(addBtn);
+                        <div class="input-with-unit">
+                             <input class="pf-input" placeholder="納期" value="${plan.period || ''}" onchange="updPrice('${cat}',${idx},'period',this.value)">
+                             <span class="input-unit">日</span>
+                        </div>
+                        <div class="input-with-unit">
+                             <input class="pf-input" placeholder="修正" value="${plan.revisions || ''}" onchange="updPrice('${cat}',${idx},'revisions',this.value)">
+                             <span class="input-unit">回</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
             });
         }
+
+        function addPlan(cat) { DATA.prices[cat].push({ title: 'New Plan' }); renderPrices(); }
+
         function formatPriceInput(el, cat, idx) {
             let val = el.value.replace(/[^0-9]/g, '');
             if (!val) return;
-            const formatted = parseInt(val).toLocaleString() + '円';
+            const formatted = parseInt(val).toLocaleString(); // Stored with '円' in view? User asked for Unit label.
+            // If we use unit label outside, input should be number only?
+            // "入力フィールドのラベル明示... 数値だけを入力すれば良いようにする"
+            // So we should NOT append '円' inside the value if the label is outside.
+            // But we need to save it likely with '円' or just number? 
+            // Existing logic saved '10,000円'. If I change to number only, I must ensure frontend consistency.
+            // Public site likely expects string or number.
+            // Let's store just number string "10,000" or raw number?
+            // "数値だけを入力すれば良い". 
+            // I will store formatted "10,000" but render unit outside.
+
             el.value = formatted;
             updPrice(cat, idx, 'price', formatted);
-            // Re-render prices if needed, or just keep updated value
         }
+
         function updPrice(cat, idx, k, v) { DATA.prices[cat][idx][k] = v; }
         function delPrice(cat, idx) { DATA.prices[cat].splice(idx, 1); renderPrices(); }
         async function savePrices() {
             await postAPI('update_prices', DATA.prices);
-            alert("Saved Prices");
+            showToast("料金プランを保存しました");
         }
 
         checkAuth();
