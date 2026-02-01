@@ -990,7 +990,9 @@
                         <input class="pf-input price-input-lg" value="${plan.title || ''}" placeholder="プラン名" onchange="updPrice('${cat}',${idx},'title',this.value)">
                         <textarea class="pf-input" rows="3" placeholder="説明" onchange="updPrice('${cat}',${idx},'desc',this.value)">${plan.desc || ''}</textarea>
                         <div class="price-row">
-                            <input class="pf-input" placeholder="価格" value="${plan.price || ''}" onchange="updPrice('${cat}',${idx},'price',this.value)">
+                            <input class="pf-input" placeholder="価格" value="${plan.price || ''}" 
+                                onfocus="this.value = this.value.replace(/[^0-9]/g, '')"
+                                onblur="formatPriceInput(this, '${cat}', ${idx})">
                             <input class="pf-input" placeholder="納期" value="${plan.period || ''}" onchange="updPrice('${cat}',${idx},'period',this.value)">
                             <input class="pf-input" placeholder="修正回数" value="${plan.revisions || ''}" onchange="updPrice('${cat}',${idx},'revisions',this.value)">
                         </div>
@@ -1004,6 +1006,14 @@
                 addBtn.onclick = () => { DATA.prices[cat].push({ title: 'New Plan' }); renderPrices(); };
                 container.appendChild(addBtn);
             });
+        }
+        function formatPriceInput(el, cat, idx) {
+            let val = el.value.replace(/[^0-9]/g, '');
+            if (!val) return;
+            const formatted = parseInt(val).toLocaleString() + '円';
+            el.value = formatted;
+            updPrice(cat, idx, 'price', formatted);
+            // Re-render prices if needed, or just keep updated value
         }
         function updPrice(cat, idx, k, v) { DATA.prices[cat][idx][k] = v; }
         function delPrice(cat, idx) { DATA.prices[cat].splice(idx, 1); renderPrices(); }
