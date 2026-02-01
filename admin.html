@@ -745,6 +745,19 @@
                 const json = await res.json();
                 DATA = { ...DATA, ...json };
 
+                // --- DEDUPLICATION LOGIC ---
+                // Ensure orders are unique by ID. Prefer the one that might have newer status if conflict (rare).
+                if (Array.isArray(DATA.orders)) {
+                    const uniqueOrders = new Map();
+                    DATA.orders.forEach(o => uniqueOrders.set(o.id, o));
+                    DATA.orders = Array.from(uniqueOrders.values());
+                }
+                if (Array.isArray(DATA.archive)) {
+                    const uniqueArchive = new Map();
+                    DATA.archive.forEach(o => uniqueArchive.set(o.id, o));
+                    DATA.archive = Array.from(uniqueArchive.values());
+                }
+
                 if (Array.isArray(DATA.prices)) DATA.prices = { mix: [], orig: [] };
                 if (!DATA.prices.mix) DATA.prices.mix = [];
                 if (!DATA.prices.orig) DATA.prices.orig = [];
@@ -777,6 +790,17 @@
             document.getElementById('page-crumb').innerText = map[tabId];
         }
 
+        // --- HELPER: Plan Name Localization ---
+        function formatPlanName(plan) {
+            // Normalize inputs just in case
+            if (!plan) return '-';
+            const p = plan.trim();
+            // Mapping based on user request and common plan names
+            if (p.toLowerCase().includes('mix') || p === 'Mix Plan') return 'ミックス／マスタリング';
+            if (p.toLowerCase().includes('original') || p === 'Original Plan' || p === 'Standard Plan') return 'オリジナル楽曲制作';
+            return p;
+        }
+
         // --- ORDERS LOGIC ---
         let filterStatus = 'all';
 
@@ -807,13 +831,22 @@
                 }
             }
 
+            // Dedupe list again just in case of overlap between archive/orders in display logic
+            const uniqueList = new Map();
+            list.forEach(o => uniqueList.set(o.id, o));
+            list = Array.from(uniqueList.values());
+
             if (query) {
                 list = list.filter(o => (o['ご依頼者名'] || '').includes(query) || (o['曲名'] || '').includes(query));
             }
 
-            // Sync counts exactly
+            // Sync counts based on FULL deduped datasets
+            const allOrdersMap = new Map();
+            (DATA.orders || []).forEach(o => allOrdersMap.set(o.id, o));
+            const uniqueOrders = Array.from(allOrdersMap.values());
+
             const counts = { 'archive': (DATA.archive || []).length };
-            (DATA.orders || []).forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
+            uniqueOrders.forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
 
             const countIds = {
                 '未着手': 'cnt-new', '支払い待ち': 'cnt-pay', '全て入金済み': 'cnt-paid',
@@ -826,7 +859,7 @@
                     else el.innerText = counts[k] || 0;
                 }
             });
-            document.getElementById('cnt-all').innerText = (DATA.orders || []).length;
+            document.getElementById('cnt-all').innerText = uniqueOrders.length;
 
 
             list.forEach(order => {
@@ -834,7 +867,6 @@
                 const archiveIndex = (DATA.archive || []).findIndex(a => a.id === order.id);
                 const isItemArchived = Boolean(DATA.archive && DATA.archive.find(a => a.id === order.id));
 
-                // Color Logic
                 let statusColor = '#333';
                 let bg = '#eee';
                 if (order.status === '未着手') { statusColor = 'var(--status-gray)'; bg = '#f3f4f6'; }
@@ -847,7 +879,7 @@
                     <td>${new Date(order.date).toLocaleDateString('ja-JP')}</td>
                     <td class="client-name" onclick="showDetail('${order.id}')">${order['曲名']}</td>
                     <td>${order['ご依頼者名']}</td>
-                    <td class="plan-name">${order['プラン']}</td>
+                    <td class="plan-name">${formatPlanName(order['プラン'])}</td>
                     <td>
                         <div class="input-with-unit" style="width:140px;">
                             <input type="date" value="${order.deadline || ''}" 
@@ -880,40 +912,69 @@
             document.getElementById('tab-order-detail').classList.add('active');
 
             const content = document.getElementById('detail-content');
+            // List all potential fields from the form
+            // Fields: Name, Email, SNS, Plan, Song Title, Reference URL, Message, Files?
             content.innerHTML = `
                 <div style="background:#f9fafb; padding:25px; border-radius:12px; margin-bottom:20px;">
                     <h3 style="font-size:1.5rem; margin-bottom:10px;">${order['曲名']}</h3>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; font-size:0.95rem;">
+                     <div class="mb-2" style="margin-bottom:20px;">
+                        <span class="status-badge" style="background:#fff; border:1px solid #ddd;">${order.status}</span>
+                         <span style="font-size:0.9rem; color:#666; margin-left:10px;">ID: ${order.id}</span>
+                     </div>
+                    
+                    <h4 style="border-bottom:1px solid #ddd; margin-bottom:15px; padding-bottom:5px;">基本情報</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; font-size:0.95rem; margin-bottom:30px;">
                         <div>
-                            <span style="color:#666; font-size:0.8rem;">CLIENT</span><br>
+                            <span style="color:#666; font-size:0.8rem;">ご依頼者名 (Name)</span><br>
                             <strong>${order['ご依頼者名']}</strong>
                         </div>
-                        <div>
-                            <span style="color:#666; font-size:0.8rem;">PLAN</span><br>
-                            <strong>${order['プラン']}</strong>
+                         <div>
+                            <span style="color:#666; font-size:0.8rem;">メールアドレス (Email)</span><br>
+                            <strong>${order['email'] || '-'}</strong>
                         </div>
                         <div>
-                            <span style="color:#666; font-size:0.8rem;">DATE</span><br>
-                            ${new Date(order.date).toLocaleDateString('ja-JP')}
+                            <span style="color:#666; font-size:0.8rem;">SNSアカウント</span><br>
+                            ${order['sns'] || order['SNS'] || '-'}
                         </div>
                         <div>
-                            <span style="color:#666; font-size:0.8rem;">PAYMENT LINK</span><br>
-                            <input value="${order.paymentLink || ''}" placeholder="https://..." 
-                            onchange="promptPayLink('${order.id}', this.value)" style="padding:6px; border:1px solid #ddd; border-radius:4px; width:100%;">
+                            <span style="color:#666; font-size:0.8rem;">プラン (Plan)</span><br>
+                            <strong>${formatPlanName(order['プラン'])}</strong>
+                        </div>
+                        <div>
+                            <span style="color:#666; font-size:0.8rem;">ご依頼日 (Date)</span><br>
+                            ${new Date(order.date).toLocaleDateString('ja-JP')} ${new Date(order.date).toLocaleTimeString('ja-JP')}
+                        </div>
+                         <div>
+                            <span style="color:#666; font-size:0.8rem;">納期 (Deadline)</span><br>
+                            ${order.deadline || '未設定'}
                         </div>
                     </div>
-                </div>
 
-                <div style="background:white; border:1px solid #eee; padding:25px; border-radius:12px;">
-                     <h4 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">ご相談内容・メッセージ</h4>
-                     <p style="white-space:pre-wrap; color:#444; line-height:1.6;">${order['要望・相談'] || 'メッセージなし'}</p>
-                     
-                     <div style="margin-top:30px;">
-                        <strong>参考音源・URL</strong>
-                        <div style="margin-top:10px; padding:15px; background:#f0f9ff; color:#0369a1; border-radius:8px; display:flex; gap:10px; align-items:center;">
-                            <i class="fa-solid fa-link"></i> ${order['参考音源'] ? `<a href="${order['参考音源']}" target="_blank" style="text-decoration:underline;">${order['参考音源']}</a>` : 'なし'}
+                    <h4 style="border-bottom:1px solid #ddd; margin-bottom:15px; padding-bottom:5px;">支払い情報</h4>
+                        <div style="margin-bottom:30px;">
+                            <span style="color:#666; font-size:0.8rem;">PAYMENT LINK</span><br>
+                            <input value="${order.paymentLink || ''}" placeholder="https://..." 
+                            onchange="promptPayLink('${order.id}', this.value)" style="padding:8px; border:1px solid #ddd; border-radius:4px; width:100%; max-width:500px;">
                         </div>
-                     </div>
+
+                    <h4 style="border-bottom:1px solid #ddd; margin-bottom:15px; padding-bottom:5px;">依頼詳細・ファイル</h4>
+                    <div style="background:white; border:1px solid #eee; padding:20px; border-radius:8px;">
+                        <p style="margin-bottom:15px;"><strong>ご要望・相談内容:</strong></p>
+                        <p style="white-space:pre-wrap; color:#444; line-height:1.6; background:#f9f9f9; padding:15px; border-radius:6px;">${order['要望・相談'] || 'なし'}</p>
+                        
+                        <div style="margin-top:20px;">
+                            <strong>参考音源・URL (Ref URL):</strong>
+                            <div style="margin-top:5px; word-break:break-all;">
+                                ${order['参考音源'] ? `<a href="${order['参考音源']}" target="_blank" style="color:var(--primary); text-decoration:underline;">${order['参考音源']}</a>` : 'なし'}
+                            </div>
+                        </div>
+                         <div style="margin-top:20px;">
+                             <strong>ギガファイル便/その他URL:</strong>
+                             <div style="margin-top:5px; word-break:break-all;">
+                                ${order['gigafile'] || order['fileUrl'] || 'なし'}
+                             </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
