@@ -710,8 +710,24 @@
             </div>
 
             <div id="tab-account" class="tab-pane">
-                <div class="page-title">アカウント設定</div>
-                <p>Not implemented yet.</p>
+                <div class="page-header">
+                    <div class="page-title">アカウント設定</div>
+                </div>
+
+                <div class="content-card" style="min-height:auto; margin-bottom:30px;">
+                    <h3>管理者情報</h3>
+                    <p style="margin-top:10px; color:#666;">現在のパスワードでログイン中です。</p>
+                </div>
+
+                <div class="content-card" style="min-height:auto; border-color:var(--status-red); background:#fef2f2;">
+                    <h3 style="color:var(--status-red);">Danger Zone</h3>
+                    <p style="margin-top:10px; margin-bottom:20px; color:#b91c1c;">
+                        すべての依頼データ（アーカイブ含む）を完全に削除します。<br>
+                        この操作は取り消せません。
+                    </p>
+                    <button class="btn" style="background:var(--status-red); color:white;"
+                        onclick="resetAllData()">依頼データをすべて削除する</button>
+                </div>
             </div>
         </section>
     </main>
@@ -724,6 +740,20 @@
         let TOKEN = localStorage.getItem('admin_token') || '';
         let DATA = { orders: [], works: [], mix: [], orig: [], prices: { mix: [], orig: [] }, voices: [] };
         let activePfCat = 'works';
+
+        async function resetAllData() {
+            if (!confirm("本当に全ての依頼データを削除しますか？\nこの操作は取り消せません。")) return;
+            if (!confirm("最終確認：本当に削除してよろしいですか？")) return;
+
+            try {
+                await postAPI('reset_all', {});
+                alert("全てのデータを削除しました。");
+                location.reload();
+            } catch (e) {
+                alert("削除に失敗しました");
+                console.error(e);
+            }
+        }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
