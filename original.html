@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オリジナル楽曲制作 | Sien-Official</title>
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- OGP Settings -->
+    <meta property="og:site_name" content="Sien-Official" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sien-official.vercel.app/" />
+    <meta property="og:title" content="Sien-Official | 歌ってみたMIX・オリジナル楽曲制作" />
+    <meta property="og:description"
+        content="あなただけのオリジナル楽曲を制作します。作曲、編曲（アレンジ）、作詞、Mixまでトータルプロデュース。Vtuber様や歌い手様のオリジナル曲に。" />
+    <meta property="og:image" content="https://sien-official.vercel.app/assets/ogp.png?v=20260203" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@sien_mc09" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css?v=2026D">
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label"><span></span></label>
+        <nav class="nav-menu">
+            <ul>
+                <li><a href="mix.html">ミックス／マスタリング</a></li>
+                <li><a href="original.html" class="active-link">オリジナル楽曲制作</a></li>
+                <li><a href="works.html">制作実績</a></li>
+                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
+                
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Page Title -->
+    <div class="page-header">
+        <div class="container">
+            <h1>オリジナル楽曲制作</h1>
+            <p>世界に一つだけのオリジナル楽曲を制作します。</p>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="container text-center">
+
+            <!-- Dynamic Plan List (Centered 2 Columns) -->
+            <div id="plan-list-orig" class="price-grid center-2-col mt-5"></div>
+
+            <div class="options-box mt-4" style="max-width: 600px; margin: 30px auto;">
+                <h4>オプション</h4>
+                <div id="option-list-orig"></div>
+            </div>
+
+            <!-- Schedule Section -->
+            <section id="schedule" class="section-flow" style="margin-top: 60px;">
+                <div class="container">
+                    <h2 class="section-title">制作スケジュール・流れ</h2>
+                    <p class="section-desc">
+                        ご依頼から納品まで、おおよそ<strong>45〜60日程度</strong> を目安に進めてまいります。<br>
+                        <small>※修正内容やスケジュールの混雑状況によっては、期間が延長となる場合がございます。</small>
+                    </p>
+
+                    <div class="flow-steps">
+                        <div class="step-item">
+                            <span class="step-num">STEP 01</span>
+                            <h3>お支払い・制作開始</h3>
+                            <p>お支払い確認後、ワンコーラスデモを制作。<br>期間：約1〜2週間</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">STEP 02</span>
+                            <h3>方向性の確認・修正</h3>
+                            <p>デモ音源をご確認いただき、イメージをすり合わせます。</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">STEP 03</span>
+                            <h3>フルコーラス制作</h3>
+                            <p>デモを元に全体を構築。<br>期間：約2〜3週間</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">STEP 04</span>
+                            <h3>ボーカル収録・提出</h3>
+                            <p>最終確認後、お客様にて収録されたデータをお送りください。</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">STEP 05</span>
+                            <h3>MIX・マスタリング</h3>
+                            <p>ボーカルとオケを馴染ませ仕上げます。<br>期間：約1〜2週間</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">STEP 06</span>
+                            <h3>完成データ納品</h3>
+                            <p>最終調整を終え、完成した音源を納品いたします。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ Section -->
+            <section id="faq" class="section" style="padding-top: 0;">
+                <div class="container text-center">
+                    <h2 class="section-title">よくある質問</h2>
+                    <p class="section-desc">ご依頼に関するご質問にお答えします。</p>
+                    <a href="faq.html" class="btn btn-outline" style="border-radius:30px; padding:10px 40px;">
+                        よくある質問はこちら <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Portfolio Section -->
+            <div class="portfolio-section mt-5">
+                <h3 class="widget-title text-center">制作実績</h3>
+                <p class="section-desc">過去の制作事例</p>
+
+                <div class="video-grid" id="original-portfolio">
+                    <!-- Dynamic Content by JS -->
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <!-- Footer (Redesign 2026: Service-Focused) -->
+    <footer class="footer">
+        <div class="footer-container">
+            <!-- Col 1: Service -->
+            <div class="footer-col">
+                <h4>サービス内容</h4>
+                <ul>
+                    <li><a href="mix.html">ミックス・マスタリング</a></li>
+                    <li><a href="original.html">オリジナル楽曲制作</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 2: Support -->
+            <div class="footer-col">
+                <h4>ご依頼・サポート</h4>
+                <ul>
+                    <li><a href="order.html">ご依頼フォーム</a></li>
+                    <li><a href="business.html">法人・企業様お問い合わせ</a></li>
+                    <li><a href="faq.html">よくある質問（FAQ）</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Policy -->
+            <div class="footer-col">
+                <h4>規約・ポリシー</h4>
+                <ul>
+                    <li><a href="terms.html">ご依頼に関する留意事項</a></li>
+                    <li><a href="privacy.html">プライバシーポリシー</a></li>
+                    <li><a href="tokusho.html">特定商取引法に基づく表記</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-copy">Copyright (c) 2026 Sien-Official. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Floating CTA -->
+
+
+
+
+    <script src="script.js?v=21"></script>
+</body>
+
+</html>

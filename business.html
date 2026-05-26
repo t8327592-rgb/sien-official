@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法人・企業様お問い合わせ | Sien-Official</title>
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
+    <!-- OGP Settings -->
+    <meta property="og:site_name" content="Sien-Official" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sien-official.vercel.app/business.html" />
+    <meta property="og:title" content="法人・企業様お問い合わせ | Sien-Official" />
+    <meta property="og:description" content="Sien-Officialへの法人・企業様からのお問い合わせフォームです。" />
+    <meta property="og:image" content="https://sien-official.vercel.app/assets/ogp.png?v=20260203" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@sien_mc09" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css?v=2026D">
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="nav-toggle-label">
+            <span></span>
+        </label>
+        <nav class="nav-menu">
+            <ul>
+                <li><a href="mix.html">ミックス／マスタリング</a></li>
+                <li><a href="original.html">オリジナル楽曲制作</a></li>
+                <li><a href="works.html">制作実績</a></li>
+                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
+                
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Page Title -->
+    <div class="page-header">
+        <div class="container">
+            <h1>法人・企業様お問い合わせ</h1>
+            <p>For Business</p>
+        </div>
+    </div>
+
+    <!-- Contact Form Section -->
+    <section class="section">
+        <div class="container">
+
+            <!-- Input Area Wrapper -->
+            <div id="input-area">
+                <p class="text-center" style="margin-bottom: 40px;">
+                    制作のご依頼、イベント出演、その他ビジネスに関するお問い合わせはこちらからお願いいたします。<br>
+                    原則24時間以内にご返信させていただきます。
+                </p>
+
+                <!-- Form -->
+                <form id="businessForm" class="order-form-clean" action="" method="POST">
+                    <input type="hidden" name="form-name" value="business">
+
+                    <!-- Single Column Grid -->
+                    <div class="form-grid">
+
+                        <!-- Company Name -->
+                        <div class="form-group">
+                            <label>貴社名 <span class="req">必須</span></label>
+                            <input type="text" name="貴社名" required placeholder="例: 株式会社○○">
+                        </div>
+
+                        <!-- Contact Person -->
+                        <div class="form-group">
+                            <label>ご担当者様名 <span class="req">必須</span></label>
+                            <input type="text" name="ご担当者様名" required placeholder="例: 山田 太郎">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label>メールアドレス <span class="req">必須</span></label>
+                            <input type="email" name="メールアドレス" required placeholder="example@company.co.jp">
+                        </div>
+
+                        <!-- Service Type -->
+                        <div class="form-group">
+                            <label>ご依頼種別 <span class="req">必須</span></label>
+                            <select name="ご依頼種別" required>
+                                <option value="">選択してください</option>
+                                <option value="ミックス／マスタリング">ミックス／マスタリング</option>
+                                <option value="オリジナル楽曲制作">オリジナル楽曲制作</option>
+                            </select>
+                        </div>
+
+                        <!-- Budget -->
+                        <div class="form-group">
+                            <label>ご予算感 <span class="req">必須</span></label>
+                            <input type="text" name="ご予算感" required placeholder="例: 10万円〜">
+                        </div>
+
+                        <!-- Message -->
+                        <div class="form-group full-width">
+                            <label>お問い合わせ内容 <span class="req">必須</span></label>
+                            <textarea name="お問い合わせ内容" required placeholder="ご依頼の詳細、スケジュール感などをご記入ください"
+                                style="min-height: 200px;"></textarea>
+                        </div>
+
+                    </div>
+
+                    <!-- Privacy Policy Agreement -->
+                    <div class="form-group checkbox-group mt-4" style="text-align: center;">
+                        <input type="checkbox" id="agree" required
+                            style="width: auto; margin-right: 10px; transform: scale(1.2);">
+                        <label for="agree" style="display: inline; font-size: 1rem; cursor: pointer;">
+                            <a href="terms.html" target="_blank" class="disclaimer-link"
+                                style="color: #2563eb; text-decoration: underline;">ご依頼に関する留意事項</a>に同意する <span
+                                class="req">*</span>
+                        </label>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg" style="min-width: 250px;">
+                            送信する <i class="fa-solid fa-paper-plane ml-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="successMessage" class="success-message hidden">
+                <i class="fa-regular fa-paper-plane"></i>
+                <h3>送信完了</h3>
+                <p>お問い合わせありがとうございます。<br>内容を確認のうえ、担当者よりご連絡させていただきます。</p>
+                <div class="text-center mt-4">
+                    <a href="index.html" class="btn btn-outline">ホームに戻る</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer (Redesign 2026: Service-Focused) -->
+    <footer class="footer">
+        <div class="footer-container">
+            <!-- Col 1: Service -->
+            <div class="footer-col">
+                <h4>サービス内容</h4>
+                <ul>
+                    <li><a href="mix.html">ミックス・マスタリング</a></li>
+                    <li><a href="original.html">オリジナル楽曲制作</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 2: Support -->
+            <div class="footer-col">
+                <h4>ご依頼・サポート</h4>
+                <ul>
+                    <li><a href="order.html">ご依頼フォーム</a></li>
+                    <li><a href="business.html">法人・企業様お問い合わせ</a></li>
+                    <li><a href="faq.html">よくある質問（FAQ）</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Policy -->
+            <div class="footer-col">
+                <h4>規約・ポリシー</h4>
+                <ul>
+                    <li><a href="terms.html">ご依頼に関する留意事項</a></li>
+                    <li><a href="privacy.html">プライバシーポリシー</a></li>
+                    <li><a href="tokusho.html">特定商取引法に基づく表記</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-copy">Copyright (c) 2026 Sien-Official. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
