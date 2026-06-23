@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  description String
+  features    String   // JSON string
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  category    String   // 'mix', 'original', 'other'
+  url         String?
+  message     String
+  status      String   @default("pending") // 'pending', 'contacted', 'completed'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  youtubeId   String
+  title       String
+  clientName  String
+  role        String
+  category    String   // 'mix', 'orig', 'vtuber', 'other'
+  sortOrder   Int      @default(999)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model News {
+  id          String   @id @default(cuid())
+  slug        String   @unique @default(uuid())
+  title       String
+  content     String
+  date        DateTime
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Voice {
+  id          String   @id @default(cuid())
+  client      String
+  content     String
+  rating      Int      @default(5)
+  source      String   @default("ココナラ")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

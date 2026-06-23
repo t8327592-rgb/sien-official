@@ -1,0 +1,189 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+
+type Portfolio = {
+  id: string;
+  title: string;
+  url: string | null;
+  serviceCategory: string | null;
+  tags: string | null;
+  isFeatured: boolean;
+};
+
+export default function WorksClient({ 
+  portfolios,
+  mixPortfolios,
+  originalPortfolios
+}: { 
+  portfolios?: Portfolio[],
+  mixPortfolios?: any[],
+  originalPortfolios?: any[]
+}) {
+  const [activeTab, setActiveTab] = useState<"mix" | "original">("mix");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  // モーダルではなく、現在インラインで再生中のポートフォリオIDを保持
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const hasTabs = mixPortfolios !== undefined && originalPortfolios !== undefined;
+  const currentPortfolios = portfolios ? portfolios : (activeTab === "mix" ? (mixPortfolios || []) : (originalPortfolios || []));
+
+  // 全タグを抽出して重複を削除
+  const allTags = Array.from(new Set(
+    currentPortfolios
+      .flatMap(p => p.tags ? p.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [])
+  )).sort();
+
+  // タグでフィルタリング
+  const filteredPortfolios = activeTag
+    ? currentPortfolios.filter(p => p.tags && p.tags.split(",").map((t: string) => t.trim()).includes(activeTag))
+    : currentPortfolios;
+
+  const getYoutubeId = (url: string | null) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : null;
+  };
+
+  const getYoutubeThumbnail = (url: string | null) => {
+    const id = getYoutubeId(url);
+    return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+  };
+
+  return (
+    <>
+      {/* タブ UI */}
+      {hasTabs && (
+        <div className="flex justify-center mb-8 gap-3 sm:gap-4">
+          <button 
+            onClick={() => { setActiveTab("mix"); setActiveTag(null); setPlayingId(null); }}
+            className={`px-6 py-3 rounded-full font-bold text-sm sm:text-base transition-all duration-300 ${activeTab === "mix" ? "bg-orange-600 text-white shadow-lg shadow-orange-500/30 scale-105" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          >
+            ボーカルMIX
+          </button>
+          <button 
+            onClick={() => { setActiveTab("original"); setActiveTag(null); setPlayingId(null); }}
+            className={`px-6 py-3 rounded-full font-bold text-sm sm:text-base transition-all duration-300 ${activeTab === "original" ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-105" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          >
+            オリジナル楽曲制作
+          </button>
+        </div>
+      )}
+
+      {/* タグフィルター UI */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
+          <button
+            onClick={() => setActiveTag(null)}
+            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+              activeTag === null
+                ? "bg-orange-600 text-white shadow-md"
+                : "bg-white text-slate-600 border border-slate-200 hover:border-orange-300 hover:bg-orange-50"
+            }`}
+          >
+            すべて
+          </button>
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(tag)}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                activeTag === tag
+                  ? "bg-orange-600 text-white shadow-md"
+                  : "bg-white text-slate-600 border border-slate-200 hover:border-orange-300 hover:bg-orange-50"
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ポートフォリオ一覧 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {filteredPortfolios.map((p) => {
+          const thumbnail = getYoutubeThumbnail(p.url);
+          const youtubeId = getYoutubeId(p.url);
+          const isPlaying = playingId === p.id && youtubeId;
+
+          return (
+            <div 
+              key={p.id} 
+              className="group flex flex-col text-left bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 w-full"
+            >
+              <div className="aspect-video bg-slate-100 relative overflow-hidden w-full">
+                {isPlaying ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                    title={p.title}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <>
+                    {thumbnail ? (
+                      <Image 
+                        src={thumbnail} 
+                        alt={p.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer" 
+                        onClick={() => youtubeId && setPlayingId(p.id)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-200">No Image</div>
+                    )}
+                    {p.isFeatured && (
+                      <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-600 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md pointer-events-none">
+                        代表作
+                      </div>
+                    )}
+                    {/* 再生ボタンオーバーレイ (画像がある場合のみ) */}
+                    {youtubeId && (
+                      <button 
+                        onClick={() => setPlayingId(p.id)}
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center w-full h-full cursor-pointer"
+                        aria-label="動画を再生"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white/90 shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-orange-600 ml-1">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="p-5 flex-1 flex flex-col w-full">
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-800 text-sm leading-relaxed line-clamp-2 transition-colors" title={p.title}>
+                    {p.title}
+                  </h3>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded-md uppercase">
+                    {p.serviceCategory || "MIX"}
+                  </span>
+                  {p.tags && p.tags.split(",").map(t => t.trim()).filter(Boolean).map(t => (
+                    <span key={t} className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {filteredPortfolios.length === 0 && (
+        <div className="text-center py-20 text-slate-500 bg-white rounded-2xl border border-slate-100">
+          該当する実績が見つかりませんでした。
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 管理者（しえん様用）アカウント
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 顧客（お問い合わせ履歴・案件）
+model Customer {
+  id             String    @id @default(cuid())
+  name           String
+  twitterId      String?
+  email          String?
+  service        String    // プラン名
+  message        String    // 問い合わせ内容全体
+  memo           String?   // 管理用メモ
+  status         String    @default("未対応") // Kanbanステータス: 未対応, 見積もり送信, 素材待ち, 制作中, 初稿提出, 修正対応, 納品完了, アーカイブ
+  deadline       DateTime? // 納期
+  price          Int?      // 料金
+  paymentStatus  String    @default("未払い") // 未払い, 支払い済み, 返金対応
+  tags           String?   // カンマ区切りタグ
+  materials      String?   // 素材URL・メモ（JSONまたはテキスト）
+  deliveryData   String?   // 納品データURL
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// メッセージテンプレート
+model Template {
+  id        String   @id @default(cuid())
+  name      String   // "初回返信", "見積もり", "納品"
+  content   String   // 本文 ({client} などの変数を含む)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 料金プラン
+model Plan {
+  id          String   @id @default(cuid())
+  title       String
+  price       String
+  description String
+  period      String?  // 納期目安
+  revisions   String?  // 修正回数
+  isPopular   Boolean  @default(false)
+  order       Int      @default(0) // 表示順
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// プロフィール情報
+model Profile {
+  id           String   @id @default(cuid())
+  name         String
+  title        String   // MIX ENGINEER / CREATOR
+  twitterId    String
+  text1        String
+  text2        String
+  text3        String
+  availability String?  @default("○") // 〇, △, ×
+  deliveryInfo String?  @default("3〜5日")
+  updatedAt    DateTime @updatedAt
+}
+
+// 制作実績（ポートフォリオ）
+model Portfolio {
+  id        String   @id @default(cuid())
+  title     String
+  videoId   String   // YouTubeの動画ID (例: olpsRfUFdjw)
+  artist    String?  // アーティスト名
+  tags      String?  // ジャンルタグ (カンマ区切り等)
+  comment   String?  // 一言コメント
+  order     Int      @default(0) // 表示順
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// お知らせ（News）
+model News {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
