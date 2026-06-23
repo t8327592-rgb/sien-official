@@ -7,30 +7,28 @@ export default async function AdminDashboard() {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // 今月の依頼
-  const thisMonthOrders = await prisma.order.findMany({
-    where: {
-      createdAt: {
-        gte: startOfMonth,
+  // データベースへのクエリを並列実行して高速化
+  const [thisMonthOrders, workingOrdersCount, recentOrders] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+        },
       },
-    },
-  });
-
-  // 作業中の案件
-  const workingOrdersCount = await prisma.order.count({
-    where: {
-      status: "WORKING",
-    },
-  });
+    }),
+    prisma.order.count({
+      where: {
+        status: "WORKING",
+      },
+    }),
+    prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    })
+  ]);
 
   // 今月の売上見込（価格が設定されているものの合計）
   const estimatedRevenue = thisMonthOrders.reduce((sum, order) => sum + (order.price || 0), 0);
-
-  // 最新のご依頼5件
-  const recentOrders = await prisma.order.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
