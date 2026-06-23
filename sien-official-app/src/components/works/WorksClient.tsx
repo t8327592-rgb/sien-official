@@ -167,7 +167,7 @@ export default function WorksClient({
                   <span className="text-[10px] font-bold tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded-md uppercase">
                     {p.serviceCategory || "MIX"}
                   </span>
-                  {p.tags && p.tags.split(",").map(t => t.trim()).filter(Boolean).map(t => (
+                  {p.tags && p.tags.split(",").map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
                     <span key={t} className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
                       #{t}
                     </span>
