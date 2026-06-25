@@ -8,7 +8,8 @@ type Order = any;
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "未対応",
-  WORKING: "見積中・作業中",
+  ESTIMATING: "見積中",
+  WORKING: "作業中",
   COMPLETED: "納品済",
   CANCELED: "キャンセル",
 };
@@ -38,7 +39,8 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
           >
             <option value="ALL">すべてのステータス</option>
             <option value="PENDING">未対応</option>
-            <option value="WORKING">見積中・作業中</option>
+            <option value="ESTIMATING">見積中</option>
+            <option value="WORKING">作業中</option>
             <option value="COMPLETED">納品済</option>
             <option value="CANCELED">キャンセル</option>
           </select>
@@ -85,8 +87,10 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <td className="p-4 pl-6">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         order.status === 'PENDING' ? 'bg-orange-100 text-orange-700' :
-                        order.status === 'WORKING' ? 'bg-amber-100 text-amber-700' :
+                        order.status === 'ESTIMATING' ? 'bg-amber-100 text-amber-700' :
+                        order.status === 'WORKING' ? 'bg-blue-100 text-blue-700' :
                         order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                        order.status === 'CANCELED' ? 'bg-slate-200 text-slate-600' :
                         'bg-slate-100 text-slate-700'
                       }`}>
                         {STATUS_LABELS[order.status] || order.status}

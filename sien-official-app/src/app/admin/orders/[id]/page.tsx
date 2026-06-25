@@ -34,6 +34,40 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
+  // プラン情報を取得して納期/修正回数を表示するための準備
+  let planDetails = null;
+  if (order.planId) {
+    planDetails = await prisma.plan.findFirst({
+      where: { id: order.planId }
+    });
+  }
+
+  // オプションテキストの整形
+  let parsedOptions: string[] = [];
+  if (order.options) {
+    try {
+      // もしJSON配列ならパース
+      const parsed = JSON.parse(order.options);
+      if (Array.isArray(parsed)) {
+        parsedOptions = parsed;
+      } else {
+        parsedOptions = [order.options];
+      }
+    } catch {
+      // ただのカンマ区切り文字列等の場合
+      parsedOptions = order.options.split(",").map(s => s.trim()).filter(Boolean);
+    }
+  }
+
+  // 日付のフォーマット (YYYY/MM/DD HH:mm)
+  const formattedDate = new Date(order.createdAt).toLocaleString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between border-b pb-4">
@@ -51,103 +85,130 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 左側: 依頼内容の表示 */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-xl font-bold border-b pb-2 mb-4">基本情報</h2>
-              <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl border bg-white p-6 shadow-sm space-y-8">
+            
+            <section>
+              <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
+                <span className="text-orange-500">👤</span> 基本情報
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-4 rounded-lg">
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">お名前</p>
-                  <p className="font-semibold text-lg">{order.clientName}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">お名前</p>
+                  <p className="font-semibold text-lg text-slate-900">{order.clientName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">Twitter ID</p>
-                  <p className="font-semibold">{order.twitterId || "未設定"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">メールアドレス</p>
+                  <p className="font-medium text-slate-700 break-all">{order.clientEmail}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">メールアドレス</p>
-                  <p className="font-semibold">{order.clientEmail}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">X（Twitter）ID</p>
+                  <p className="font-medium text-slate-700">{order.twitterId || "未設定"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">希望連絡手段</p>
-                  <p className="font-semibold">{order.contactMethod || "未設定"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">希望連絡手段</p>
+                  <p className="font-medium text-slate-700">{order.contactMethod || "未設定"}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">活動用途</p>
-                  <p className="font-semibold text-orange-600 bg-orange-50 inline-block px-2 py-1 rounded">{order.activityPurpose || "未指定"}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-slate-500 font-medium">顧客ステータス</p>
-                  <p className="font-semibold text-orange-600 bg-orange-50 inline-block px-2 py-1 rounded">
-                    {order.isRepeater ? "リピーター（依頼経験あり）" : "新規のお客様"}
-                  </p>
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-1">顧客ステータス</p>
+                  {order.isRepeater ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                      リピーター（依頼経験あり）
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                      新規のお客様
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h2 className="text-xl font-bold border-b pb-2 mb-4">ご依頼内容・楽曲情報</h2>
-              <div className="grid grid-cols-2 gap-4">
+            <section>
+              <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
+                <span className="text-orange-500">🎵</span> ご依頼内容・楽曲情報
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">サービス種別</p>
-                  <p className="font-semibold">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">サービス種別</p>
+                  <p className="font-semibold text-slate-900">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">選択プラン</p>
-                  <p className="font-semibold">{order.planId ? (PLAN_LABELS[order.planId] || order.planId) : "指定なし"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">選択プラン</p>
+                  <div className="font-semibold text-slate-900">
+                    {order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : "指定なし"}
+                    {planDetails && (
+                      <div className="text-sm font-normal text-slate-500 mt-1 flex gap-4">
+                        <span>納期：{planDetails.period || "要相談"}</span>
+                        <span>修正：{planDetails.revisions || "要相談"}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">曲名</p>
-                  <p className="font-semibold">{order.songTitle || "未設定"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">曲名</p>
+                  <p className="font-medium text-slate-700">{order.songTitle || "未設定"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">歌唱キー</p>
-                  <p className="font-semibold">{order.vocalKey || "未設定"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">歌唱キー</p>
+                  <p className="font-medium text-slate-700">{order.vocalKey || "未設定"}</p>
                 </div>
+                
                 {order.serviceType === "ORIGINAL" && (
                   <>
                     <div>
-                      <p className="text-sm text-slate-500 font-medium">希望ジャンル</p>
-                      <p className="font-semibold">{order.genre || "未設定"}</p>
+                      <p className="text-xs text-slate-500 font-bold mb-1">希望ジャンル</p>
+                      <p className="font-medium text-slate-700">{order.genre || "未設定"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-500 font-medium">作詞の有無</p>
-                      <p className="font-semibold">{order.lyricsStatus || "未設定"}</p>
+                      <p className="text-xs text-slate-500 font-bold mb-1">作詞の有無</p>
+                      <p className="font-medium text-slate-700">{order.lyricsStatus || "未設定"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-500 font-medium">仮歌の有無</p>
-                      <p className="font-semibold">{order.vocalGuideStatus || "未設定"}</p>
+                      <p className="text-xs text-slate-500 font-bold mb-1">仮歌の有無</p>
+                      <p className="font-medium text-slate-700">{order.vocalGuideStatus || "未設定"}</p>
                     </div>
                   </>
                 )}
-                <div className="col-span-2">
-                  <p className="text-sm text-slate-500 font-medium">オプション</p>
-                  <p className="font-semibold">{order.options || "なし"}</p>
+                
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-2">オプション</p>
+                  {parsedOptions.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1 text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded border">
+                      {parsedOptions.map((opt, i) => (
+                        <li key={i}>{opt}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="font-medium text-slate-400">選択なし</p>
+                  )}
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h2 className="text-xl font-bold border-b pb-2 mb-4">素材・リファレンス</h2>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">素材提出URL</p>
+            <section>
+              <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
+                <span className="text-orange-500">📁</span> 素材・リファレンス
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-1">素材提出URL</p>
                   {order.materialsUrl ? (
-                    <a href={order.materialsUrl} target="_blank" rel="noreferrer" className="text-orange-600 hover:underline break-all">{order.materialsUrl}</a>
+                    <a href={order.materialsUrl} target="_blank" rel="noreferrer" className="text-orange-600 hover:text-orange-700 font-medium underline underline-offset-4 break-all">{order.materialsUrl}</a>
                   ) : (
-                    <p className="font-semibold text-slate-400">未提出</p>
+                    <p className="font-medium text-slate-400">未提出</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">参考曲URL</p>
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-1">参考曲URL</p>
                   {order.referenceUrl ? (
-                    <a href={order.referenceUrl} target="_blank" rel="noreferrer" className="text-orange-600 hover:underline break-all">{order.referenceUrl}</a>
+                    <a href={order.referenceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-4 break-all">{order.referenceUrl}</a>
                   ) : (
-                    <p className="font-semibold text-slate-400">なし</p>
+                    <p className="font-medium text-slate-400">なし</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">リファレンス再現度</p>
-                  <p className="font-semibold">
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-1">リファレンス再現度</p>
+                  <p className="font-medium text-slate-700">
                     {order.referenceFidelity === "1" && "1. お任せ"}
                     {order.referenceFidelity === "2" && "2. 参考にしつつお任せ"}
                     {order.referenceFidelity === "3" && "3. 完全準拠"}
@@ -155,30 +216,32 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   </p>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h2 className="text-xl font-bold border-b pb-2 mb-4">納期・お支払い・ご要望</h2>
-              <div className="grid grid-cols-2 gap-4">
+            <section>
+              <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
+                <span className="text-orange-500">💬</span> 納期・お支払い・ご要望
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">希望納期</p>
-                  <p className="font-semibold">{order.deadline || "指定なし"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">希望納期</p>
+                  <p className="font-semibold text-slate-900">{order.deadline || "指定なし"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">お支払い方法</p>
-                  <p className="font-semibold">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : "未設定"}</p>
+                  <p className="text-xs text-slate-500 font-bold mb-1">お支払い方法</p>
+                  <p className="font-semibold text-slate-900">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : "未設定"}</p>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-slate-500 font-medium mb-2">ご要望・メッセージ</p>
-                  <div className="bg-slate-50 p-4 rounded-lg border text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 font-bold mb-2">ご要望・メッセージ</p>
+                  <div className="bg-slate-50 p-4 rounded-lg border text-sm whitespace-pre-wrap leading-relaxed text-slate-700">
                     {order.message || "メッセージはありません"}
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div className="pt-2 text-right">
-              <p className="text-xs text-slate-400">受付日時: {new Date(order.createdAt).toLocaleString()}</p>
+            <div className="pt-4 border-t text-right">
+              <p className="text-sm font-medium text-slate-400">受付日時: {formattedDate}</p>
             </div>
           </div>
         </div>

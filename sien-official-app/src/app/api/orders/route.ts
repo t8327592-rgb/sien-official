@@ -21,14 +21,19 @@ export async function POST(request: Request) {
     }
 
     // リピーターかどうかの自動判定
-    // 過去に同じEmail, Twitter ID, またはクライアント名で依頼があればリピーターとする
+    // 過去に同じEmail, または（空でない）Twitter ID, または同じ名前で依頼があればリピーターとする
+    const orConditions: any[] = [
+      { clientEmail: clientEmail },
+      { clientName: clientName }
+    ];
+    
+    if (twitterId && twitterId.trim() !== "") {
+      orConditions.push({ twitterId: twitterId });
+    }
+
     const pastOrder = await prisma.order.findFirst({
       where: {
-        OR: [
-          { clientEmail: clientEmail },
-          { twitterId: twitterId ? twitterId : "impossible_string" },
-          { clientName: clientName }
-        ]
+        OR: orConditions
       }
     });
     const isRepeater = pastOrder !== null;
