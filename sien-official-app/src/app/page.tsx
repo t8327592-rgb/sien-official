@@ -41,27 +41,30 @@ export default async function Home() {
             受付状況：現在スケジュール調整可能
           </div>
           
+          <p className="text-orange-600 font-bold mb-4 tracking-widest text-sm md:text-base drop-shadow-md">
+            歌い手・VTuber向け MIX＆オリジナル楽曲制作スタジオ
+          </p>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 sm:mb-8 leading-[1.2] drop-shadow-xl">
-            あなたの歌を<br className="md:hidden" />
+            あなたの歌声を、<br className="md:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 drop-shadow-md">
               “一番輝く形”へ
             </span>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-slate-800 mb-10 max-w-3xl font-bold leading-relaxed drop-shadow-lg px-2 break-keep">
-            一人ひとりの声質や表現を大切に。<br />
-            「あなたらしさ」を活かした音作りで、最高の一曲へ仕上げます。
+            ボーカルMIXから、あなただけの完全オリジナル楽曲制作まで。<br />
+            「あなたらしさ」を活かしたプロクオリティの音源を提案します。
           </p>
 
           <div className="flex flex-col items-center gap-4 w-full sm:w-auto px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button asChild className="rounded-full h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-bold bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-xl shadow-orange-500/30 w-full sm:w-auto hover:scale-105 transition-transform border-none text-white">
-                <Link href="#pricing" className="flex items-center justify-center">
-                  料金・詳細を見る <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
+                <Link href="/order" className="flex items-center justify-center">
+                  すぐにお見積り依頼 <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
                 </Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-bold bg-white/90 backdrop-blur-md text-slate-800 border-white/50 hover:bg-white shadow-lg w-full sm:w-auto hover:scale-105 transition-all">
-                <Link href="/order" className="flex items-center justify-center">
-                  すぐにお見積り依頼
+                <Link href="#services" className="flex items-center justify-center">
+                  サービス詳細を見る
                 </Link>
               </Button>
             </div>
@@ -80,8 +83,30 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 1.5. こんな方に最適 */}
+      <section className="py-16 bg-white border-b border-orange-100">
+        <div className="container px-4 mx-auto max-w-4xl">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-10 text-center flex items-center justify-center gap-3">
+            <CheckCircle2 className="w-8 h-8 text-orange-500" />
+            こんなお悩み、ありませんか？
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              { title: "MIX依頼が初めて", desc: "必要なデータや手順から丁寧にサポート。初心者の方でも安心してお任せいただけます。" },
+              { title: "スマホ録音をプロ級に", desc: "ノイズ除去からピッチ補正まで、スマホのマイク音源でもオケに馴染む高クオリティに仕上げます。" },
+              { title: "自分だけの曲が欲しい", desc: "歌ってみたの次のステップへ。あなたの声質や世界観にピッタリの完全オリジナル曲を制作します。" }
+            ].map((item, i) => (
+              <div key={i} className="bg-orange-50/50 rounded-2xl p-6 border border-orange-100 hover:border-orange-300 transition-colors">
+                <h3 className="font-bold text-slate-900 mb-2 text-lg">{item.title}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 2. サービス内容 */}
-      <section className="py-24 bg-orange-50/50 border-b border-orange-100">
+      <section id="services" className="py-24 bg-orange-50/50 border-b border-orange-100">
         <div className="container px-4 mx-auto text-center max-w-5xl">
           <h2 className="text-3xl font-extrabold text-slate-900 mb-4">サービス内容</h2>
           <div className="w-12 h-1 bg-gradient-to-r from-orange-500 to-amber-500 mx-auto mb-16 rounded-full" />
@@ -197,10 +222,13 @@ export default async function Home() {
                   「{review.text}」
                 </p>
                 <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-                  <UserCircle className="w-8 h-8 text-slate-300" />
+                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${review.name}`} alt={review.name} className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 p-0.5" />
                   <div>
-                    <div className="font-bold text-slate-900 text-sm">{review.name}</div>
-                    <div className="text-[10px] font-bold text-orange-500 mt-1">{review.type}</div>
+                    <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                      {review.name}
+                      <svg className="w-3 h-3 text-[#1DA1F2]/80" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.96H5.078z" /></svg>
+                    </div>
+                    <div className="text-[10px] font-bold text-orange-500 mt-0.5">{review.type}</div>
                   </div>
                 </div>
               </div>
