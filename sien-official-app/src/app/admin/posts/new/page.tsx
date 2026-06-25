@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export default function NewPostPage() {
   async function createPost(formData: FormData) {
@@ -70,14 +71,9 @@ export default function NewPostPage() {
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">サムネイル画像URL (ブログ・実績用)</label>
-              <input 
-                name="imageUrl" 
-                type="url" 
-                placeholder="例: https://example.com/image.png"
-                className="w-full p-2 border rounded-md"
-              />
-              <p className="text-xs text-slate-500 mt-1">※画像をアップロードしたURLを入力してください。</p>
+              <label className="block text-sm font-medium mb-1">サムネイル画像 (ブログ・実績用)</label>
+              <ImageUploader />
+              <p className="text-xs text-slate-500 mt-2">※画像を選択すると自動で圧縮されて保存されます。設定しない場合はデフォルトのアイコンが表示されます。</p>
             </div>
 
             <div className="col-span-1 md:col-span-2">
