@@ -41,9 +41,6 @@ export default async function Home() {
             受付状況：現在スケジュール調整可能
           </div>
           
-          <p className="text-orange-600 font-bold mb-4 tracking-widest text-sm md:text-base drop-shadow-md">
-            歌い手・VTuber向け MIX＆オリジナル楽曲制作スタジオ
-          </p>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 sm:mb-8 leading-[1.2] drop-shadow-xl">
             あなたの歌声を、<br className="md:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 drop-shadow-md">
