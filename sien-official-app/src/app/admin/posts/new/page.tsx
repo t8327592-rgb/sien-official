@@ -10,6 +10,8 @@ export default function NewPostPage() {
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const type = formData.get("type") as string;
+    const category = formData.get("category") as string;
+    const imageUrl = formData.get("imageUrl") as string;
     const published = formData.get("published") === "true";
     
     if (!title || !content) return;
@@ -19,6 +21,8 @@ export default function NewPostPage() {
         title,
         content,
         type,
+        category: category || null,
+        imageUrl: imageUrl || null,
         published,
       },
     });
@@ -51,10 +55,32 @@ export default function NewPostPage() {
               <select name="type" className="w-full p-2 border rounded-md bg-white">
                 <option value="NEWS">お知らせ</option>
                 <option value="WORKS">制作実績</option>
+                <option value="BLOG">ブログ</option>
               </select>
             </div>
 
             <div>
+              <label className="block text-sm font-medium mb-1">カテゴリー (ブログ用)</label>
+              <input 
+                name="category" 
+                type="text" 
+                placeholder="例: 音楽制作, 日常, チュートリアル"
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium mb-1">サムネイル画像URL (ブログ・実績用)</label>
+              <input 
+                name="imageUrl" 
+                type="url" 
+                placeholder="例: https://example.com/image.png"
+                className="w-full p-2 border rounded-md"
+              />
+              <p className="text-xs text-slate-500 mt-1">※画像をアップロードしたURLを入力してください。</p>
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium mb-1">公開設定</label>
               <select name="published" className="w-full p-2 border rounded-md bg-white">
                 <option value="false">下書きとして保存</option>

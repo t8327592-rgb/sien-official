@@ -56,7 +56,9 @@ model Post {
   title     String
   content   String   // Markdownやリッチテキスト用
   published Boolean  @default(false)
-  type      String   @default("NEWS") // "NEWS" または "WORKS"
+  type      String   @default("NEWS") // "NEWS", "WORKS", "BLOG"
+  category  String?  // ブログのカテゴリー (例: "お知らせ", "技術記事", "日常")
+  imageUrl  String?  // サムネイル画像のURL
   authorId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

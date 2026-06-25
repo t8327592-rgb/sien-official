@@ -34,9 +34,11 @@ export function Footer() {
         </div>
         
         <div className="flex flex-col gap-3">
-          <h4 className="font-bold text-foreground">サービス内容</h4>
+          <h4 className="font-bold text-foreground">コンテンツ</h4>
           <Link href="/mix" className="text-muted-foreground hover:text-primary transition-colors">ミックス・マスタリング</Link>
           <Link href="/original" className="text-muted-foreground hover:text-primary transition-colors">オリジナル楽曲制作</Link>
+          <Link href="/works" className="text-muted-foreground hover:text-primary transition-colors">制作実績</Link>
+          <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">ブログ</Link>
         </div>
         <div className="flex flex-col gap-3">
           <h4 className="font-bold text-foreground">ご依頼・サポート</h4>

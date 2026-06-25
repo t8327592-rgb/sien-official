@@ -36,11 +36,12 @@ export function Header() {
         </div>
         
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold">
           <Link href="/profile" className="transition-colors text-slate-600 hover:text-orange-500">プロフィール</Link>
           <Link href="/mix" className="transition-colors text-slate-600 hover:text-orange-500">ミックス/マスタリング</Link>
-          <Link href="/original" className="transition-colors text-slate-600 hover:text-orange-500">オリジナル楽曲制作</Link>
+          <Link href="/original" className="transition-colors text-slate-600 hover:text-orange-500">オリジナル楽曲</Link>
           <Link href="/works" className="transition-colors text-slate-600 hover:text-orange-500">制作実績</Link>
+          <Link href="/blog" className="transition-colors text-slate-600 hover:text-orange-500">ブログ</Link>
           <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold">
             <Link href="/order">ご依頼フォーム</Link>
           </Button>
@@ -63,6 +64,7 @@ export function Header() {
           <Link href="/mix" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">ミックス/マスタリング</Link>
           <Link href="/original" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">オリジナル楽曲制作</Link>
           <Link href="/works" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">制作実績</Link>
+          <Link href="/blog" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">ブログ</Link>
           <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold mt-2 h-12">
             <Link href="/order">ご依頼・お見積りはこちら</Link>
           </Button>

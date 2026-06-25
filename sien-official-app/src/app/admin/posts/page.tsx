@@ -25,13 +25,19 @@ export default async function AdminPostsPage() {
               <div key={post.id} className="p-4 border rounded-md flex justify-between items-center hover:bg-slate-50 transition-colors">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded ${post.type === 'NEWS' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                      {post.type === 'NEWS' ? 'お知らせ' : '制作実績'}
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      post.type === 'NEWS' ? 'bg-orange-100 text-orange-800' : 
+                      post.type === 'WORKS' ? 'bg-green-100 text-green-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {post.type === 'NEWS' ? 'お知らせ' : post.type === 'WORKS' ? '制作実績' : 'ブログ'}
                     </span>
                     <h3 className="font-bold text-lg">{post.title}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    作成日: {new Date(post.createdAt).toLocaleDateString()}
+                  <p className="text-sm text-muted-foreground flex items-center gap-3">
+                    <span>作成日: {new Date(post.createdAt).toLocaleDateString()}</span>
+                    {post.category && <span>タグ: {post.category}</span>}
+                    {post.imageUrl && <span className="text-xs border px-1 rounded text-slate-400">画像あり</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
