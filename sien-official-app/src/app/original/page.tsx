@@ -23,7 +23,7 @@ export default async function OriginalPage() {
   });
 
   const portfolios = await prisma.portfolio.findMany({
-    where: { category: "ORIGINAL" },
+    where: { serviceCategory: "ORIGINAL" },
     orderBy: { createdAt: 'desc' },
     take: 2,
   });
