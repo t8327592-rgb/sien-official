@@ -19,12 +19,26 @@ export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle 
         body: JSON.stringify({ deadline }),
       });
 
-      if (!res.ok) throw new Error("保存に失敗しました");
+      if (!res.ok) throw new Error("データベースへの保存に失敗しました");
       
-      // (将来拡張用) Google Calendar API へ同期
-      // await fetch("/api/admin/calendar/sync", { ... })
+      // Google Calendar API へ同期
+      const syncRes = await fetch("/api/admin/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, deadline }),
+      });
 
-      setMessage("保存しました！");
+      const syncData = await syncRes.json();
+
+      if (!syncRes.ok) {
+        throw new Error("カレンダーへの同期に失敗しました");
+      }
+
+      if (syncData.message && syncData.message.includes("skipped")) {
+        setMessage("納期は保存されましたが、カレンダー連携は未設定のためスキップされました");
+      } else {
+        setMessage("納期を保存し、カレンダーへ連携しました！");
+      }
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error(error);
