@@ -109,6 +109,33 @@ export async function POST(request: Request) {
       console.error("Failed to send Discord notification:", discordError);
     }
 
+    // Send Email notification
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const { sendMail } = await import("@/lib/mail");
+        
+        // ユーザー向け確認メール
+        await sendMail({
+          to: clientEmail,
+          subject: "【Sien-Official】ご依頼を受け付けました",
+          text: `${clientName} 様\n\nこの度は、Sien-Officialへご依頼いただき誠にありがとうございます。\n以下の内容でご依頼を受け付けました。\n\n内容を確認の上、通常24時間以内に折り返しご連絡させていただきます。\n\n■ ご依頼内容\nサービス: ${serviceType === 'MIX' ? 'ミックス／マスタリング' : 'オリジナル楽曲制作'}\n楽曲名: ${songTitle || "未定"}\n\n引き続き、よろしくお願いいたします。\n\nSien-Official\nhttps://sien-official.com`,
+        });
+
+        // 管理者向け通知メール
+        await sendMail({
+          to: process.env.SMTP_USER,
+          subject: `【新規依頼】${clientName}様よりご依頼がありました`,
+          text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\nhttps://sien-official.com/admin/orders`,
+        });
+
+        console.log("Email notification sent successfully.");
+      } else {
+        console.warn("SMTP credentials are not set. Skipping Email notification.");
+      }
+    } catch (emailError) {
+      console.error("Failed to send Email notification:", emailError);
+    }
+
     return NextResponse.json({ success: true, order: newOrder }, { status: 201 });
   } catch (error) {
     console.error("Order creation failed:", error);

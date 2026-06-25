@@ -75,16 +75,17 @@ export default async function MixPage() {
       </section>
 
       {/* 2. 比較 (Before/After) */}
-      <section id="compare" className="py-24 bg-slate-50 border-b border-slate-100 relative overflow-hidden">
-        {/* 背景の装飾 */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-100/50 via-slate-50 to-slate-50 blur-2xl"></div>
-        
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl font-bold mb-4 text-slate-900 flex items-center justify-center gap-3">
-            <Headphones className="w-8 h-8 text-orange-500" />
-            MIXでどれくらい変わる？
-          </h2>
-          <p className="text-slate-500 mb-12">スマートフォンの録音データでも、プロの技術でここまで生まれ変わります。</p>
+      <section id="compare" className="py-24 px-4 bg-white border-b border-slate-100">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">
+              MIXでどれくらい変わる？
+            </h2>
+            <p className="text-slate-600 text-lg md:text-xl font-medium">
+              MIX前の生データと、MIX・マスタリング後の完成音源を聴き比べてみてください。<br className="hidden md:block" />
+              ピッチやリズムの正確さだけでなく、声の抜けやオケとの馴染み具合が劇的に変化します。
+            </p>
+          </div>
           
           <BeforeAfterPlayer />
         </div>
@@ -219,60 +220,33 @@ export default async function MixPage() {
 
       {/* 6. オプション */}
       <section className="py-24 bg-slate-50 border-b border-slate-100">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900 mb-4">オプション</h2>
             <p className="text-slate-500">基本プランに追加できるオプションサービスです。</p>
           </div>
           
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="divide-y divide-slate-100">
-              {[
-                { name: "ライブ用音源制作", priceText: "1,000円", description: "ライブ会場での鳴りや音圧を考慮し、ステージ歌唱向けに調整した音源を制作します。" },
-                { 
-                  name: "エンコード", 
-                  priceText: "0円〜1,000円", 
-                  description: (
-                    <>
-                      完成した音源と本家動画を組み合わせ、投稿用のMP4データを制作します。<br/>
-                      <span className="inline-block mt-2 text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
-                        ・お支払い金額の合計が10,000円以上：0円<br/>
-                        ・お支払い金額の合計が10,000円未満：+1,000円
-                      </span>
-                    </>
-                  )
-                },
-                { name: "アカペラ音源納品", priceText: "0円", description: "ボーカルのみの音源データも合わせて納品します。" },
-                { 
-                  name: "ボーカルガイド作成", 
-                  priceText: "3,000円", 
-                  description: "MIXと併せてのご依頼はもちろん、ガイド制作のみのご依頼も可能です。メイン・ユニゾン・ハモリを打ち込み、WAV形式またはMIDI形式で納品いたします。納期は最大7日ほどいただく場合がございます。" 
-                },
-                { 
-                  name: "カットアップ", 
-                  priceText: "2,000円〜", 
-                  description: (
-                    <>
-                      10秒あたりの金額です。作業量に応じて料金が変動する可能性がございますので、事前にご相談ください。<br/>
-                      <a href="https://youtu.be/jaD7Q3c6Zrk?si=Zrw6bF0RA33Mjy1h&t=97" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-orange-600 hover:text-orange-700 font-bold text-sm bg-orange-50 px-3 py-1 rounded-full transition-colors">
-                        ▶️ サンプルを聴く（1:37〜）
-                      </a>
-                    </>
-                  )
-                }
-              ].map((opt, i) => (
-                <div key={i} className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-lg">{opt.name}</h3>
-                    {opt.description && <p className="text-slate-500 text-sm mt-1">{opt.description}</p>}
+          {options.length === 0 ? (
+            <p className="text-center text-slate-500">現在公開されているオプションはありません。</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {options.filter(o => o.category === "MIX").map((opt) => (
+                <div key={opt.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-200 transition-all flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-3 gap-2">
+                    <h3 className="font-bold text-slate-800 leading-tight">{opt.name}</h3>
+                    <div className="text-sm font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-lg shrink-0">
+                      {opt.priceText.includes("円") && !opt.priceText.startsWith("+") && opt.priceText !== "無料" ? `+ ${opt.priceText}` : opt.priceText}
+                    </div>
                   </div>
-                  <div className="text-xl font-bold text-orange-600 whitespace-nowrap bg-orange-50 px-4 py-2 rounded-lg text-center">
-                    {opt.priceText === "無料" ? opt.priceText : `+ ${opt.priceText}`}
-                  </div>
+                  {opt.description && (
+                    <div className="text-slate-500 text-sm leading-relaxed whitespace-pre-wrap mt-auto">
+                      {opt.description}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </section>
 

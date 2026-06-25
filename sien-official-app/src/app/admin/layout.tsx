@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
@@ -17,8 +18,9 @@ export default async function AdminLayout({
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r text-slate-600 flex flex-col shadow-sm z-10">
-        <div className="h-16 flex items-center px-6 border-b">
-          <span className="font-bold text-xl tracking-tight text-primary">Sien-Official</span>
+        <div className="h-16 flex items-center px-6 border-b gap-3">
+          <Image src="/icon.png" alt="Sien" width={28} height={28} className="rounded-full shadow-sm" />
+          <span className="font-bold text-xl tracking-tight text-slate-800">Sien Admin</span>
         </div>
         <nav className="flex-1 py-6 px-4 space-y-2">
           <Link href="/admin" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">ダッシュボード</Link>
@@ -53,7 +55,7 @@ export default async function AdminLayout({
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
               AIアシスタント待機中
             </span>
-            <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center font-bold text-white shadow-md">S</div>
+            <Image src="/icon.png" alt="Sien" width={32} height={32} className="rounded-full shadow-md" />
           </div>
         </header>
         {/* Content Area */}

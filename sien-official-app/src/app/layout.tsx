@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { OpeningAnimation } from "@/components/ui/OpeningAnimation";
+import { Toaster } from "react-hot-toast";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-sans",
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Toaster position="top-center" />
       </body>
     </html>
   );

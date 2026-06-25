@@ -17,6 +17,17 @@ export default async function OriginalPage() {
     orderBy: { orderIndex: 'asc' } // DB側で指定したorderIndexでソート
   });
 
+  const options = await prisma.option.findMany({
+    where: { isActive: true },
+    orderBy: { orderIndex: 'asc' }
+  });
+
+  const portfolios = await prisma.portfolio.findMany({
+    where: { category: "ORIGINAL" },
+    orderBy: { createdAt: 'desc' },
+    take: 2,
+  });
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       
@@ -280,53 +291,33 @@ export default async function OriginalPage() {
 
       {/* 7. オプション */}
       <section className="py-24 bg-white border-b border-slate-100">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900 mb-4">オプション</h2>
             <p className="text-slate-500">基本プランに追加できるオプションサービスです。</p>
           </div>
           
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="divide-y divide-slate-100">
-              {[
-                {
-                  name: "生楽器演奏追加",
-                  price: "10,000円〜",
-                  desc: "ギター、ベース、ピアノなど専門プレイヤーによる生演奏を追加いたします。※提携クリエイターへの依頼となるため、使用楽器や内容により料金が変動いたします。（基本料金内で対応できる場合もございます）"
-                },
-                {
-                  name: "人間による仮歌歌唱",
-                  price: "5,000円〜",
-                  desc: "より実際の歌唱ニュアンスに近い「人間による仮歌」をご希望の場合はこちらをご利用ください。※提携クリエイターへの依頼となるため料金が変動する場合がございます。（基本料金内ではボーカロイドによる仮歌をお渡しします）"
-                },
-                {
-                  name: "ボーカルディレクション",
-                  price: "5,000円",
-                  desc: "Discord等を使用し、オンラインでレコーディング時の歌唱アドバイスや方向性の確認を行います。"
-                },
-                {
-                  name: "パラデータ納品",
-                  price: "5,000円",
-                  desc: "各楽器パートごとの独立した音声データ（WAV形式）を納品いたします。ご自身でのリミックスや、ライブでのオケの調整用などにご利用いただけます。"
-                },
-                {
-                  name: "著作権（財産権）譲渡",
-                  price: "要相談",
-                  desc: "楽曲の完全買い取りをご希望の場合は、別途ご相談ください。"
-                }
-              ].map((opt, i) => (
-                <div key={i} className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 text-lg mb-1">{opt.name}</h3>
-                    {opt.desc && <div className="text-sm text-slate-500 leading-relaxed">{opt.desc}</div>}
+          {options.length === 0 ? (
+            <p className="text-center text-slate-500">現在公開されているオプションはありません。</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {options.filter(o => o.category === "ORIGINAL").map((opt) => (
+                <div key={opt.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-200 transition-all flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-3 gap-2">
+                    <h3 className="font-bold text-slate-800 leading-tight">{opt.name}</h3>
+                    <div className="text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-lg shrink-0">
+                      {opt.priceText.includes("円") && !opt.priceText.startsWith("+") && opt.priceText !== "要相談" && opt.priceText !== "無料" ? `+ ${opt.priceText}` : opt.priceText}
+                    </div>
                   </div>
-                  <div className="text-xl font-bold text-orange-600 whitespace-nowrap bg-orange-50 px-4 py-2 rounded-lg text-center shrink-0">
-                    {opt.price === "要相談" ? opt.price : `+ ${opt.price}`}
-                  </div>
+                  {opt.description && (
+                    <div className="text-slate-500 text-sm leading-relaxed whitespace-pre-wrap mt-auto">
+                      {opt.description}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </section>
 

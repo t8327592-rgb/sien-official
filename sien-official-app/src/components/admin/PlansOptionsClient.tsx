@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { updatePlan, createPlan, deletePlan, updatePlanOrders, updateOption, createOption, deleteOption, updateOptionOrders } from "@/app/actions/plans";
 import { Button } from "@/components/ui/button";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -130,7 +131,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     saveTimeoutRef.current = setTimeout(async () => {
       const res = await updatePlan(updatedPlan.id, updatedPlan);
       if (res.success) triggerSaveStatus();
-      else alert("プランの保存に失敗しました");
+      else toast.error("プランの保存に失敗しました");
     }, 800);
   };
 
@@ -145,7 +146,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     saveTimeoutRef.current = setTimeout(async () => {
       const res = await updateOption(updatedOption.id, updatedOption);
       if (res.success) triggerSaveStatus();
-      else alert("オプションの保存に失敗しました");
+      else toast.error("オプションの保存に失敗しました");
     }, 800);
   };
 
@@ -190,7 +191,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
       setEditingPlan(res.data);
       triggerSaveStatus();
     } else {
-      alert("追加に失敗しました");
+      toast.error("追加に失敗しました");
       setSaveStatus("idle");
     }
   };
@@ -203,7 +204,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
       setPlans(prev => prev.filter(p => p.id !== id));
       triggerSaveStatus();
     } else {
-      alert("削除に失敗しました");
+      toast.error("削除に失敗しました");
       setSaveStatus("idle");
     }
   };
@@ -216,7 +217,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
       setEditingOption(res.data);
       triggerSaveStatus();
     } else {
-      alert("追加に失敗しました");
+      toast.error("追加に失敗しました");
       setSaveStatus("idle");
     }
   };
@@ -229,7 +230,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
       setOptions(prev => prev.filter(o => o.id !== id));
       triggerSaveStatus();
     } else {
-      alert("削除に失敗しました");
+      toast.error("削除に失敗しました");
       setSaveStatus("idle");
     }
   };
