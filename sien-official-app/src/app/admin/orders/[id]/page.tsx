@@ -42,22 +42,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     });
   }
 
-  // オプションテキストの整形
-  let parsedOptions: string[] = [];
-  if (order.options) {
-    try {
-      // もしJSON配列ならパース
-      const parsed = JSON.parse(order.options);
-      if (Array.isArray(parsed)) {
-        parsedOptions = parsed;
-      } else {
-        parsedOptions = [order.options];
-      }
-    } catch {
-      // ただのカンマ区切り文字列等の場合
-      parsedOptions = order.options.split(",").map(s => s.trim()).filter(Boolean);
-    }
-  }
+
 
   // 日付のフォーマット (YYYY/MM/DD HH:mm)
   const formattedDate = new Date(order.createdAt).toLocaleString("ja-JP", {
@@ -171,16 +156,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 )}
                 
                 <div className="md:col-span-2">
-                  <p className="text-xs text-slate-500 font-bold mb-2">オプション</p>
-                  {parsedOptions.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-1 text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded border">
-                      {parsedOptions.map((opt, i) => (
-                        <li key={i}>{opt}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="font-medium text-slate-400">選択なし</p>
-                  )}
+                  <p className="text-xs text-slate-500 font-bold mb-1">オプション</p>
+                  <p className="font-medium text-slate-700">{order.options || "なし"}</p>
                 </div>
               </div>
             </section>
