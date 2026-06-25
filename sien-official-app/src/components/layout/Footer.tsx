@@ -52,7 +52,13 @@ export function Footer() {
         </div>
       </div>
       <div className="container mx-auto px-4 mt-16 border-t pt-8 text-center text-xs text-muted-foreground">
-        <p>Copyright &copy; 2026 Sien-Official. All Rights Reserved.</p>
+        <p>
+          Copyright &copy; 2026{" "}
+          <Link href="/login" className="hover:text-slate-400 transition-colors">
+            Sien-Official
+          </Link>
+          . All Rights Reserved.
+        </p>
       </div>
     </footer>
   );
