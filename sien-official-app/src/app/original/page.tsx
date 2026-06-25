@@ -300,22 +300,22 @@ export default async function OriginalPage() {
           {options.length === 0 ? (
             <p className="text-center text-slate-500">現在公開されているオプションはありません。</p>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {options.filter(o => o.category === "ORIGINAL").map((opt) => (
-                <div key={opt.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-200 transition-all flex flex-col h-full">
-                  <div className="flex justify-between items-start mb-3 gap-2">
-                    <h3 className="font-bold text-slate-800 leading-tight">{opt.name}</h3>
-                    <div className="text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-lg shrink-0">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {options.filter(o => o.category === "ORIGINAL").map((opt) => (
+                  <div key={opt.id} className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-lg">{opt.name}</h3>
+                      {opt.description && (
+                        <p className="text-slate-500 text-sm mt-1 whitespace-pre-wrap leading-relaxed">{opt.description}</p>
+                      )}
+                    </div>
+                    <div className="text-xl font-bold text-amber-600 whitespace-nowrap bg-amber-50 px-4 py-2 rounded-lg text-center shrink-0">
                       {opt.priceText.includes("円") && !opt.priceText.startsWith("+") && opt.priceText !== "要相談" && opt.priceText !== "無料" ? `+ ${opt.priceText}` : opt.priceText}
                     </div>
                   </div>
-                  {opt.description && (
-                    <div className="text-slate-500 text-sm leading-relaxed whitespace-pre-wrap mt-auto">
-                      {opt.description}
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
