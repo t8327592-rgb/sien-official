@@ -71,7 +71,7 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
         <Button 
           onClick={handleGenerate} 
           disabled={isGenerating}
-          className="w-full bg-white hover:bg-slate-700 text-white font-bold py-6 rounded-xl transition-all shadow-md"
+          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-6 rounded-xl transition-all shadow-md"
         >
           {isGenerating ? (
             <span className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
               <textarea
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                className="w-full h-56 p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none resize-y text-sm leading-relaxed"
+                className="w-full h-56 p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none resize-y text-sm leading-relaxed"
                 placeholder="生成されたテキストがここに表示されます"
               />
             </div>

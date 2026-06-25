@@ -10,6 +10,29 @@ export default async function AdminFinancePage() {
   });
   const totalSales = completedOrders.reduce((sum, order) => sum + (order.price || 0), 0);
 
+  // 売上・集計データの計算
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  let thisMonthSales = 0;
+  let thisYearSales = 0;
+
+  completedOrders.forEach(order => {
+    const date = new Date(order.createdAt); // 本当は納品日(updatedAt等)がベターですが、createdAtで代用
+    const price = order.price || 0;
+    
+    if (date.getFullYear() === currentYear) {
+      thisYearSales += price;
+      if (date.getMonth() === currentMonth) {
+        thisMonthSales += price;
+      }
+    }
+  });
+
+  const orderCount = completedOrders.length;
+  const averagePrice = orderCount > 0 ? Math.round(totalSales / orderCount) : 0;
+
   // 経費データの取得
   const expenses = await prisma.expense.findMany({
     orderBy: { date: "desc" },
@@ -48,18 +71,37 @@ export default async function AdminFinancePage() {
       </div>
 
       {/* サマリー・ダッシュボード */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 mb-2">今月の売上</h3>
+          <p className="text-3xl font-bold text-slate-900">¥{thisMonthSales.toLocaleString()}</p>
+        </div>
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 mb-2">今年の売上</h3>
+          <p className="text-3xl font-bold text-slate-900">¥{thisYearSales.toLocaleString()}</p>
+        </div>
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 mb-2">総案件数</h3>
+          <p className="text-3xl font-bold text-slate-900">{orderCount} 件</p>
+        </div>
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 mb-2">平均単価</h3>
+          <p className="text-3xl font-bold text-slate-900">¥{averagePrice.toLocaleString()}</p>
+        </div>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 mb-2">確定売上 (納品済)</h3>
-          <p className="text-3xl font-bold text-slate-900">¥{totalSales.toLocaleString()}</p>
+          <h3 className="text-sm font-medium text-slate-500 mb-2">累計売上</h3>
+          <p className="text-2xl font-bold text-slate-900">¥{totalSales.toLocaleString()}</p>
         </div>
         <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 mb-2">経費合計</h3>
-          <p className="text-3xl font-bold text-red-600">¥{totalExpenses.toLocaleString()}</p>
+          <h3 className="text-sm font-medium text-slate-500 mb-2">累計経費</h3>
+          <p className="text-2xl font-bold text-red-600">¥{totalExpenses.toLocaleString()}</p>
         </div>
         <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 mb-2">見込利益</h3>
-          <p className={`text-3xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <h3 className="text-sm font-medium text-slate-500 mb-2">累計利益</h3>
+          <p className={`text-2xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             ¥{profit.toLocaleString()}
           </p>
         </div>
@@ -125,7 +167,7 @@ export default async function AdminFinancePage() {
               <label className="block text-sm font-medium mb-1">金額 (円)</label>
               <input type="number" name="amount" required placeholder="例: 15000" className="w-full p-2 border rounded-md" />
             </div>
-            <button type="submit" className="w-full bg-orange-50 border border-orange-100 text-white py-2 rounded-md font-medium hover:bg-white transition-colors mt-2">
+            <button type="submit" className="w-full bg-slate-800 border border-slate-700 text-white py-2 rounded-md font-medium hover:bg-slate-700 transition-colors mt-2">
               登録する
             </button>
           </form>

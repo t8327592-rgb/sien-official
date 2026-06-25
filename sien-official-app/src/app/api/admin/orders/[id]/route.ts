@@ -11,15 +11,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { id } = await params;
     const body = await request.json();
-    const { status } = body;
+    const { status, price, deadline } = body;
 
-    if (!status) {
-      return NextResponse.json({ success: false, error: "Status is required" }, { status: 400 });
+    const dataToUpdate: any = {};
+    if (status !== undefined) dataToUpdate.status = status;
+    if (price !== undefined) dataToUpdate.price = price;
+    if (deadline !== undefined) dataToUpdate.deadline = deadline;
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
 
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: dataToUpdate,
     });
 
     return NextResponse.json({ success: true, order: updatedOrder });

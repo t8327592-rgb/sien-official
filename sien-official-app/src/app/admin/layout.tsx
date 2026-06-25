@@ -18,9 +18,10 @@ export default async function AdminLayout({
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r text-slate-600 flex flex-col shadow-sm z-10">
-        <div className="h-16 flex items-center px-6 border-b gap-3">
-          <Image src="/icon.png" alt="Sien" width={28} height={28} className="rounded-full shadow-sm" />
-          <span className="font-bold text-xl tracking-tight text-slate-800">Sien Admin</span>
+        <div className="h-16 flex items-center px-6 border-b">
+          <Link href="/admin">
+            <img src="/logo.png" alt="Sien-Official" className="h-8 w-auto object-contain" />
+          </Link>
         </div>
         <nav className="flex-1 py-6 px-4 space-y-2">
           <Link href="/admin" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">ダッシュボード</Link>
@@ -51,11 +52,7 @@ export default async function AdminLayout({
         <header className="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm">
           <h2 className="font-semibold text-slate-800">管理ダッシュボード</h2>
           <div className="flex items-center gap-4 text-sm">
-            <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-              AIアシスタント待機中
-            </span>
-            <Image src="/icon.png" alt="Sien" width={32} height={32} className="rounded-full shadow-md" />
+            {/* Icons and badges removed as per request */}
           </div>
         </header>
         {/* Content Area */}

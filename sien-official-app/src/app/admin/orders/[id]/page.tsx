@@ -5,8 +5,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AiReplyPanel } from "@/components/admin/AiReplyPanel";
 import { AiPostGeneratorPanel } from "@/components/admin/AiPostGeneratorPanel";
+import { FinancePanel } from "@/components/admin/FinancePanel";
+import { DeadlinePanel } from "@/components/admin/DeadlinePanel";
 
 import { OrderActions } from "@/components/admin/OrderActions";
+
+const PLAN_LABELS: Record<string, string> = {
+  lite: "ライトプラン",
+  std: "スタンダードプラン",
+  pro: "プロプラン",
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  bank_transfer: "銀行振込",
+  credit_card: "クレジットカード",
+  paypay: "PayPay",
+};
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -75,11 +89,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-slate-500 font-medium">サービス種別</p>
-                  <p className="font-semibold">{order.serviceType === "mix" ? "ミックス・マスタリング" : "オリジナル楽曲制作"}</p>
+                  <p className="font-semibold">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-500 font-medium">選択プラン</p>
-                  <p className="font-semibold">{order.planId || "指定なし"}</p>
+                  <p className="font-semibold">{order.planId ? (PLAN_LABELS[order.planId] || order.planId) : "指定なし"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-500 font-medium">曲名</p>
@@ -152,7 +166,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
                 <div>
                   <p className="text-sm text-slate-500 font-medium">お支払い方法</p>
-                  <p className="font-semibold">{order.paymentMethod || "未設定"}</p>
+                  <p className="font-semibold">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : "未設定"}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-slate-500 font-medium mb-2">ご要望・メッセージ</p>
@@ -169,8 +183,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {/* 右側: AIアシストパネル */}
+        {/* 右側: 管理・AIアシストパネル */}
         <div className="space-y-6">
+          <DeadlinePanel orderId={order.id} initialDeadline={order.deadline} clientName={order.clientName} songTitle={order.songTitle} />
+          <FinancePanel orderId={order.id} initialPrice={order.price} />
           <AiReplyPanel order={order} />
           <AiPostGeneratorPanel order={order} />
         </div>
