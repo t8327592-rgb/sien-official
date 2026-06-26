@@ -25,13 +25,12 @@ export async function checkIsRepeater(
     orConditions.push({ clientEmail: email });
   }
   
-  if (twitterId && twitterId.trim() !== "") {
+  if (twitterId && twitterId.trim() !== "" && twitterId.trim() !== "@" && twitterId.trim() !== "なし" && twitterId.trim() !== "無し") {
     orConditions.push({ twitterId: twitterId });
   }
   
-  if (name && name.trim() !== "") {
-    orConditions.push({ clientName: name });
-  }
+  // 名前(clientName)だけの一致は誤判定(同姓同名や「テスト」等)が多いため除外
+
   
   if (orConditions.length === 0) {
     return false;

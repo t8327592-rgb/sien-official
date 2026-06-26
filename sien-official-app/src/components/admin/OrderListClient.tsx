@@ -305,15 +305,18 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                   <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}</div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-slate-700 text-sm">{order.clientName}</span>
-                    {order.isRepeater ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">リピーター</span>
-                    ) : (
-                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">新規</span>
-                    )}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">顧客種別</span>
+                    {order.isRepeater ? (
+                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">リピーター</span>
+                    ) : (
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">新規</span>
+                    )}
+                  </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">サービス</span>
                     <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-600 font-medium">
@@ -370,6 +373,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
                 <th className="py-3 px-4 pl-5">ステータス</th>
                 <th className="py-3 px-4">ご依頼日</th>
+                <th className="py-3 px-4">顧客種別</th>
                 <th className="py-3 px-4">曲名</th>
                 <th className="py-3 px-4">クライアント名</th>
                 <th className="py-3 px-4">サービス内容</th>
@@ -436,17 +440,19 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <td className="py-3 px-4 text-slate-500 text-xs">
                       {new Date(order.createdAt).toLocaleDateString("ja-JP")}
                     </td>
+                    <td className="py-3 px-4">
+                      {order.isRepeater ? (
+                        <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">リピーター</span>
+                      ) : (
+                        <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">新規</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 font-medium text-slate-800 max-w-[200px] truncate" title={order.songTitle}>
                       {order.songTitle || <span className="text-slate-400">未設定</span>}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{order.clientName}</span>
-                        {order.isRepeater ? (
-                          <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">リピーター</span>
-                        ) : (
-                          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">新規</span>
-                        )}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{order.clientEmail}</div>
                     </td>
