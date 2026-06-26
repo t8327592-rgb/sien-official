@@ -1,183 +1,32 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ミックス／マスタリング | Sien-Official</title>
-    <link rel="icon" type="image/png" href="./assets/favicon.png">
-    <!-- Fonts & Icons -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
-    <!-- OGP Settings -->
-    <meta property="og:site_name" content="Sien-Official" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sien-official.vercel.app/" />
-    <meta property="og:title" content="Sien-Official | 歌ってみたMIX・オリジナル楽曲制作" />
-    <meta property="og:description"
-        content="【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。" />
-    <meta property="og:image" content="https://sien-official.vercel.app/assets/ogp.png?v=20260203" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@sien_mc09" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Styles -->
-    <link rel="stylesheet" href="style.css?v=2026D">
-    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+    <meta http-equiv="refresh" content="5;url=https://www.sien-official.com/">
+    <title>ホームページ移転のお知らせ | Sien-Official</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #fff9f5; color: #333; text-align: center; padding: 50px 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #f97316; font-size: 24px; margin-bottom: 20px; }
+        p { margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 15px 30px; background-color: #f97316; color: #fff; text-decoration: none; font-weight: bold; border-radius: 30px; margin-top: 20px; }
+        .btn:hover { background-color: #ea580c; }
+        .loader { margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
-
-    <!-- Header Navigation -->
-    <header class="header">
-        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
-        <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label"><span></span></label>
-        <nav class="nav-menu">
-            <ul>
-                <li><a href="mix.html" class="active-link">ミックス／マスタリング</a></li>
-                <li><a href="original.html">オリジナル楽曲制作</a></li>
-                <li><a href="works.html">制作実績</a></li>
-                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
-                
-            </ul>
-        </nav>
-    </header>
-
-    <!-- Page Title -->
-    <div class="page-header">
-        <div class="container">
-            <h1>ミックス／マスタリング</h1>
-            <p>楽曲のポテンシャルを最大限に引き出す、確かなクオリティ。</p>
-        </div>
+    <div class="container">
+        <h1>ホームページ移転のお知らせ</h1>
+        <p>Sien-Officialのホームページはリニューアルに伴い、新しいURLへ移転いたしました。</p>
+        <p>今後のご依頼・お問い合わせは、新ホームページをご利用いただきますようお願いいたします。</p>
+        <p><strong>新ホームページURL：</strong><br><a href="https://www.sien-official.com/">https://www.sien-official.com/</a></p>
+        
+        <a href="https://www.sien-official.com/" class="btn">新ホームページへ移動する</a>
+        
+        <div class="loader"></div>
+        <p style="font-size: 14px; color: #666;">5秒後に自動的に新ホームページへ移動します...</p>
     </div>
-
-    <!-- Integrated Before/After Widget -->
-    <section class="section">
-        <div class="container">
-            <div class="audio-compare-lite">
-                <h3 class="widget-title"><i class="fa-solid fa-headphones"></i> 音質比較 (Before / After)</h3>
-                <p class="widget-desc">楽曲ジャンル: ロック / ポップス<br>聴きどころ: ピッチやタイミングの自然な補正と、オケに馴染むボーカル処理をご確認ください。</p>
-
-                <div class="compare-item-lite" style="max-width: 600px; margin: 0 auto;">
-                    <span class="song-label">モニタリング（DECO*27）</span>
-                    <div class="player-controls">
-                        <div class="toggle-switch">
-                            <input type="radio" id="s1-before" name="sample1-type" value="before" checked>
-                            <label for="s1-before">Before</label>
-                            <input type="radio" id="s1-after" name="sample1-type" value="after">
-                            <label for="s1-after">After</label>
-                        </div>
-                        <button class="play-btn wave-play-btn" data-sample="1"><i class="fa-solid fa-play"></i></button>
-                    </div>
-
-                    <div class="seek-container" style="display:none;">
-                        <span class="curr-time" id="time-1">0:00</span>
-                        <input type="range" class="seek-bar" id="seek-1" value="0" min="0" max="100" step="0.1">
-                        <span class="total-time" id="total-1">0:00</span>
-                    </div>
-
-                    <div style="position:relative; width: 100%; height: 60px; margin-top: 15px;">
-                        <div id="waveform-1-before" style="position:absolute; top:0; left:0; width: 100%; height: 100%;"></div>
-                        <div id="waveform-1-after" style="position:absolute; top:0; left:0; width: 100%; height: 100%; display:none;"></div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-top:5px; width:100%;">
-                        <span id="wave-time-1">0:00</span>
-                        <span id="wave-total-1">0:00</span>
-                    </div>
-
-                    <!-- Real Local Files -->
-                    <audio id="audio-1-before" src="./assets/sample1_before.mp3"></audio>
-                    <audio id="audio-1-after" src="./assets/sample1_after.mp3"></audio>
-                </div>
-            </div>
-
-            <!-- Pricing Grid -->
-            <!-- Pricing Grid -->
-            <div id="plan-list-mix" class="price-grid mt-5"></div>
-
-            <div class="options-box">
-                <h4>オプション</h4>
-                <div id="option-list-mix"></div>
-            </div>
-
-            <!-- FAQ Section -->
-            <section id="faq" class="section" style="padding-top: 60px; padding-bottom: 0;">
-                <div class="container text-center">
-                    <h2 class="section-title">よくある質問</h2>
-                    <p class="section-desc">ご依頼に関するご質問にお答えします。</p>
-                    <a href="faq.html" class="btn btn-outline" style="border-radius:30px; padding:10px 40px;">
-                        よくある質問はこちら <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                </div>
-            </section>
-
-            <!-- Portfolio Section -->
-            <div class="portfolio-section mt-5">
-                <h3 class="widget-title text-center">制作実績</h3>
-                <p class="section-desc">過去の制作事例</p>
-
-                <div class="video-grid" id="mix-portfolio">
-                    <!-- Dynamic Content by JS -->
-                </div>
-
-                <div class="text-center mt-4">
-                    <button id="show-more-btn" class="btn btn-outline"
-                        style="border-radius: 30px; padding: 8px 25px; font-size: 0.9rem;">
-                        制作実績をもっと見る <i class="fa-solid fa-chevron-down"></i>
-                    </button>
-                </div>
-            </div>
-
-
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <!-- Footer (Redesign 2026: Service-Focused) -->
-    <footer class="footer">
-        <div class="footer-container">
-            <!-- Col 1: Service -->
-            <div class="footer-col">
-                <h4>サービス内容</h4>
-                <ul>
-                    <li><a href="mix.html">ミックス・マスタリング</a></li>
-                    <li><a href="original.html">オリジナル楽曲制作</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 2: Support -->
-            <div class="footer-col">
-                <h4>ご依頼・サポート</h4>
-                <ul>
-                    <li><a href="order.html">ご依頼フォーム</a></li>
-                    <li><a href="business.html">法人・企業様お問い合わせ</a></li>
-                    <li><a href="faq.html">よくある質問（FAQ）</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 3: Policy -->
-            <div class="footer-col">
-                <h4>規約・ポリシー</h4>
-                <ul>
-                    <li><a href="terms.html">ご依頼に関する留意事項</a></li>
-                    <li><a href="privacy.html">プライバシーポリシー</a></li>
-                    <li><a href="tokusho.html">特定商取引法に基づく表記</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p class="footer-copy">Copyright (c) 2026 Sien-Official. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-    <!-- Mobile Floating CTA -->
-
-
-
-
-    <script src="script.js?v=21"></script>
 </body>
-
 </html>

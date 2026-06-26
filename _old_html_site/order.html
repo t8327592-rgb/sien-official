@@ -1,287 +1,32 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ご依頼フォーム | Sien-Official</title>
-    <link rel="icon" type="image/png" href="./assets/favicon.png">
-    <!-- OGP Settings -->
-    <meta property="og:site_name" content="Sien-Official" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sien-official.vercel.app/" />
-    <meta property="og:title" content="Sien-Official | 歌ってみたMIX・オリジナル楽曲制作" />
-    <meta property="og:description"
-        content="【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。" />
-    <meta property="og:image" content="https://sien-official.vercel.app/assets/ogp.png?v=20260203" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@sien_mc09" />
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Styles -->
-    <link rel="stylesheet" href="style.css?v=2026D">
+    <meta http-equiv="refresh" content="5;url=https://www.sien-official.com/">
+    <title>ホームページ移転のお知らせ | Sien-Official</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #fff9f5; color: #333; text-align: center; padding: 50px 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #f97316; font-size: 24px; margin-bottom: 20px; }
+        p { margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 15px 30px; background-color: #f97316; color: #fff; text-decoration: none; font-weight: bold; border-radius: 30px; margin-top: 20px; }
+        .btn:hover { background-color: #ea580c; }
+        .loader { margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
-
-    <!-- Header Navigation -->
-    <header class="header">
-        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
-        <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label">
-            <span></span>
-        </label>
-        <nav class="nav-menu">
-            <ul>
-                <li><a href="mix.html">ミックス／マスタリング</a></li>
-                <li><a href="original.html">オリジナル楽曲制作</a></li>
-                <li><a href="works.html">制作実績</a></li>
-                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
-                
-            </ul>
-        </nav>
-    </header>
-
-    <!-- Page Title -->
-    <div class="page-header">
-        <div class="container">
-            <h1>ご依頼フォーム</h1>
-            <p>お見積もりは無料です。原則24時間以内にメールにて返信いたします。</p>
-        </div>
+    <div class="container">
+        <h1>ホームページ移転のお知らせ</h1>
+        <p>Sien-Officialのホームページはリニューアルに伴い、新しいURLへ移転いたしました。</p>
+        <p>今後のご依頼・お問い合わせは、新ホームページをご利用いただきますようお願いいたします。</p>
+        <p><strong>新ホームページURL：</strong><br><a href="https://www.sien-official.com/">https://www.sien-official.com/</a></p>
+        
+        <a href="https://www.sien-official.com/" class="btn">新ホームページへ移動する</a>
+        
+        <div class="loader"></div>
+        <p style="font-size: 14px; color: #666;">5秒後に自動的に新ホームページへ移動します...</p>
     </div>
-
-    <!-- Order Section -->
-    <section class="section">
-        <div class="container">
-
-            <!-- Input Area Wrapper -->
-            <div id="input-area">
-                <div class="order-status text-center">
-                    <span class="status-open" id="order-status-display"></span>
-                </div>
-
-                <!-- Corporate Link -->
-                <div class="text-center mb-5" style="margin-bottom: 60px;">
-                    <a href="business.html" class="btn btn-outline btn-sm"
-                        style="border-radius: 30px; font-weight: 500;">
-                        <i class="fa-solid fa-briefcase"></i> 法人・企業様のお問い合わせはこちら
-                    </a>
-                </div>
-
-                <!-- Important Notice -->
-                <div id="notices-container"></div>
-
-                <!-- Form -->
-                <form id="orderForm" class="order-form-clean" action="" method="POST">
-                    <input type="hidden" name="form-name" value="contact">
-
-                    <!-- Single Column Grid -->
-                    <div class="form-grid">
-
-                        <!-- Section 1: Basic Info -->
-                        <h3 class="form-section-title">【① 基本情報】</h3>
-
-                        <!-- Activity Name -->
-                        <div class="form-group">
-                            <label>活動名 / お名前 <span class="req">必須</span></label>
-                            <input type="text" name="ご依頼者名" required placeholder="活動名を入力">
-                        </div>
-
-                        <!-- Email -->
-                        <div class="form-group">
-                            <label>メールアドレス <span class="req">必須</span></label>
-                            <input type="email" name="メールアドレス" required placeholder="example@email.com">
-                        </div>
-
-                        <!-- Twitter ID -->
-                        <div class="form-group">
-                            <label>Twitter ID <span class="req">必須</span></label>
-                            <input type="text" name="TwitterID(任意)" required placeholder="@sien_mc09">
-                        </div>
-
-                        <!-- Contact Method -->
-                        <div class="form-group">
-                            <label>希望する連絡手段 <span class="req">必須</span></label>
-                            <select name="希望する連絡手段" required>
-                                <option value="">選択してください</option>
-                                <option value="twitter_dm">Twitter DM</option>
-                                <option value="email">メール</option>
-                            </select>
-                        </div>
-
-                        <!-- Section 2: Request Details -->
-                        <h3 class="form-section-title">【② ご依頼内容】</h3>
-
-                        <!-- Plan -->
-                        <div class="form-group">
-                            <label>プランを選択してください <span class="req">必須</span></label>
-                            <select name="プラン" id="plan" required>
-                                <option value="">選択してください</option>
-                                <option value="std">スタンダードプラン</option>
-                                <option value="chorus">ワンコーラスプラン</option>
-                                <option value="short">ショート動画用MIX</option>
-                                <option value="speed">短納期プラン</option>
-                                <option value="superspeed">最短納期プラン</option>
-                                <option value="collab">コラボ・合唱プラン</option>
-                                <option value="orig_std">完パケプラン</option>
-                                <option value="orig_lyric">作詞持ち込みプラン</option>
-                                <option value="other">その他・ご相談</option>
-                            </select>
-                        </div>
-
-                        <!-- Song Name -->
-                        <div class="form-group full-width">
-                            <label>曲名 (ない場合は"なし"と入力) <span class="req">必須</span></label>
-                            <input type="text" name="曲名" required placeholder="例: モニタリング / なし">
-                        </div>
-
-                        <!-- Option -->
-                        <div class="form-group">
-                            <label>オプション / その他</label>
-                            <input type="text" name="オプション" placeholder="ボーカルガイド、カットアップ、エンコードなど">
-                        </div>
-
-                        <!-- Section 3: Song Info -->
-                        <h3 class="form-section-title">【③ 楽曲情報】</h3>
-
-                        <!-- Key -->
-                        <div class="form-group">
-                            <label>歌唱キー <span class="req">必須</span></label>
-                            <select name="キー変更" required>
-                                <option value="">選択してください</option>
-                                <option value="0">原キー (±0)</option>
-                                <option value="+1">+1</option>
-                                <option value="+2">+2</option>
-                                <option value="+3">+3</option>
-                                <option value="+4">+4</option>
-                                <option value="+5">+5</option>
-                                <option value="+6">+6</option>
-                                <option value="+7">+7</option>
-                                <option value="-1">-1</option>
-                                <option value="-2">-2</option>
-                                <option value="-3">-3</option>
-                                <option value="-4">-4</option>
-                                <option value="-5">-5</option>
-                                <option value="-6">-6</option>
-                                <option value="-7">-7</option>
-                            </select>
-                        </div>
-
-                        <!-- Ref URL -->
-                        <div class="form-group">
-                            <label>参考曲 (YouTubeなどのURL)</label>
-                            <input type="url" name="参考URL(任意)" placeholder="https://...">
-                        </div>
-
-                        <!-- Section 4: Material Submission -->
-                        <h3 class="form-section-title">【④ 素材提出】</h3>
-
-                        <!-- Upload URL -->
-                        <div class="form-group full-width">
-                            <label>レコーディング済み音源のアップロードURL</label>
-                            <input type="url" name="レコーディング済み音源" placeholder="Gigafile便、Google DriveなどのURL">
-                            <p class="form-note" style="font-size: 0.9em; color: #aaa; margin-top: 5px;">
-                                ※音源が未提出の場合でもご依頼可能です。</p>
-                        </div>
-
-                        <!-- Section 5: Payment Method -->
-                        <h3 class="form-section-title">【⑤ お支払い方法】</h3>
-
-                        <!-- Payment Method -->
-                        <div class="form-group">
-                            <label>お支払い方法 <span class="req">必須</span></label>
-                            <select name="お支払い方法" required>
-                                <option value="">選択してください</option>
-                                <option value="bank_transfer">銀行振込</option>
-                                <option value="credit_card">クレジットカード</option>
-                            </select>
-                        </div>
-
-                        <!-- Section 6: Free Text -->
-                        <h3 class="form-section-title">【⑥ 自由記述】</h3>
-
-                        <!-- Remarks -->
-                        <div class="form-group full-width">
-                            <label>ご要望・ご質問・特記事項など</label>
-                            <textarea name="ご要望・ご質問・特記事項など" placeholder="ご自由にご記入ください"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Agreement -->
-                    <div class="form-group checkbox-group mt-4" style="text-align: center;">
-                        <input type="checkbox" id="agree" required
-                            style="width: auto; margin-right: 10px; transform: scale(1.2);">
-                        <label for="agree" style="display: inline; font-size: 1rem; cursor: pointer;">
-                            <a href="terms.html" target="_blank" class="disclaimer-link"
-                                style="color: #2563eb; text-decoration: underline;">ご依頼に関する留意事項</a>に同意する <span
-                                class="req">*</span>
-                        </label>
-                    </div>
-
-                    <div class="text-center mt-5">
-                        <button type="submit" class="btn btn-primary btn-lg" style="min-width: 250px;">
-                            無料で内容を相談する <i class="fa-solid fa-paper-plane ml-2"></i>
-                        </button>
-                        <p style="margin-top:10px; font-size:0.9rem; color:#666;">最短24時間以内に返信いたします</p>
-                    </div>
-                </form>
-            </div>
-
-            <div id="successMessage" class="success-message hidden">
-                <i class="fa-regular fa-paper-plane"></i>
-                <h3>送信完了</h3>
-                <p>送信が完了しました。<br>この度はご依頼いただき、誠にありがとうございます。<br><br>内容を確認のうえ、24時間以内にご連絡させていただきます。</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer (Redesign 2026: Service-Focused) -->
-    <footer class="footer">
-        <div class="footer-container">
-            <!-- Col 1: Service -->
-            <div class="footer-col">
-                <h4>サービス内容</h4>
-                <ul>
-                    <li><a href="mix.html">ミックス・マスタリング</a></li>
-                    <li><a href="original.html">オリジナル楽曲制作</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 2: Support -->
-            <div class="footer-col">
-                <h4>ご依頼・サポート</h4>
-                <ul>
-                    <li><a href="order.html">ご依頼フォーム</a></li>
-                    <li><a href="business.html">法人・企業様お問い合わせ</a></li>
-                    <li><a href="faq.html">よくある質問（FAQ）</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 3: Policy -->
-            <div class="footer-col">
-                <h4>規約・ポリシー</h4>
-                <ul>
-                    <li><a href="terms.html">ご依頼に関する留意事項</a></li>
-                    <li><a href="privacy.html">プライバシーポリシー</a></li>
-                    <li><a href="tokusho.html">特定商取引法に基づく表記</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p class="footer-copy">Copyright (c) 2026 Sien-Official. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-
-
-    <script src="script.js"></script>
 </body>
-
 </html>

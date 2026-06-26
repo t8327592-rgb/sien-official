@@ -1,135 +1,32 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>制作実績 | Sien-Official</title>
-    <link rel="icon" type="image/png" href="./assets/favicon.png">
-    <!-- Fonts & Icons -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
-    <!-- OGP Settings -->
-    <meta property="og:site_name" content="Sien-Official" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sien-official.vercel.app/" />
-    <meta property="og:title" content="Sien-Official | 歌ってみたMIX・オリジナル楽曲制作" />
-    <meta property="og:description" content="Sien-Officialの制作実績（Portfolio）一覧。歌ってみたMIX、オリジナル楽曲制作のサンプルをご試聴いただけます。" />
-    <meta property="og:image" content="https://sien-official.vercel.app/assets/ogp.png?v=20260203" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@sien_mc09" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Styles -->
-    <link rel="stylesheet" href="style.css?v=2026D">
+    <meta http-equiv="refresh" content="5;url=https://www.sien-official.com/">
+    <title>ホームページ移転のお知らせ | Sien-Official</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #fff9f5; color: #333; text-align: center; padding: 50px 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #f97316; font-size: 24px; margin-bottom: 20px; }
+        p { margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 15px 30px; background-color: #f97316; color: #fff; text-decoration: none; font-weight: bold; border-radius: 30px; margin-top: 20px; }
+        .btn:hover { background-color: #ea580c; }
+        .loader { margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
-
-    <!-- Header Navigation -->
-    <header class="header">
-        <div class="logo"><a href="index.html"><img src="./assets/logo.png" alt="SIEN.OFFICIAL"></a></div>
-        <input type="checkbox" id="nav-toggle" class="nav-toggle">
-        <label for="nav-toggle" class="nav-toggle-label"><span></span></label>
-        <nav class="nav-menu">
-            <ul>
-                <li><a href="mix.html">ミックス／マスタリング</a></li>
-                <li><a href="original.html">オリジナル楽曲制作</a></li>
-                <li><a href="works.html" class="active-link">制作実績</a></li>
-                <li><a href="order.html" class="nav-cta">ご依頼フォーム</a></li>
-                
-            </ul>
-        </nav>
-    </header>
-
-    <!-- Page Title -->
-    <div class="page-header">
-        <div class="container">
-            <h1>制作実績</h1>
-            <p>これまでに手掛けた作品の一部をご紹介します。</p>
-        </div>
+    <div class="container">
+        <h1>ホームページ移転のお知らせ</h1>
+        <p>Sien-Officialのホームページはリニューアルに伴い、新しいURLへ移転いたしました。</p>
+        <p>今後のご依頼・お問い合わせは、新ホームページをご利用いただきますようお願いいたします。</p>
+        <p><strong>新ホームページURL：</strong><br><a href="https://www.sien-official.com/">https://www.sien-official.com/</a></p>
+        
+        <a href="https://www.sien-official.com/" class="btn">新ホームページへ移動する</a>
+        
+        <div class="loader"></div>
+        <p style="font-size: 14px; color: #666;">5秒後に自動的に新ホームページへ移動します...</p>
     </div>
-
-    <!-- Works Content -->
-    <section class="section">
-        <div class="container">
-
-            <!-- Tabs -->
-            <div class="works-tabs text-center mb-5">
-                <button class="tab-btn active" data-tab="all">すべて</button>
-                <button class="tab-btn" data-tab="mix">ミックス／マスタリング</button>
-                <button class="tab-btn" data-tab="original">オリジナル楽曲制作</button>
-            </div>
-
-            <!-- Category 1: Mix & Mastering -->
-            <div class="works-category mb-5" id="category-mix">
-                <h2 class="section-title">ミックス／マスタリング</h2>
-                <div class="video-grid" id="works-mix-container">
-                    <!-- Loaded by script.js -->
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <div style="height: 60px;" id="works-separator"></div>
-
-            <!-- Category 2: Original Song Production -->
-            <div class="works-category" id="category-original">
-                <h2 class="section-title">オリジナル楽曲制作</h2>
-                <div class="video-grid" id="works-original-container">
-                    <!-- Loaded by script.js -->
-                </div>
-            </div>
-
-            <div class="text-center mt-5">
-                <a href="order.html" class="btn btn-primary btn-lg">お見積もり・相談する</a>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <!-- Footer (Redesign 2026: Service-Focused) -->
-    <footer class="footer">
-        <div class="footer-container">
-            <!-- Col 1: Service -->
-            <div class="footer-col">
-                <h4>サービス内容</h4>
-                <ul>
-                    <li><a href="mix.html">ミックス・マスタリング</a></li>
-                    <li><a href="original.html">オリジナル楽曲制作</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 2: Support -->
-            <div class="footer-col">
-                <h4>ご依頼・サポート</h4>
-                <ul>
-                    <li><a href="order.html">ご依頼フォーム</a></li>
-                    <li><a href="business.html">法人・企業様お問い合わせ</a></li>
-                    <li><a href="faq.html">よくある質問（FAQ）</a></li>
-                </ul>
-            </div>
-
-            <!-- Col 3: Policy -->
-            <div class="footer-col">
-                <h4>規約・ポリシー</h4>
-                <ul>
-                    <li><a href="terms.html">ご依頼に関する留意事項</a></li>
-                    <li><a href="privacy.html">プライバシーポリシー</a></li>
-                    <li><a href="tokusho.html">特定商取引法に基づく表記</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p class="footer-copy">Copyright (c) 2026 Sien-Official. All Rights Reserved.</p>
-        </div>
-    </footer>
-
-    <!-- Mobile Floating CTA -->
-
-
-    <script src="script.js"></script>
 </body>
-
 </html>
