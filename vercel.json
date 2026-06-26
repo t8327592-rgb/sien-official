@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://www.sien-official.com/",
+      "permanent": false
+    }
+  ]
+}
