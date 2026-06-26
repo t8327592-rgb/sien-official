@@ -192,7 +192,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           <div className="p-5 grid grid-cols-2 gap-4 flex-1">
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">お名前</p>
-              {renderEditable('clientName', <span className="font-bold text-slate-800">{order.clientName}</span>)}
+              <span className="font-bold text-slate-800">{order.clientName}</span>
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1 flex items-center justify-between">
@@ -201,11 +201,11 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
                   <Copy className="w-3 h-3" />
                 </button>
               </p>
-              {renderEditable('clientEmail', <span className="text-sm font-medium text-slate-700 break-all">{order.clientEmail}</span>)}
+              <span className="text-sm font-medium text-slate-700 break-all">{order.clientEmail}</span>
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">X (Twitter)</p>
-              {renderEditable('twitterId', renderTwitterLink(order.twitterId))}
+              {renderTwitterLink(order.twitterId)}
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">顧客ステータス</p>
