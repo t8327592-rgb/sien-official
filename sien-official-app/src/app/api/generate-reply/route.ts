@@ -9,13 +9,13 @@ export async function POST(req: Request) {
       materialsUrl, paymentMethod, deadline 
     } = body;
 
-    const serviceName = serviceType === "mix" ? "ミックス・マスタリング" : "オリジナル楽曲制作";
+    const serviceName = serviceType === "MIX" ? "ミックス・マスタリング" : "オリジナル楽曲制作";
     
     // プラン情報の解決
     let planName = "未設定";
     let planContext = "";
     
-    if (serviceType === "mix") {
+    if (serviceType === "MIX") {
       switch (planId) {
         case "mix_standard":
           planName = "スタンダードプラン";

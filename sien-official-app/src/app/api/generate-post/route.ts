@@ -8,7 +8,7 @@ export async function POST(req: Request) {
       songTitle, options, vocalKey, referenceUrl, referenceFidelity
     } = body;
 
-    const serviceName = serviceType === "mix" ? "Mix & Mastering" : "Original Song";
+    const serviceName = serviceType === "MIX" ? "Mix & Mastering" : "Original Song";
 
     const prompt = `あなたはプロの音楽クリエイター「Sien」のアシスタントです。
 以下のクライアントから依頼された楽曲が完成したため、Twitter(X)などのSNSで告知するためのポスト本文を作成してください。
