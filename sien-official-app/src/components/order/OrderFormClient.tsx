@@ -235,11 +235,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">ご依頼ありがとうございます</h2>
           <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base text-left bg-slate-50 p-6 rounded-2xl border border-slate-100">
             <p className="mb-4 font-bold text-slate-800 text-center">送信が完了いたしました。</p>
-            <p className="mb-4">内容を確認のうえ、入力いただいたご連絡先へ通常24時間以内にご返信いたします。</p>
-            <p className="text-xs sm:text-sm text-slate-500">
-              24時間を過ぎても返信がない場合は、メールが正常に届いていない可能性がございます。<br/>
-              その際は、お手数ですが、X（Twitter）のDM、またはメールアドレスまでご連絡くださいますようお願いいたします。
-            </p>
+            <p className="text-center">内容を確認のうえ、入力いただいたご連絡先へ通常24時間以内にご返信いたします。</p>
           </div>
           <Button asChild className="w-full sm:w-auto rounded-full px-10 h-14 bg-white border-2 border-orange-500 text-orange-600 font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-600 shadow-sm hover:shadow-md transition-all active:scale-95">
             <a href="/">トップページに戻る</a>
