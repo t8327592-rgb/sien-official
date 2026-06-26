@@ -3,8 +3,15 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPostsPage() {
+export default async function AdminPostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type } = await searchParams;
+
   const posts = await prisma.post.findMany({
+    where: type ? { type } : {},
     orderBy: { createdAt: "desc" },
   });
 
@@ -16,6 +23,22 @@ export default async function AdminPostsPage() {
           新規投稿を作成
         </Link>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/admin/posts" className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${!type ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+          すべて
+        </Link>
+        <Link href="/admin/posts?type=NEWS" className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${type === 'NEWS' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-700 hover:bg-orange-50'}`}>
+          お知らせ
+        </Link>
+        <Link href="/admin/posts?type=WORKS" className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${type === 'WORKS' ? 'bg-green-500 text-white' : 'bg-white border border-green-200 text-green-700 hover:bg-green-50'}`}>
+          制作実績
+        </Link>
+        <Link href="/admin/posts?type=BLOG" className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${type === 'BLOG' ? 'bg-blue-500 text-white' : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'}`}>
+          ブログ
+        </Link>
+      </div>
+
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
         {posts.length === 0 ? (
           <p className="text-muted-foreground">現在投稿されている記事はありません。</p>
