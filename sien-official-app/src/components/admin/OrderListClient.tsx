@@ -138,6 +138,25 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
   const completedCount = baseFilteredOrders.filter((o) => o.status === "COMPLETED").length;
   const canceledCount = baseFilteredOrders.filter((o) => isCanceled(o.status)).length;
 
+  // リピート率計算（顧客ベース）
+  const uniqueClients = new Map<string, boolean>();
+  orders.forEach(order => {
+    if (order.clientEmail) {
+      const isRepeater = order.isRepeater === true || uniqueClients.get(order.clientEmail);
+      uniqueClients.set(order.clientEmail, !!isRepeater);
+    }
+  });
+
+  const totalClientsCount = uniqueClients.size;
+  let repeaterClientsCount = 0;
+  uniqueClients.forEach((isRepeater) => {
+    if (isRepeater) repeaterClientsCount++;
+  });
+
+  const repeatRate = totalClientsCount > 0 
+    ? Math.round((repeaterClientsCount / totalClientsCount) * 100) 
+    : 0;
+
   // 最終的に表示するリスト
   const displayOrders = baseFilteredOrders
     .filter((order) => {
@@ -202,9 +221,9 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
         </div>
       </div>
 
-      {/* メインタブ */}
-      <div className="flex flex-col gap-3">
-        <nav className="flex space-x-6 border-b border-slate-200 px-1" aria-label="Tabs">
+      {/* メインタブとサマリー */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <nav className="flex space-x-6 border-b border-slate-200 px-1 w-full sm:w-auto" aria-label="Tabs">
           <button
             onClick={() => setActiveTab("IN_PROGRESS")}
             className={`whitespace-nowrap pb-3 px-1 border-b-2 font-bold text-sm transition-colors duration-200 ${
@@ -236,6 +255,13 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
             キャンセル（{canceledCount}）
           </button>
         </nav>
+        
+        {/* リピート率表示 */}
+        <div className="flex items-center gap-2 px-1 sm:px-0 text-sm">
+          <span className="text-slate-500 font-bold">リピート率</span>
+          <span className="text-indigo-600 font-bold text-base bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{repeatRate}%</span>
+          <span className="text-slate-400 text-xs font-medium">({repeaterClientsCount}名 / 全{totalClientsCount}名)</span>
+        </div>
       </div>
 
       {/* リスト表示 */}
