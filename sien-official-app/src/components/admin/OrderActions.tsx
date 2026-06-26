@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 
-type OrderStatus = "PENDING" | "ESTIMATING" | "WORKING" | "COMPLETED" | "CANCELED";
+type OrderStatus = "PENDING" | "ESTIMATING" | "WAITING_PAYMENT" | "WORKING" | "COMPLETED" | "CANCELED";
 
 export function OrderActions({ orderId, currentStatus }: { orderId: string, currentStatus: string }) {
   const router = useRouter();
@@ -105,6 +105,7 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
       >
         <option value="PENDING">未対応</option>
         <option value="ESTIMATING">見積中</option>
+        <option value="WAITING_PAYMENT">入金待ち</option>
         <option value="WORKING">作業中</option>
         <option value="COMPLETED">納品済</option>
         <option value="CANCELED">キャンセル</option>
