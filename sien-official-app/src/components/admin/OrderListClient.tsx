@@ -134,25 +134,25 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+            <Search className="absolute left-3 top-3 md:top-2.5 h-4 w-4 text-slate-500" />
             <input 
               type="text" 
               placeholder="名前, 曲名, メールで検索..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 placeholder:text-slate-500 p-2.5 md:p-2 pl-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
+              className="w-full border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 placeholder:text-slate-500 py-2.5 pr-3 pl-9 md:py-2 md:pr-3 md:pl-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
             />
           </div>
           <div className="relative flex-1 sm:flex-none group">
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-              className="w-full appearance-none border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 p-2.5 md:p-2 pl-3 pr-8 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
+              className="w-full appearance-none border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 py-2.5 pl-3 pr-9 md:py-2 md:pl-3 md:pr-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
             >
               <option value="desc">新しい順</option>
               <option value="asc">古い順</option>
             </select>
-            <ArrowUpDown className="absolute right-2.5 top-3 md:top-2.5 h-4 w-4 text-slate-500 pointer-events-none group-focus-within:text-orange-500" />
+            <ArrowUpDown className="absolute right-3 top-3 md:top-2.5 h-4 w-4 text-slate-500 pointer-events-none group-focus-within:text-orange-500" />
           </div>
         </div>
       </div>
