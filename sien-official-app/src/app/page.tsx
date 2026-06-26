@@ -9,11 +9,21 @@ import { getSiteSetting } from "@/app/actions/settings";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [featuredPortfolios, siteSetting] = await Promise.all([
+  const [mixPortfolios, originalPortfolios, reviews, siteSetting] = await Promise.all([
     prisma.portfolio.findMany({
-      where: { isFeatured: true },
+      where: { isFeatured: true, serviceCategory: { not: "オリジナル楽曲制作" } },
       orderBy: { orderIndex: "asc" },
       take: 4,
+    }),
+    prisma.portfolio.findMany({
+      where: { isFeatured: true, serviceCategory: "オリジナル楽曲制作" },
+      orderBy: { orderIndex: "asc" },
+      take: 3,
+    }),
+    prisma.review.findMany({
+      where: { isPublished: true },
+      orderBy: { orderIndex: "asc" },
+      take: 3,
     }),
     getSiteSetting()
   ]);
@@ -161,27 +171,8 @@ export default async function Home() {
           </div>
           
           <FeaturedWorksList 
-            mixPortfolios={featuredPortfolios} 
-            originalPortfolios={[
-              {
-                id: "orig-1",
-                title: "【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】",
-                url: "https://www.youtube.com/watch?v=zTxvMNXaFoA",
-                serviceCategory: "オリジナル楽曲制作"
-              },
-              {
-                id: "orig-2",
-                title: "【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】",
-                url: "https://www.youtube.com/watch?v=Rc531IszCes",
-                serviceCategory: "オリジナル楽曲制作"
-              },
-              {
-                id: "orig-3",
-                title: "週末を待て。『SODA』Music Video",
-                url: "https://www.youtube.com/watch?v=Ke1HAX8Z49I",
-                serviceCategory: "オリジナル楽曲制作"
-              }
-            ]} 
+            mixPortfolios={mixPortfolios} 
+            originalPortfolios={originalPortfolios} 
           />
           
           <div className="text-center mt-12">
@@ -203,32 +194,16 @@ export default async function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                text: "初めてのMIX依頼で右も左も分かりませんでしたが、必要なデータを丁寧に教えていただき、とても安心して進められました！仕上がりも大満足です！",
-                name: "歌い手 A様",
-                type: "ボーカルMIX"
-              },
-              {
-                text: "スマホ録音なので音質が心配でしたが、ノイズも消えていて、別人のように綺麗にオケに馴染んでいて驚きました。リピート確定です！",
-                name: "VTuber K様",
-                type: "ボーカルMIX"
-              },
-              {
-                text: "オリジナル曲の依頼をさせていただきました。ざっくりとしたイメージしかお伝えできなかったのですが、期待を遥かに超える素晴らしい楽曲を作っていただきました！",
-                name: "シンガーソングライター S様",
-                type: "オリジナル楽曲制作"
-              }
-            ].map((review, i) => (
-              <div key={i} className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:border-orange-200 transition-colors relative">
+            {reviews.map((review) => (
+              <div key={review.id} className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:border-orange-200 transition-colors relative">
                 <Quote className="absolute top-6 right-6 w-8 h-8 text-orange-100" />
                 <div className="flex items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <Star key={star} className="w-4 h-4 text-orange-400 fill-orange-400" />
+                  {Array.from({ length: review.rating }).map((_, idx) => (
+                    <Star key={idx} className="w-4 h-4 text-orange-400 fill-orange-400" />
                   ))}
                 </div>
                 <p className="text-slate-700 text-sm leading-relaxed mb-6 flex-1 min-h-[5rem] font-medium">
-                  「{review.text}」
+                  「{review.content}」
                 </p>
                 <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
                   <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${review.name}`} alt={review.name} className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 p-0.5" />
@@ -237,7 +212,7 @@ export default async function Home() {
                       {review.name}
                       <svg className="w-3 h-3 text-[#1DA1F2]/80" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.96H5.078z" /></svg>
                     </div>
-                    <div className="text-[10px] font-bold text-orange-500 mt-0.5">{review.type}</div>
+                    <div className="text-[10px] font-bold text-orange-500 mt-0.5">{review.serviceType}</div>
                   </div>
                 </div>
               </div>

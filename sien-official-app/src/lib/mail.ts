@@ -19,17 +19,15 @@ export const sendMail = async ({
     },
   });
 
-  const mailOptions = {
-    from: `"Sien-Official" <${process.env.SMTP_USER}>`,
-    to,
-    subject,
-    text,
-    html,
-  };
-
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
+    const info = await transporter.sendMail({
+      from: `"Sien-Official" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      text,
+      html,
+    });
+
     return { success: true };
   } catch (error) {
     console.error("Error sending email:", error);
