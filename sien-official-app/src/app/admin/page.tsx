@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // データベースへのクエリを並列実行して高速化
-  const [thisMonthOrders, workingOrdersCount, recentOrders] = await Promise.all([
+  const [thisMonthOrders, workingOrdersCount] = await Promise.all([
     prisma.order.findMany({
       where: {
         createdAt: {
@@ -20,10 +20,6 @@ export default async function AdminDashboard() {
       where: {
         status: "WORKING",
       },
-    }),
-    prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 5,
     })
   ]);
 
@@ -60,52 +56,7 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Orders Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mt-8">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-slate-800">最新のご依頼</h3>
-          <Link href="/admin/orders" className="text-sm text-orange-600 font-medium hover:underline">すべて見る</Link>
-        </div>
-        <div className="overflow-x-auto">
-          {recentOrders.length === 0 ? (
-            <div className="p-6 text-sm text-slate-500 text-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/30 m-6">
-              現在、ご依頼はありません。
-            </div>
-          ) : (
-            <table className="w-full text-sm text-left text-slate-600">
-              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-3 font-medium">依頼日</th>
-                  <th className="px-6 py-3 font-medium">お名前</th>
-                  <th className="px-6 py-3 font-medium">サービス</th>
-                  <th className="px-6 py-3 font-medium">希望納期</th>
-                  <th className="px-6 py-3 font-medium text-right">金額</th>
-                  <th className="px-6 py-3 font-medium text-center">ステータス</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">{order.createdAt.toLocaleDateString()}</td>
-                    <td className="px-6 py-4 font-bold text-slate-800">
-                      {order.clientName}
-                      {order.isRepeater && <span className="ml-2 text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">リピ</span>}
-                    </td>
-                    <td className="px-6 py-4">{order.serviceType === "MIX" ? "MIX" : "オリジナル"}</td>
-                    <td className="px-6 py-4">{order.deadline || "指定なし"}</td>
-                    <td className="px-6 py-4 text-right font-medium">
-                      {order.price ? `¥${order.price.toLocaleString()}` : "未定"}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {getStatusBadge(order.status)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+
     </div>
   );
 }
