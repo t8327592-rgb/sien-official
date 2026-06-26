@@ -18,10 +18,22 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [serviceFilter, setServiceFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // フィルタリングとソート
   const filteredOrders = initialOrders
     .filter((order) => filterStatus === "ALL" || order.status === filterStatus)
+    .filter((order) => serviceFilter === "ALL" || order.serviceType === serviceFilter)
+    .filter((order) => {
+      if (!searchQuery) return true;
+      const lowerQuery = searchQuery.toLowerCase();
+      return (
+        (order.clientName && order.clientName.toLowerCase().includes(lowerQuery)) ||
+        (order.songTitle && order.songTitle.toLowerCase().includes(lowerQuery)) ||
+        (order.clientEmail && order.clientEmail.toLowerCase().includes(lowerQuery))
+      );
+    })
     .sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
@@ -30,12 +42,45 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-4">
+      {/* サービスタブ */}
+      <div className="flex flex-wrap gap-2">
+        <button 
+          onClick={() => setServiceFilter("ALL")}
+          className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${serviceFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+        >
+          すべて
+        </button>
+        <button 
+          onClick={() => setServiceFilter("mix")}
+          className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${serviceFilter === 'mix' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-700 hover:bg-orange-50'}`}
+        >
+          MIX・マスタリング
+        </button>
+        <button 
+          onClick={() => setServiceFilter("original")}
+          className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors shadow-sm ${serviceFilter === 'original' ? 'bg-blue-500 text-white' : 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50'}`}
+        >
+          オリジナル楽曲制作
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+          {/* 検索ボックス */}
+          <div className="relative w-full sm:w-64">
+            <input 
+              type="text" 
+              placeholder="名前, 曲名, メールで検索..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full border-slate-200 rounded-lg text-sm bg-white p-2 pl-3 outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+            />
+          </div>
+
           <select 
             value={filterStatus} 
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="border-slate-200 rounded-lg text-sm bg-white p-2 outline-none focus:ring-2 focus:ring-orange-500"
+            className="border-slate-200 rounded-lg text-sm bg-white p-2 outline-none focus:ring-2 focus:ring-orange-500 shadow-sm flex-1 sm:flex-none"
           >
             <option value="ALL">すべてのステータス</option>
             <option value="PENDING">未対応</option>
@@ -47,13 +92,13 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-            className="border-slate-200 rounded-lg text-sm bg-white p-2 outline-none focus:ring-2 focus:ring-orange-500"
+            className="border-slate-200 rounded-lg text-sm bg-white p-2 outline-none focus:ring-2 focus:ring-orange-500 shadow-sm flex-1 sm:flex-none"
           >
             <option value="desc">新しい順</option>
             <option value="asc">古い順</option>
           </select>
         </div>
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-100 font-medium text-slate-600">
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 font-medium text-slate-600 whitespace-nowrap">
           全 {filteredOrders.length} 件
         </div>
       </div>
