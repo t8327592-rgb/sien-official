@@ -219,16 +219,31 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
     }
   };
 
+  useEffect(() => {
+    if (status === "success") {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [status]);
+
   if (status === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-        <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-100 text-center max-w-lg">
+      <div className="min-h-screen flex items-center justify-center bg-brand-bg px-4 py-20">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-slate-100 text-center max-w-lg w-full">
           <div className="w-20 h-20 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">ご依頼ありがとうございます</h2>
-          <p className="text-slate-600 mb-8 leading-relaxed">送信が完了しました。<br/>内容を確認次第、入力いただいた連絡先へご連絡いたします。</p>
-          <Button asChild className="rounded-full px-10 h-12 bg-orange-50 border border-orange-100 text-white font-bold"><a href="/">トップページに戻る</a></Button>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">ご依頼ありがとうございます</h2>
+          <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base text-left bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <p className="mb-4 font-bold text-slate-800 text-center">送信が完了いたしました。</p>
+            <p className="mb-4">内容を確認のうえ、入力いただいたご連絡先へ通常24時間以内にご返信いたします。</p>
+            <p className="text-xs sm:text-sm text-slate-500">
+              24時間を過ぎても返信がない場合は、メールが正常に届いていない可能性がございます。<br/>
+              その際は、お手数ですが、X（Twitter）のDM、またはメールアドレスまでご連絡くださいますようお願いいたします。
+            </p>
+          </div>
+          <Button asChild className="w-full sm:w-auto rounded-full px-10 h-14 bg-white border-2 border-orange-500 text-orange-600 font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-600 shadow-sm hover:shadow-md transition-all active:scale-95">
+            <a href="/">トップページに戻る</a>
+          </Button>
         </div>
       </div>
     );
