@@ -48,21 +48,28 @@ export default async function Home() {
         <div className="relative z-10 container px-4 pt-24 pb-32 mx-auto text-center flex flex-col items-center min-h-[calc(100vh-8rem)] justify-center">
           {/* 受付バッジ */}
           <div className={`mb-8 inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-white/90 backdrop-blur-md shadow-sm border font-bold text-xs sm:text-sm tracking-wide transition-all ${
-            siteSetting.acceptingOrders 
+            siteSetting.orderStatus === "AVAILABLE" 
               ? "border-orange-200 text-orange-600" 
+              : siteSetting.orderStatus === "BUSY"
+              ? "border-amber-200 text-amber-600"
               : "border-slate-200 text-slate-500"
           }`}>
-            {siteSetting.acceptingOrders ? (
+            {siteSetting.orderStatus === "AVAILABLE" ? (
               <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-orange-500"></span>
+              </span>
+            ) : siteSetting.orderStatus === "BUSY" ? (
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-amber-500"></span>
               </span>
             ) : (
               <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                 <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-slate-400"></span>
               </span>
             )}
-            {siteSetting.acceptingOrders ? "受付状況：" : "お知らせ："} {siteSetting.announcement || (siteSetting.acceptingOrders ? "現在スケジュール調整可能" : "現在満枠のため受付を停止しております")}
+            {siteSetting.orderStatus === "UNAVAILABLE" ? "お知らせ：" : "受付状況："} {siteSetting.announcement || (siteSetting.orderStatus === "AVAILABLE" ? "現在スケジュール調整可能" : siteSetting.orderStatus === "BUSY" ? "現在混雑中（納期は要相談）" : "現在満枠のため受付を停止しております")}
           </div>
           
           <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-4 sm:mb-8 leading-[1.3] md:leading-[1.2] drop-shadow-xl">

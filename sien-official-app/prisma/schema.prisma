@@ -138,7 +138,8 @@ model BusinessContact {
 // システム・サイト設定用モデル
 model SiteSetting {
   id              String   @id @default("default")
-  acceptingOrders Boolean  @default(true) // 受付ステータス
+  acceptingOrders Boolean  @default(true) // (非推奨) 旧受付ステータス
+  orderStatus     String   @default("AVAILABLE") // "AVAILABLE", "BUSY", "UNAVAILABLE"
   announcement    String?  // サイト案内メッセージ
   updatedAt       DateTime @updatedAt
 }

@@ -16,7 +16,7 @@ export async function getSiteSetting() {
     setting = await prisma.siteSetting.create({
       data: {
         id: "default",
-        acceptingOrders: true,
+        orderStatus: "AVAILABLE",
         announcement: "現在、納品まで約3〜4週間いただいております。",
       },
     });
@@ -29,18 +29,23 @@ export async function getSiteSetting() {
  * サイト設定を更新する
  */
 export async function updateSiteSetting(data: {
-  acceptingOrders: boolean;
+  orderStatus?: string;
   announcement: string | null;
 }) {
+  const status = data.orderStatus || "AVAILABLE";
+  const legacyAccepting = status !== "UNAVAILABLE";
+  
   const setting = await prisma.siteSetting.upsert({
     where: { id: "default" },
     update: {
-      acceptingOrders: data.acceptingOrders,
+      orderStatus: status,
+      acceptingOrders: legacyAccepting, // 旧バージョンとの互換性
       announcement: data.announcement,
     },
     create: {
       id: "default",
-      acceptingOrders: data.acceptingOrders,
+      orderStatus: status,
+      acceptingOrders: legacyAccepting,
       announcement: data.announcement,
     },
   });

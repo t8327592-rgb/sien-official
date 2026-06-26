@@ -7,13 +7,14 @@ import { updateSiteSetting } from "@/app/actions/settings";
 import { useRouter } from "next/navigation";
 
 type SiteSetting = {
-  acceptingOrders: boolean;
+  acceptingOrders: boolean; // 互換性のため残す
+  orderStatus: string;
   announcement: string | null;
 };
 
 export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting }) {
   const router = useRouter();
-  const [acceptingOrders, setAcceptingOrders] = useState(initialSetting.acceptingOrders);
+  const [orderStatus, setOrderStatus] = useState(initialSetting.orderStatus || "AVAILABLE");
   const [announcement, setAnnouncement] = useState(initialSetting.announcement || "");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -21,7 +22,7 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
     setIsSaving(true);
     try {
       await updateSiteSetting({
-        acceptingOrders,
+        orderStatus,
         announcement,
       });
       alert("設定を保存しました。");
@@ -46,12 +47,13 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
         <div>
           <p className="text-sm font-bold text-slate-700 mb-1">受付ステータス</p>
           <select 
-            value={acceptingOrders ? "true" : "false"}
-            onChange={(e) => setAcceptingOrders(e.target.value === "true")}
+            value={orderStatus}
+            onChange={(e) => setOrderStatus(e.target.value)}
             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
           >
-            <option value="true">受付中（通常通り）</option>
-            <option value="false">受付停止中（満枠など）</option>
+            <option value="AVAILABLE">受付可能（通常どおり）</option>
+            <option value="BUSY">混雑（納期が長くなる可能性あり）</option>
+            <option value="UNAVAILABLE">受付不可（新規受付停止中）</option>
           </select>
         </div>
         <div>

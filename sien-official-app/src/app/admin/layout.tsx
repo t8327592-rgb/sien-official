@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -17,35 +18,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r text-slate-600 flex flex-col shadow-sm z-10">
-        <div className="h-16 flex items-center px-6 border-b">
-          <Link href="/">
-            <img src="/logo.png" alt="Sien-Official" className="h-8 w-auto object-contain" />
-          </Link>
-        </div>
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          <Link href="/admin" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">ダッシュボード</Link>
-          <Link href="/admin/orders" className="flex items-center justify-between px-4 py-2 rounded-lg bg-orange-50 text-orange-600 font-medium">
-            <span>依頼管理</span>
-            {pendingOrdersCount > 0 && (
-              <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                {pendingOrdersCount}
-              </span>
-            )}
-          </Link>
-          <Link href="/admin/posts" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">ブログ・記事管理</Link>
-          <Link href="/admin/portfolio" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">実績管理</Link>
-          <Link href="/admin/reviews" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">お客様の声管理</Link>
-          <Link href="/admin/plans" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">料金プラン管理</Link>
-          <Link href="/admin/finance" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">金額・確定申告</Link>
-          <Link href="/admin/settings" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">設定</Link>
-        </nav>
-        <div className="p-4 border-t">
-          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:text-slate-900 hover:bg-slate-100">
-            ログアウト
-          </Button>
-        </div>
-      </aside>
+      <AdminSidebar pendingOrdersCount={pendingOrdersCount} />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
