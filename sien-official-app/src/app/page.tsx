@@ -74,9 +74,7 @@ export default async function Home() {
         {/* Scroll Indicator */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center z-20 animate-bounce">
           <span className="text-orange-600 text-xs font-extrabold tracking-widest uppercase mb-2 drop-shadow-sm">Scroll</span>
-          <div className="w-6 h-10 border-2 border-orange-500/80 rounded-full flex justify-center p-1 shadow-md bg-white/40 backdrop-blur-sm">
-            <div className="w-1.5 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-          </div>
+          <div className="w-[2px] h-12 bg-gradient-to-b from-orange-500 to-transparent rounded-full shadow-sm"></div>
         </div>
       </section>
 
