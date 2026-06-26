@@ -134,3 +134,11 @@ model BusinessContact {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+// システム・サイト設定用モデル
+model SiteSetting {
+  id              String   @id @default("default")
+  acceptingOrders Boolean  @default(true) // 受付ステータス
+  announcement    String?  // サイト案内メッセージ
+  updatedAt       DateTime @updatedAt
+}

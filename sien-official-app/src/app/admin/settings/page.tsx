@@ -1,9 +1,13 @@
-import { Calendar, Mail, Settings, Shield, Webhook, Download, Database, Info, Moon } from "lucide-react";
+import { Calendar, Shield, Database, Info, Moon, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getSiteSetting } from "@/app/actions/settings";
+import { SettingsClient } from "./SettingsClient";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const siteSetting = await getSiteSetting();
+
   return (
     <div className="space-y-8 max-w-6xl">
       <div className="flex items-center justify-between border-b pb-4">
@@ -15,34 +19,8 @@ export default function AdminSettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        {/* 基本設定 */}
-        <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <Settings className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold">基本設定</h2>
-          </div>
-          <div className="space-y-4 flex-grow">
-            <div>
-              <p className="text-sm font-bold text-slate-700 mb-1">受付ステータス</p>
-              <select className="w-full border border-slate-300 rounded-md p-2 text-sm">
-                <option>受付中（通常通り）</option>
-                <option>受付停止中（満枠）</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-700 mb-1">サイト案内メッセージ</p>
-              <textarea 
-                className="w-full border border-slate-300 rounded-md p-2 text-sm" 
-                rows={2} 
-                placeholder="トップページに表示する案内文..."
-                defaultValue="現在、納品まで約3〜4週間いただいております。"
-              ></textarea>
-            </div>
-          </div>
-          <Button className="w-full mt-6 bg-slate-800 hover:bg-slate-700 text-white">更新する</Button>
-        </section>
+        {/* 基本設定 (Client Component) */}
+        <SettingsClient initialSetting={siteSetting} />
 
         {/* 外部サービス連携 */}
         <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">

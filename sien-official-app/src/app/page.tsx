@@ -4,15 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { ArrowRight, Star, Quote, UserCircle, CheckCircle2 } from "lucide-react";
 import { HeroVideoPlayer } from "@/components/ui/HeroVideoPlayer";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
+import { getSiteSetting } from "@/app/actions/settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const featuredPortfolios = await prisma.portfolio.findMany({
-    where: { isFeatured: true },
-    orderBy: { orderIndex: "asc" },
-    take: 4,
-  });
+  const [featuredPortfolios, siteSetting] = await Promise.all([
+    prisma.portfolio.findMany({
+      where: { isFeatured: true },
+      orderBy: { orderIndex: "asc" },
+      take: 4,
+    }),
+    getSiteSetting()
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-slate-900">
@@ -33,12 +37,22 @@ export default async function Home() {
         
         <div className="relative z-10 container px-4 pt-24 pb-32 mx-auto text-center flex flex-col items-center min-h-[calc(100vh-8rem)] justify-center">
           {/* 受付バッジ */}
-          <div className="mb-8 inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-white/80 backdrop-blur-md border border-orange-200 text-orange-600 text-xs sm:text-sm font-bold shadow-sm tracking-wide">
-            <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-orange-500"></span>
-            </span>
-            受付状況：現在スケジュール調整可能
+          <div className={`mb-8 inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-white/90 backdrop-blur-md shadow-sm border font-bold text-xs sm:text-sm tracking-wide transition-all ${
+            siteSetting.acceptingOrders 
+              ? "border-orange-200 text-orange-600" 
+              : "border-slate-200 text-slate-500"
+          }`}>
+            {siteSetting.acceptingOrders ? (
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-orange-500"></span>
+              </span>
+            ) : (
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-slate-400"></span>
+              </span>
+            )}
+            {siteSetting.acceptingOrders ? "受付状況：" : "お知らせ："} {siteSetting.announcement || (siteSetting.acceptingOrders ? "現在スケジュール調整可能" : "現在満枠のため受付を停止しております")}
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 sm:mb-8 leading-[1.2] drop-shadow-xl">
