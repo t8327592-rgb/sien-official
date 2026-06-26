@@ -20,15 +20,16 @@ export function AdminSidebar({ pendingOrdersCount }: { pendingOrdersCount: numbe
   ];
 
   return (
-    <aside className="w-64 bg-white border-r text-slate-600 flex flex-col shadow-sm z-10">
-      <div className="h-16 flex items-center px-6 border-b">
+    <aside className="w-full md:w-64 bg-white md:border-r border-b md:border-b-0 text-slate-600 flex flex-col md:min-h-screen shadow-sm z-10 flex-shrink-0">
+      <div className="h-16 flex items-center justify-between px-6 border-b">
         <Link href="/">
           <img src="/logo.png" alt="Sien-Official" className="h-8 w-auto object-contain" />
         </Link>
       </div>
-      <nav className="flex-1 py-6 px-4 space-y-2">
+      
+      {/* スマホ時は横スクロール、PC時は縦並び */}
+      <nav className="flex-1 p-4 flex md:flex-col gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
         {navItems.map((item) => {
-          // exact match for dashboard, prefix match for others (e.g. /admin/orders/xxx)
           const isActive = item.href === "/admin" 
             ? pathname === "/admin" 
             : pathname?.startsWith(item.href);
@@ -45,7 +46,7 @@ export function AdminSidebar({ pendingOrdersCount }: { pendingOrdersCount: numbe
             >
               <span>{item.label}</span>
               {item.count !== undefined && item.count > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full ml-2 md:ml-0">
                   {item.count}
                 </span>
               )}
@@ -53,7 +54,9 @@ export function AdminSidebar({ pendingOrdersCount }: { pendingOrdersCount: numbe
           );
         })}
       </nav>
-      <div className="p-4 border-t">
+
+      {/* PC時のみログアウトボタンを表示 */}
+      <div className="hidden md:block p-4 border-t mt-auto">
         <Button variant="ghost" className="w-full justify-start text-slate-500 hover:text-slate-900 hover:bg-slate-100">
           ログアウト
         </Button>

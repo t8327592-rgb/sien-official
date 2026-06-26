@@ -59,8 +59,8 @@ export default function BusinessListClient({ initialContacts }: { initialContact
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left border-collapse whitespace-nowrap">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
               <th className="py-3 px-4 pl-5 w-32">ステータス</th>
