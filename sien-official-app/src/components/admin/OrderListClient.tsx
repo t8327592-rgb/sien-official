@@ -323,13 +323,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <div onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
                       {editingField?.orderId === order.id && editingField?.field === 'deadline' ? (
                         <input 
+                          type="date"
                           autoFocus 
                           value={editValue} 
                           onChange={e => setEditValue(e.target.value)} 
                           onBlur={saveEdit} 
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
-                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-24"
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-32"
                         />
                       ) : (
                         <span className="text-slate-700 underline decoration-slate-300 decoration-dashed underline-offset-4">{order.deadline || <span className="text-slate-400 font-normal">未定</span>}</span>
@@ -451,13 +452,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <td className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)}>
                       {editingField?.orderId === order.id && editingField?.field === 'deadline' ? (
                         <input 
+                          type="date"
                           autoFocus 
                           value={editValue} 
                           onChange={e => setEditValue(e.target.value)} 
                           onBlur={saveEdit} 
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
-                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-slate-900"
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-32 text-slate-900"
                         />
                       ) : (
                         <span className="hover:bg-slate-100 p-1 rounded transition-colors -ml-1 border border-transparent hover:border-slate-200 border-dashed">{order.deadline || <span className="text-slate-400">未定</span>}</span>
