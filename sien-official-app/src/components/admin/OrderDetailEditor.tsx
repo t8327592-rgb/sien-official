@@ -142,6 +142,15 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
               onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+              onClick={e => {
+                if (type === 'date') {
+                  try {
+                    if ('showPicker' in HTMLInputElement.prototype) {
+                      (e.target as HTMLInputElement).showPicker();
+                    }
+                  } catch (err) {}
+                }
+              }}
               placeholder={placeholder}
               className={`w-full border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500 ${type === 'date' ? 'min-h-[30px]' : ''}`}
             />

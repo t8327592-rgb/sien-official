@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const calendar = google.calendar({ version: "v3", auth });
 
     // スケジュール内容を作成
-    const serviceName = order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲";
+    const serviceName = order.serviceType === "MIX" ? "ボーカルMIX" : "オリジナル楽曲";
     const songName = order.songTitle ? ` (${order.songTitle})` : "";
     
     const event = {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       end: {
         date: deadline, // 終日予定の場合、startとendを同日に設定
       },
-      colorId: order.serviceType === "mix" ? "3" : "5", // 3: 紫, 5: 黄色 (Googleカレンダーの色)
+      colorId: order.serviceType === "MIX" ? "3" : "5", // 3: 紫, 5: 黄色 (Googleカレンダーの色)
     };
 
     // Googleカレンダーへ追加

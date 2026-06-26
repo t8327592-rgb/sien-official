@@ -108,6 +108,15 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
       });
       if (res.ok) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, [field]: valueToSave } : o));
+        
+        // 納期が設定された場合はGoogleカレンダーに同期
+        if (field === "deadline" && valueToSave) {
+          fetch('/api/admin/calendar/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, deadline: valueToSave })
+          }).catch(err => console.error("Calendar sync error:", err));
+        }
       }
     } catch (error) {
       console.error(`Failed to update ${field}:`, error);
@@ -360,7 +369,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                           onChange={e => setEditValue(e.target.value)} 
                           onBlur={saveEdit} 
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
-                          onClick={e => e.stopPropagation()}
+                          onClick={e => {
+                            e.stopPropagation();
+                            try {
+                              if ('showPicker' in HTMLInputElement.prototype) {
+                                (e.target as HTMLInputElement).showPicker();
+                              }
+                            } catch (err) {}
+                          }}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-32"
                         />
                       ) : (
@@ -494,7 +510,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                           onChange={e => setEditValue(e.target.value)} 
                           onBlur={saveEdit} 
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
-                          onClick={e => e.stopPropagation()}
+                          onClick={e => {
+                            e.stopPropagation();
+                            try {
+                              if ('showPicker' in HTMLInputElement.prototype) {
+                                (e.target as HTMLInputElement).showPicker();
+                              }
+                            } catch (err) {}
+                          }}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-32 text-slate-900"
                         />
                       ) : (
