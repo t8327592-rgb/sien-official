@@ -38,6 +38,11 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
   const [searchQuery, setSearchQuery] = useState<string>("");
   
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  
+  // インライン編集用の状態
+  const [editingField, setEditingField] = useState<{orderId: string, field: string} | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ポップアップの外側をクリックしたら閉じる処理
@@ -68,6 +73,46 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
       console.error("Failed to update status:", error);
     } finally {
       setEditingStatusId(null);
+    }
+  };
+
+  const startEditing = (orderId: string, field: string, initialValue: string | number | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingField({ orderId, field });
+    setEditValue(initialValue ? String(initialValue) : "");
+  };
+
+  const saveEdit = async () => {
+    if (!editingField) return;
+    const { orderId, field } = editingField;
+    
+    let valueToSave: any = editValue;
+    if (field === "price") {
+      if (editValue.trim() === "") {
+        valueToSave = null;
+      } else {
+        valueToSave = parseInt(editValue.replace(/[^0-9]/g, ""), 10);
+        if (isNaN(valueToSave)) valueToSave = null;
+      }
+    } else {
+      if (editValue.trim() === "") {
+        valueToSave = null;
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: valueToSave })
+      });
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, [field]: valueToSave } : o));
+      }
+    } catch (error) {
+      console.error(`Failed to update ${field}:`, error);
+    } finally {
+      setEditingField(null);
     }
   };
 
@@ -266,12 +311,48 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100">
-                  <div className="text-slate-600 text-xs bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                    {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
+                <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">サービス</span>
+                    <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-600 font-medium">
+                      {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
+                    </span>
                   </div>
-                  <div className="font-bold text-slate-900 text-base">
-                    {order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">納期</span>
+                    <div onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                      {editingField?.orderId === order.id && editingField?.field === 'deadline' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-24"
+                        />
+                      ) : (
+                        <span className="text-slate-700 underline decoration-slate-300 decoration-dashed underline-offset-4">{order.deadline || <span className="text-slate-400 font-normal">未定</span>}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">金額</span>
+                    <div onClick={(e) => startEditing(order.id, 'price', order.price, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                      {editingField?.orderId === order.id && editingField?.field === 'price' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
+                        />
+                      ) : (
+                        <span className="text-slate-900 font-bold text-sm underline decoration-slate-300 decoration-dashed underline-offset-4">{order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未見積もり</span>}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -289,13 +370,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                 <th className="py-3 px-4">曲名</th>
                 <th className="py-3 px-4">クライアント名</th>
                 <th className="py-3 px-4">サービス内容</th>
+                <th className="py-3 px-4">納期</th>
                 <th className="py-3 px-4 pr-5 text-right">金額</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {displayOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-sm text-slate-500">
+                  <td colSpan={7} className="p-8 text-center text-sm text-slate-500">
                     該当する依頼データはありません。
                   </td>
                 </tr>
@@ -366,8 +448,35 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <td className="py-3 px-4 text-slate-600 text-xs">
                       {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
                     </td>
-                    <td className="py-3 px-4 pr-5 font-bold text-slate-900 text-right">
-                      {order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}
+                    <td className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)}>
+                      {editingField?.orderId === order.id && editingField?.field === 'deadline' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-slate-900"
+                        />
+                      ) : (
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -ml-1 border border-transparent hover:border-slate-200 border-dashed">{order.deadline || <span className="text-slate-400">未定</span>}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 pr-5 font-bold text-slate-900 text-right cursor-text" onClick={(e) => startEditing(order.id, 'price', order.price, e)}>
+                      {editingField?.orderId === order.id && editingField?.field === 'price' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right"
+                        />
+                      ) : (
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span>
+                      )}
                     </td>
                   </tr>
                 ))

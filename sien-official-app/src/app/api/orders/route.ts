@@ -20,23 +20,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // リピーターかどうかの自動判定
-    // 過去に同じEmail, または（空でない）Twitter ID, または同じ名前で依頼があればリピーターとする
-    const orConditions: any[] = [
-      { clientEmail: clientEmail },
-      { clientName: clientName }
-    ];
-    
-    if (twitterId && twitterId.trim() !== "") {
-      orConditions.push({ twitterId: twitterId });
-    }
-
-    const pastOrder = await prisma.order.findFirst({
-      where: {
-        OR: orConditions
-      }
-    });
-    const isRepeater = pastOrder !== null;
+    const { checkIsRepeater } = await import("@/lib/repeater");
+    const isRepeater = await checkIsRepeater(clientEmail, twitterId, clientName);
 
     const newOrder = await prisma.order.create({
       data: {
