@@ -1,45 +1,50 @@
 import { PrismaClient } from '@prisma/client';
+import { updateAllClientOrdersToRepeater } from '../src/lib/repeater';
+
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('Resetting all orders to isRepeater: false...');
+  await prisma.order.updateMany({ data: { isRepeater: false } });
+
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: 'asc' },
   });
 
   console.log(`Found ${orders.length} orders. Recalculating isRepeater...`);
 
-  let updatedCount = 0;
+  const processedEmails = new Set<string>();
+  const processedTwitters = new Set<string>();
+  let repeaterClientCount = 0;
 
   for (const order of orders) {
-    const isRepeater = await prisma.order.findFirst({
-      where: {
-        id: { not: order.id },
-        createdAt: { lt: order.createdAt },
-        OR: [
-          { clientEmail: order.clientEmail },
-          { 
-            AND: [
-              { twitterId: { not: "" } },
-              { twitterId: { not: null } },
-              { twitterId: order.twitterId }
-            ]
-          },
-          { clientName: order.clientName },
-        ]
-      }
-    }).then(res => res !== null);
+    if (order.clientEmail && processedEmails.has(order.clientEmail)) continue;
+    if (order.twitterId && processedTwitters.has(order.twitterId)) continue;
 
-    if (order.isRepeater !== isRepeater) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { isRepeater }
-      });
-      updatedCount++;
-      console.log(`Updated order ${order.id} (${order.clientName}) to isRepeater: ${isRepeater}`);
+    const orConditions: any[] = [];
+    if (order.clientEmail && order.clientEmail.trim() !== "") {
+      orConditions.push({ clientEmail: order.clientEmail });
+    }
+    if (order.twitterId && order.twitterId.trim() !== "" && order.twitterId.trim() !== "@" && order.twitterId.trim() !== "なし" && order.twitterId.trim() !== "無し") {
+      orConditions.push({ twitterId: order.twitterId });
+    }
+
+    if (orConditions.length === 0) continue;
+
+    const count = await prisma.order.count({
+      where: { OR: orConditions }
+    });
+
+    if (count >= 2) {
+      await updateAllClientOrdersToRepeater(order.clientEmail, order.twitterId);
+      repeaterClientCount++;
+      if (order.clientEmail) processedEmails.add(order.clientEmail);
+      if (order.twitterId) processedTwitters.add(order.twitterId);
+      console.log(`Marked as repeater: ${order.clientName} (Email: ${order.clientEmail}, Twitter: ${order.twitterId}) - Total Orders: ${count}`);
     }
   }
 
-  console.log(`Finished. Updated ${updatedCount} orders.`);
+  console.log(`Finished. Marked ${repeaterClientCount} unique clients as repeaters.`);
 }
 
 main()

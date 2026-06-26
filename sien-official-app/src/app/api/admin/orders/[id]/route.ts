@@ -55,6 +55,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data: dataToUpdate,
     });
 
+    if (updatedOrder.isRepeater) {
+      // 更新によってリピーターになった、あるいは元々リピーターの場合、同一クライアントの過去の依頼もすべてリピーターにする
+      const { updateAllClientOrdersToRepeater } = await import("@/lib/repeater");
+      await updateAllClientOrdersToRepeater(updatedOrder.clientEmail, updatedOrder.twitterId);
+    }
+
     return NextResponse.json({ success: true, order: updatedOrder });
   } catch (error) {
     console.error("Failed to update order status:", error);

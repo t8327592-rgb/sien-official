@@ -20,8 +20,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { checkIsRepeater } = await import("@/lib/repeater");
+    const { checkIsRepeater, updateAllClientOrdersToRepeater } = await import("@/lib/repeater");
     const isRepeater = await checkIsRepeater(clientEmail, twitterId, clientName, undefined, new Date());
+
+    if (isRepeater) {
+      // 2回目以降の依頼があった場合、そのクライアントの過去の依頼も含めてすべて「リピーター」として更新する
+      await updateAllClientOrdersToRepeater(clientEmail, twitterId);
+    }
 
     const newOrder = await prisma.order.create({
       data: {

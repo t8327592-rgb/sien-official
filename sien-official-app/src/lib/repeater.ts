@@ -71,3 +71,34 @@ export async function checkIsRepeater(
 
   return pastOrder !== null;
 }
+
+/**
+ * 指定したクライアント（Email または TwitterID）に紐づくすべての依頼を「リピーター (isRepeater=true)」に更新する
+ */
+export async function updateAllClientOrdersToRepeater(
+  email: string | null | undefined,
+  twitterId: string | null | undefined
+) {
+  const orConditions: any[] = [];
+  
+  if (email && email.trim() !== "") {
+    orConditions.push({ clientEmail: email });
+  }
+  
+  if (twitterId && twitterId.trim() !== "" && twitterId.trim() !== "@" && twitterId.trim() !== "なし" && twitterId.trim() !== "無し") {
+    orConditions.push({ twitterId: twitterId });
+  }
+  
+  if (orConditions.length === 0) {
+    return;
+  }
+
+  await prisma.order.updateMany({
+    where: {
+      OR: orConditions
+    },
+    data: {
+      isRepeater: true
+    }
+  });
+}
