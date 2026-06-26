@@ -19,7 +19,7 @@ export default async function BlogIndexPage({
 
   // カテゴリ一覧を取得（動的に生成）
   const allBlogPosts = await prisma.post.findMany({
-    where: { type: "BLOG", published: true },
+    where: { type: { in: ["BLOG", "NEWS"] }, published: true },
     select: { category: true },
   });
   
@@ -30,7 +30,7 @@ export default async function BlogIndexPage({
   // 記事を取得
   const posts = await prisma.post.findMany({
     where: { 
-      type: "BLOG", 
+      type: { in: ["BLOG", "NEWS"] }, 
       published: true,
       ...(category ? { category } : {})
     },
