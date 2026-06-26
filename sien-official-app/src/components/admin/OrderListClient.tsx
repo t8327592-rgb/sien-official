@@ -164,14 +164,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
             すべて
           </button>
           <button 
-            onClick={() => setServiceFilter("mix")}
-            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'mix' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setServiceFilter("MIX")}
+            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'MIX' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             MIX・マスタリング
           </button>
           <button 
-            onClick={() => setServiceFilter("original")}
-            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'original' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setServiceFilter("ORIGINAL")}
+            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'ORIGINAL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             オリジナル楽曲制作
           </button>
@@ -315,7 +315,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">サービス</span>
                     <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-600 font-medium">
-                      {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
+                      {order.serviceType === "MIX" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
@@ -446,7 +446,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                       <div className="text-[10px] text-slate-400 mt-0.5">{order.clientEmail}</div>
                     </td>
                     <td className="py-3 px-4 text-slate-600 text-xs">
-                      {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
+                      {order.serviceType === "MIX" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
                     </td>
                     <td className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)}>
                       {editingField?.orderId === order.id && editingField?.field === 'deadline' ? (

@@ -259,9 +259,9 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
             {renderEditable('serviceType', 
-              <span className="font-medium text-slate-800">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</span>,
+              <span className="font-medium text-slate-800">{order.serviceType === "MIX" ? "ボーカルMIX" : "オリジナル楽曲制作"}</span>,
               'select',
-              [{value: 'mix', label: 'ボーカルMIX'}, {value: 'original', label: 'オリジナル楽曲制作'}]
+              [{value: 'MIX', label: 'ボーカルMIX'}, {value: 'ORIGINAL', label: 'オリジナル楽曲制作'}]
             )}
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
@@ -279,7 +279,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             {renderEditable('vocalKey', <span className="font-medium text-slate-800">{order.vocalKey || <span className="text-slate-400">未設定</span>}</span>)}
           </div>
           
-          {order.serviceType === "original" && (
+          {order.serviceType === "ORIGINAL" && (
             <>
               <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
                 <span className="text-[11px] font-bold text-slate-400 mt-1">希望ジャンル</span>
