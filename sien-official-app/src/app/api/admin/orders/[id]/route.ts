@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { 
       status, price, deadline, 
       serviceType, planId, songTitle, vocalKey, options, message,
-      clientName, clientEmail, twitterId
+      clientName, clientEmail, twitterId, isRepeater
     } = body;
 
     const dataToUpdate: any = {};
@@ -31,19 +31,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (clientEmail !== undefined) dataToUpdate.clientEmail = clientEmail;
     if (twitterId !== undefined) dataToUpdate.twitterId = twitterId;
 
-    if (Object.keys(dataToUpdate).length === 0) {
+    if (Object.keys(dataToUpdate).length === 0 && isRepeater === undefined) {
       return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
 
-    // クライアント情報が更新される場合、または status が変更された場合、リピーター判定を再計算
-    const currentOrder = await prisma.order.findUnique({ where: { id } });
-    if (currentOrder) {
-      const newEmail = clientEmail !== undefined ? clientEmail : currentOrder.clientEmail;
-      const newTwitterId = twitterId !== undefined ? twitterId : currentOrder.twitterId;
-      const newName = clientName !== undefined ? clientName : currentOrder.clientName;
-      
-      const { checkIsRepeater } = await import("@/lib/repeater");
-      dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
+    if (isRepeater !== undefined) {
+      dataToUpdate.isRepeater = isRepeater === true || isRepeater === 'true';
+    } else {
+      // クライアント情報が更新される場合、または status が変更された場合、リピーター判定を再計算
+      const currentOrder = await prisma.order.findUnique({ where: { id } });
+      if (currentOrder) {
+        const newEmail = clientEmail !== undefined ? clientEmail : currentOrder.clientEmail;
+        const newTwitterId = twitterId !== undefined ? twitterId : currentOrder.twitterId;
+        const newName = clientName !== undefined ? clientName : currentOrder.clientName;
+        
+        const { checkIsRepeater } = await import("@/lib/repeater");
+        dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
+      }
     }
 
     const updatedOrder = await prisma.order.update({

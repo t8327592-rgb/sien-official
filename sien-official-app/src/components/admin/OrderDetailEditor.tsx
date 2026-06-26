@@ -200,10 +200,14 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">顧客ステータス</p>
-              {order.isRepeater ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規のお客様</span>
+              {renderEditable('isRepeater',
+                order.isRepeater ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規</span>
+                ),
+                'select',
+                [{value: 'false', label: '新規'}, {value: 'true', label: 'リピーター'}]
               )}
             </div>
           </div>

@@ -305,8 +305,10 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                   <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}</div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-slate-700 text-sm">{order.clientName}</span>
-                    {order.isRepeater && (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold">リピーター</span>
+                    {order.isRepeater ? (
+                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">リピーター</span>
+                    ) : (
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">新規</span>
                     )}
                   </div>
                 </div>
@@ -440,8 +442,10 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{order.clientName}</span>
-                        {order.isRepeater && (
-                          <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold">リピーター</span>
+                        {order.isRepeater ? (
+                          <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">リピーター</span>
+                        ) : (
+                          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0">新規</span>
                         )}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{order.clientEmail}</div>
