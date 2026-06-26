@@ -54,9 +54,6 @@ export function BeforeAfterPlayer() {
     afterAudioRef.current.loop = false;
     beforeAudioRef.current.preload = "auto";
     afterAudioRef.current.preload = "auto";
-    
-    beforeAudioRef.current.volume = 1;
-    afterAudioRef.current.volume = 0;
 
     const setAudioData = (e: Event) => {
       const audio = e.target as HTMLAudioElement;
@@ -68,23 +65,19 @@ export function BeforeAfterPlayer() {
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
-      if (beforeAudioRef.current) {
-        beforeAudioRef.current.pause();
-        beforeAudioRef.current.currentTime = 0;
-      }
-      if (afterAudioRef.current) {
-        afterAudioRef.current.pause();
-        afterAudioRef.current.currentTime = 0;
-      }
+      if (beforeAudioRef.current) beforeAudioRef.current.currentTime = 0;
+      if (afterAudioRef.current) afterAudioRef.current.currentTime = 0;
     };
 
     afterAudioRef.current.addEventListener('loadedmetadata', setAudioData);
+    beforeAudioRef.current.addEventListener('loadedmetadata', setAudioData);
     afterAudioRef.current.addEventListener('ended', handleEnded);
     beforeAudioRef.current.addEventListener('ended', handleEnded);
     
     return () => {
       if (beforeAudioRef.current) {
         beforeAudioRef.current.pause();
+        beforeAudioRef.current.removeEventListener('loadedmetadata', setAudioData);
         beforeAudioRef.current.removeEventListener('ended', handleEnded);
       }
       if (afterAudioRef.current) {
@@ -95,36 +88,39 @@ export function BeforeAfterPlayer() {
     };
   }, []);
 
+  // ボリュームと再生状態の同期
   useEffect(() => {
     if (!beforeAudioRef.current || !afterAudioRef.current) return;
     const effectiveVolume = isMuted ? 0 : masterVolume;
     
-    if (isAfter) {
-      beforeAudioRef.current.volume = 0;
-      afterAudioRef.current.volume = effectiveVolume;
+    beforeAudioRef.current.volume = effectiveVolume;
+    afterAudioRef.current.volume = effectiveVolume;
+
+    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
+    const otherAudio = isAfter ? beforeAudioRef.current : afterAudioRef.current;
+
+    if (isPlaying) {
+      otherAudio.pause();
+      currentAudio.currentTime = otherAudio.currentTime;
+      currentAudio.play().catch(e => console.error("Play prevented:", e));
     } else {
-      beforeAudioRef.current.volume = effectiveVolume;
-      afterAudioRef.current.volume = 0;
+      otherAudio.pause();
+      currentAudio.pause();
     }
   }, [isAfter, masterVolume, isMuted]);
 
   const togglePlay = () => {
     if (!beforeAudioRef.current || !afterAudioRef.current) return;
     
+    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
+    
     if (isPlaying) {
-      beforeAudioRef.current.pause();
-      afterAudioRef.current.pause();
+      currentAudio.pause();
       setIsPlaying(false);
     } else {
-      const targetTime = afterAudioRef.current.currentTime;
-      beforeAudioRef.current.currentTime = targetTime;
-      
-      const playPromise1 = beforeAudioRef.current.play();
-      const playPromise2 = afterAudioRef.current.play();
-      
-      Promise.all([playPromise1, playPromise2])
+      currentAudio.play()
         .then(() => setIsPlaying(true))
-        .catch(e => console.error(e));
+        .catch(e => console.error("Play prevented:", e));
     }
   };
 
@@ -132,8 +128,8 @@ export function BeforeAfterPlayer() {
     const time = Number(e.target.value);
     setCurrentTime(time);
     
-    if (beforeAudioRef.current) beforeAudioRef.current.currentTime = time;
-    if (afterAudioRef.current) afterAudioRef.current.currentTime = time;
+    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
+    if (currentAudio) currentAudio.currentTime = time;
   };
 
   const handleSeekMouseUp = () => isDraggingRef.current = false;
@@ -142,8 +138,8 @@ export function BeforeAfterPlayer() {
   const skipTime = (amount: number) => {
     if (!beforeAudioRef.current || !afterAudioRef.current) return;
     const newTime = Math.max(0, Math.min(duration, currentTime + amount));
-    beforeAudioRef.current.currentTime = newTime;
-    afterAudioRef.current.currentTime = newTime;
+    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
+    currentAudio.currentTime = newTime;
     setCurrentTime(newTime);
   };
 

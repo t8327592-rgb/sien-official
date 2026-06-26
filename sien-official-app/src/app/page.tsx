@@ -33,7 +33,7 @@ export default async function Home() {
       
       {/* 1. ヒーローセクション（ファーストビュー） */}
       {/* 画面いっぱいに広がるよう、上部のヘッダー(h-16=4rem)の分を引いて「ちょうど画面にピッタリ」収まるサイズに計算 */}
-      <section className="relative w-full min-h-[calc(100dvh-4rem)] flex items-center justify-center overflow-hidden bg-white border-b border-orange-100">
+      <section className="relative w-full min-h-[calc(100svh-4rem)] flex items-center justify-center overflow-hidden bg-white border-b border-orange-100">
         
         {/* 背景動画 */}
         <div className="absolute inset-0 opacity-100">
