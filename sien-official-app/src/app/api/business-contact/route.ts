@@ -58,6 +58,56 @@ export async function POST(request: Request) {
       console.error("Failed to send Discord notification for business contact:", discordError);
     }
 
+    // Send Email notification
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const { sendMail } = await import("@/lib/mail");
+        
+        // お客様向け確認メール
+        await sendMail({
+          to: email,
+          subject: `【Sien-Official】法人・企業様 お問い合わせ受付完了のご案内`,
+          text: `${companyName}
+${contactName} 様
+
+この度はSien-Officialへお問い合わせいただき、誠にありがとうございます。
+以下の内容で送信を承りました。
+
+担当者より通常1〜2営業日以内にご連絡いたしますので、今しばらくお待ちくださいませ。
+
+■お問い合わせ内容
+ご用件：${inquiryType}
+ご予算感：${budget || "未定"}
+希望納期：${deadline || "未定"}
+詳細：
+${message}
+
+--------------------------------------------------
+Sien-Official
+https://sien-official.com
+--------------------------------------------------`,
+        });
+
+        // 管理者向け通知メール
+        await sendMail({
+          to: process.env.SMTP_USER,
+          subject: `【法人お問い合わせ】${companyName} ${contactName}様よりお問い合わせがありました`,
+          text: `${companyName} の ${contactName}様（${email}）より、法人・企業様向けのお問い合わせがありました。
+
+ご用件: ${inquiryType}
+管理画面より詳細をご確認ください。
+
+https://sien-official.com/admin/business`,
+        });
+
+        console.log("Email notification sent successfully.");
+      } else {
+        console.warn("SMTP credentials are not set. Skipping Email notification.");
+      }
+    } catch (emailError) {
+      console.error("Failed to send Email notification:", emailError);
+    }
+
     return NextResponse.json({ success: true, contact: newContact }, { status: 201 });
   } catch (error) {
     console.error("Business contact creation failed:", error);
