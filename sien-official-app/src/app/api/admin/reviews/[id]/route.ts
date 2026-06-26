@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { name, serviceType, content, rating, isPublished, orderIndex } = body;
+
+    const review = await prisma.review.update({
+      where: { id },
+      data: {
+        name,
+        serviceType,
+        content,
+        rating,
+        isPublished,
+        orderIndex,
+      },
+    });
+
+    return NextResponse.json(review);
+  } catch (error) {
+    console.error('Failed to update review:', error);
+    return NextResponse.json({ error: 'Failed to update review' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    await prisma.review.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete review:', error);
+    return NextResponse.json({ error: 'Failed to delete review' }, { status: 500 });
+  }
+}

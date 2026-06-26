@@ -35,6 +35,7 @@ export default async function AdminLayout({
           </Link>
           <Link href="/admin/posts" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">ブログ・記事管理</Link>
           <Link href="/admin/portfolio" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">実績管理</Link>
+          <Link href="/admin/reviews" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">お客様の声管理</Link>
           <Link href="/admin/plans" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">料金プラン管理</Link>
           <Link href="/admin/finance" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">金額・確定申告</Link>
           <Link href="/admin/settings" className="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors text-slate-700 font-medium">設定</Link>
