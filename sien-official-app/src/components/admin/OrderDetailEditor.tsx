@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy } from "lucide-react";
+import { Copy, Edit2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 type Order = any; // 簡易的な型定義
@@ -18,18 +18,24 @@ const PAYMENT_LABELS: Record<string, string> = {
   paypay: "PayPay",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "受付待ち",
+  ESTIMATING: "見積中",
+  WORKING: "作業中",
+  COMPLETED: "納品済",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+  ESTIMATING: "bg-blue-100 text-blue-700 border-blue-200",
+  WORKING: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
 export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder: Order, planDetails: any }) {
   const [order, setOrder] = useState<Order>(initialOrder);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
-
-  const formattedDate = new Date(order.createdAt).toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(order.clientEmail);
@@ -37,24 +43,30 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
   };
 
   const renderTwitterLink = (twitterId: string | null) => {
-    if (!twitterId) return <p className="font-medium text-slate-400">未設定</p>;
+    if (!twitterId) return <span className="text-slate-400">未設定</span>;
     const url = twitterId.startsWith('@') ? `https://x.com/${twitterId.slice(1)}` : `https://x.com/${twitterId}`;
     return (
-      <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-4">
+      <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 underline underline-offset-2">
         {twitterId}
       </a>
     );
   };
 
-  const startEditing = (field: string, initialVal: string | null) => {
+  const startEditing = (field: string, initialVal: any) => {
     setEditingField(field);
-    setEditValue(initialVal || "");
+    setEditValue(initialVal === null || initialVal === undefined ? "" : String(initialVal));
   };
 
   const saveEdit = async () => {
     if (!editingField) return;
     const field = editingField;
-    const valueToSave = editValue.trim() === "" ? null : editValue;
+    let valueToSave: string | number | null = editValue.trim() === "" ? null : editValue;
+    
+    // 数値型（price）のキャスト
+    if (field === "price" && valueToSave !== null) {
+      valueToSave = parseInt(valueToSave as string, 10);
+      if (isNaN(valueToSave)) valueToSave = null;
+    }
 
     try {
       const res = await fetch(`/api/admin/orders/${order.id}`, {
@@ -76,40 +88,44 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     }
   };
 
-  const renderEditable = (field: string, displayValue: string | React.ReactNode, type: 'text' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[]) => {
+  const renderEditable = (field: string, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
     if (editingField === field) {
       return (
-        <div className="flex gap-2 items-start mt-1">
+        <div className="flex gap-2 items-start w-full">
           {type === 'textarea' ? (
             <textarea 
               autoFocus
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
-              className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-h-[100px]"
+              className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-h-[120px]"
+              placeholder={placeholder}
             />
           ) : type === 'select' ? (
             <select
               autoFocus
               value={editValue}
-              onChange={e => setEditValue(e.target.value)}
-              className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+              onChange={e => {
+                setEditValue(e.target.value);
+              }}
+              className="w-full border border-slate-300 rounded p-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">未設定</option>
               {options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           ) : (
             <input 
-              type="text"
+              type={type}
               autoFocus
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
               onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
-              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder={placeholder}
+              className="w-full border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500"
             />
           )}
           <div className="flex flex-col gap-1 shrink-0">
-            <button onClick={saveEdit} className="bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-orange-600">保存</button>
-            <button onClick={() => setEditingField(null)} className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded hover:bg-slate-200">ｷｬﾝｾﾙ</button>
+            <button onClick={saveEdit} className="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-700 shadow-sm">保存</button>
+            <button onClick={() => setEditingField(null)} className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-200">ｷｬﾝｾﾙ</button>
           </div>
         </div>
       );
@@ -118,182 +134,213 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     return (
       <div 
         onClick={() => startEditing(field, order[field])} 
-        className="cursor-text hover:bg-slate-50 p-1 -mx-1 rounded transition-colors group relative min-h-[28px] border border-transparent hover:border-slate-200 border-dashed"
+        className="group relative cursor-pointer min-h-[24px] rounded px-1 -mx-1 hover:bg-slate-100 transition-colors flex items-center justify-between"
       >
-        {displayValue}
+        <div className="flex-1 w-full">{displayValue}</div>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity pl-2 shrink-0">
+          <Edit2 className="w-3 h-3 text-slate-400" />
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm space-y-8">
+    <div className="space-y-6">
       
-      <section>
-        <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
-          <span className="text-orange-500">👤</span> 基本情報
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-4 rounded-lg">
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">お名前</p>
-            {renderEditable('clientName', <p className="font-semibold text-lg text-slate-900">{order.clientName}</p>)}
+      {/* 2カラム トップパネル */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* 左：基本情報 */}
+        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+          <div className="bg-slate-50/50 px-5 py-3 border-b flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-600 flex items-center gap-1.5">
+              <span className="text-orange-500">👤</span> 基本情報
+            </h2>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">メールアドレス</p>
-            <div className="flex items-center gap-2">
-              {renderEditable('clientEmail', <p className="font-medium text-slate-700 break-all">{order.clientEmail}</p>)}
-              <button onClick={handleCopyEmail} className="p-1.5 hover:bg-slate-200 rounded text-slate-500 transition-colors shrink-0" title="コピー">
-                <Copy className="w-3.5 h-3.5" />
-              </button>
+          <div className="p-5 grid grid-cols-2 gap-4 flex-1">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">お名前</p>
+              {renderEditable('clientName', <span className="font-bold text-slate-800">{order.clientName}</span>)}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1 flex items-center justify-between">
+                メールアドレス
+                <button onClick={handleCopyEmail} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
+                  <Copy className="w-3 h-3" />
+                </button>
+              </p>
+              {renderEditable('clientEmail', <span className="text-sm font-medium text-slate-700 break-all">{order.clientEmail}</span>)}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">X (Twitter)</p>
+              {renderEditable('twitterId', renderTwitterLink(order.twitterId))}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">顧客ステータス</p>
+              {order.isRepeater ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規のお客様</span>
+              )}
             </div>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">X（Twitter）ID</p>
-            {renderEditable('twitterId', renderTwitterLink(order.twitterId))}
+        </div>
+
+        {/* 右：クイック管理 */}
+        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col h-full border-orange-100">
+          <div className="bg-orange-50/30 px-5 py-3 border-b border-orange-100 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+              ⚡ クイック管理
+            </h2>
+            <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded">クリックで編集</span>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">希望連絡手段</p>
-            {renderEditable('contactMethod', <p className="font-medium text-slate-700">{order.contactMethod || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-1">顧客ステータス</p>
-            {order.isRepeater ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                リピーター（依頼経験あり）
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                新規のお客様
-              </span>
-            )}
-            <p className="text-[10px] text-slate-400 mt-1">※情報編集時に再計算されます</p>
+          <div className="p-5 grid grid-cols-2 gap-4 flex-1">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">ステータス</p>
+              {renderEditable('status', 
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${STATUS_COLORS[order.status] || "bg-slate-100 text-slate-700"}`}>
+                  {STATUS_LABELS[order.status] || order.status}
+                </span>,
+                'select',
+                Object.entries(STATUS_LABELS).map(([k, v]) => ({ value: k, label: v }))
+              )}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">お支払い方法</p>
+              {renderEditable('paymentMethod', 
+                <span className="font-bold text-slate-800">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : <span className="text-slate-400 font-normal">未設定</span>}</span>,
+                'select',
+                Object.entries(PAYMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))
+              )}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">希望納期</p>
+              {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>)}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">金額 (円)</p>
+              {renderEditable('price', <span className="font-bold text-slate-800">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}</span>, 'number')}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
-          <span className="text-orange-500">🎵</span> ご依頼内容・楽曲情報
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">サービス種別</p>
+      {/* ご依頼内容・楽曲情報 */}
+      <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-slate-50/50 px-6 py-4 border-b flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+            🎵 ご依頼内容・楽曲情報
+          </h2>
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
             {renderEditable('serviceType', 
-              <p className="font-semibold text-slate-900">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</p>,
+              <span className="font-medium text-slate-800">{order.serviceType === "mix" ? "ボーカルMIX" : "オリジナル楽曲制作"}</span>,
               'select',
               [{value: 'mix', label: 'ボーカルMIX'}, {value: 'original', label: 'オリジナル楽曲制作'}]
             )}
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">選択プラン</p>
+          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">選択プラン</span>
             {renderEditable('planId', 
-              <div className="font-semibold text-slate-900">
-                {order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : <span className="text-slate-400 font-normal">指定なし</span>}
-              </div>
+              <span className="font-medium text-slate-800">{order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : <span className="text-slate-400">指定なし</span>}</span>
             )}
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">曲名</p>
-            {renderEditable('songTitle', <p className="font-medium text-slate-700">{order.songTitle || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
+          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">曲名</span>
+            {renderEditable('songTitle', <span className="font-medium text-slate-800">{order.songTitle || <span className="text-slate-400">未設定</span>}</span>)}
           </div>
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">歌唱キー</p>
-            {renderEditable('vocalKey', <p className="font-medium text-slate-700">{order.vocalKey || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
+          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">歌唱キー</span>
+            {renderEditable('vocalKey', <span className="font-medium text-slate-800">{order.vocalKey || <span className="text-slate-400">未設定</span>}</span>)}
           </div>
           
           {order.serviceType === "original" && (
             <>
-              <div>
-                <p className="text-xs text-slate-500 font-bold mb-1">希望ジャンル</p>
-                {renderEditable('genre', <p className="font-medium text-slate-700">{order.genre || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
+              <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-bold text-slate-400 mt-1">希望ジャンル</span>
+                {renderEditable('genre', <span className="font-medium text-slate-800">{order.genre || <span className="text-slate-400">未設定</span>}</span>)}
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold mb-1">作詞の有無</p>
-                {renderEditable('lyricsStatus', <p className="font-medium text-slate-700">{order.lyricsStatus || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
+              <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-bold text-slate-400 mt-1">作詞の有無</span>
+                {renderEditable('lyricsStatus', <span className="font-medium text-slate-800">{order.lyricsStatus || <span className="text-slate-400">未設定</span>}</span>)}
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold mb-1">仮歌の有無</p>
-                {renderEditable('vocalGuideStatus', <p className="font-medium text-slate-700">{order.vocalGuideStatus || <span className="text-slate-400 font-normal">未設定</span>}</p>)}
+              <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-bold text-slate-400 mt-1">仮歌の有無</span>
+                {renderEditable('vocalGuideStatus', <span className="font-medium text-slate-800">{order.vocalGuideStatus || <span className="text-slate-400">未設定</span>}</span>)}
               </div>
             </>
           )}
-          
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-1">オプション</p>
-            {renderEditable('options', <p className="font-medium text-slate-700">{order.options || <span className="text-slate-400 font-normal">なし</span>}</p>, 'textarea')}
+
+          <div className="md:col-span-2 grid grid-cols-[100px_1fr] items-start">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">オプション</span>
+            {renderEditable('options', <span className="font-medium text-slate-800">{order.options || <span className="text-slate-400">なし</span>}</span>, 'textarea')}
           </div>
         </div>
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
-          <span className="text-orange-500">📁</span> 素材・リファレンス
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-1">素材提出URL</p>
+      {/* 素材・参考URL */}
+      <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-slate-50/50 px-6 py-4 border-b flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+            📁 素材・参考URL
+          </h2>
+        </div>
+        <div className="p-6 grid grid-cols-1 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start border-b border-slate-100 pb-3">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">素材提出URL</span>
             {renderEditable('materialsUrl', 
               order.materialsUrl ? (
                 <a href={order.materialsUrl} target="_blank" rel="noreferrer" className="text-orange-600 hover:text-orange-700 font-medium underline underline-offset-4 break-all">{order.materialsUrl}</a>
               ) : (
-                <p className="font-medium text-slate-400">未提出</p>
+                <span className="text-slate-400">未提出</span>
               )
             )}
           </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-1">参考曲URL</p>
+          <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start border-b border-slate-100 pb-3">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">参考曲URL</span>
             {renderEditable('referenceUrl', 
               order.referenceUrl ? (
                 <a href={order.referenceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-4 break-all">{order.referenceUrl}</a>
               ) : (
-                <p className="font-medium text-slate-400">なし</p>
+                <span className="text-slate-400">なし</span>
               )
             )}
           </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-1">リファレンス再現度</p>
+          <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">リファレンス再現度</span>
             {renderEditable('referenceFidelity', 
-              <p className="font-medium text-slate-700">
+              <span className="font-medium text-slate-800">
                 {order.referenceFidelity === "1" && "1. お任せ"}
                 {order.referenceFidelity === "2" && "2. 参考にしつつお任せ"}
                 {order.referenceFidelity === "3" && "3. 完全準拠"}
-                {!order.referenceFidelity && "未設定"}
-              </p>,
+                {!order.referenceFidelity && <span className="text-slate-400">未設定</span>}
+              </span>,
               'select',
               [{value: '1', label: '1. お任せ'}, {value: '2', label: '2. 参考にしつつお任せ'}, {value: '3', label: '3. 完全準拠'}]
             )}
           </div>
         </div>
-      </section>
-
-      <section>
-        <h2 className="text-xl font-bold border-b pb-2 mb-4 text-slate-800 flex items-center gap-2">
-          <span className="text-orange-500">💬</span> お支払い・ご要望
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p className="text-xs text-slate-500 font-bold mb-1">お支払い方法</p>
-            {renderEditable('paymentMethod', 
-              <p className="font-semibold text-slate-900">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : <span className="text-slate-400 font-normal">未設定</span>}</p>,
-              'select',
-              [{value: 'bank_transfer', label: '銀行振込'}, {value: 'credit_card', label: 'クレジットカード'}, {value: 'paypay', label: 'PayPay'}]
-            )}
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-500 font-bold mb-2">ご要望・メッセージ</p>
-            {renderEditable('message', 
-              <div className="bg-slate-50 p-4 rounded-lg border text-sm whitespace-pre-wrap leading-relaxed text-slate-700">
-                {order.message || <span className="text-slate-400">メッセージはありません</span>}
-              </div>,
-              'textarea'
-            )}
-          </div>
-        </div>
-      </section>
-
-      <div className="pt-4 border-t text-right flex justify-between items-center">
-        <p className="text-xs text-slate-400 text-left">※納期と金額の管理は<br/>一覧画面から行えます</p>
-        <p className="text-sm font-medium text-slate-400">受付日時: {formattedDate}</p>
       </div>
+
+      {/* ご要望・メッセージ */}
+      <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-slate-50/50 px-6 py-4 border-b flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+            💬 ご要望・メッセージ
+          </h2>
+        </div>
+        <div className="p-6">
+          {renderEditable('message', 
+            <div className="text-sm whitespace-pre-wrap leading-relaxed text-slate-700 min-h-[4rem]">
+              {order.message || <span className="text-slate-400">メッセージはありません</span>}
+            </div>,
+            'textarea'
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

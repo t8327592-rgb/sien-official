@@ -6,7 +6,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AiReplyPanel } from "@/components/admin/AiReplyPanel";
 import { AiPostGeneratorPanel } from "@/components/admin/AiPostGeneratorPanel";
-import { OrderActions } from "@/components/admin/OrderActions";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,30 +28,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/orders" className="text-muted-foreground hover:text-primary">
-            ← 戻る
-          </Link>
-          <h1 className="text-3xl font-bold">依頼詳細</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <OrderActions orderId={order.id} currentStatus={order.status} />
-        </div>
+    <div className="space-y-6 max-w-4xl mx-auto pb-20">
+      <div className="flex items-center gap-4 mb-8">
+        <Link href="/admin/orders" className="text-slate-500 hover:text-slate-900 transition-colors font-bold text-sm bg-white border px-4 py-2 rounded-full shadow-sm hover:shadow">
+          ← 戻る
+        </Link>
+        <h1 className="text-2xl font-extrabold text-slate-800">依頼詳細</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 左側: 依頼内容の表示と編集 */}
-        <div className="lg:col-span-2 space-y-6">
-          <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
-        </div>
+      <div className="space-y-6">
+        <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
+      </div>
 
-        {/* 右側: 管理・AIアシストパネル */}
-        <div className="space-y-6">
-          <AiReplyPanel order={order} />
-          <AiPostGeneratorPanel order={order} />
-        </div>
+      <div className="space-y-6 mt-12 pt-12 border-t border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <span className="text-blue-500">🤖</span> AI アシスト
+        </h2>
+        <AiReplyPanel order={order} />
+        <AiPostGeneratorPanel order={order} />
       </div>
     </div>
   );
