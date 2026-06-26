@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, CheckCircle2, Loader2, Building2 } from "lucide-react";
 
@@ -23,6 +23,12 @@ export function BusinessContactForm() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (isSuccess) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,14 +59,14 @@ export function BusinessContactForm() {
 
   if (isSuccess) {
     return (
-      <div className="bg-white rounded-[2rem] p-8 md:p-12 border border-slate-100 shadow-xl text-center max-w-2xl mx-auto">
+      <div className="bg-white rounded-[2rem] p-8 md:p-12 border border-slate-100 shadow-xl text-center max-w-2xl mx-auto my-12">
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle2 className="w-10 h-10 text-green-500" />
         </div>
         <h3 className="text-2xl font-bold text-slate-900 mb-4">お問い合わせを受け付けました</h3>
         <p className="text-slate-600 leading-relaxed mb-8">
           お問い合わせいただき誠にありがとうございます。<br />
-          内容を確認の上、担当者より1〜2営業日以内にご連絡いたします。
+          内容を確認の上、担当者より通常1〜2営業日以内にご連絡いたします。
         </p>
         <div className="bg-slate-50 p-6 rounded-2xl text-left border border-slate-100 mb-8">
           <p className="text-sm text-slate-500 mb-1">送信されたメールアドレス</p>
@@ -74,9 +80,17 @@ export function BusinessContactForm() {
   }
 
   return (
-    <div className="bg-white rounded-[2rem] p-6 md:p-10 border border-slate-100 shadow-xl max-w-3xl mx-auto relative overflow-hidden">
-      {/* 装飾 */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none opacity-60"></div>
+    <>
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-slate-900 mb-4">お問い合わせ・ご相談</h2>
+        <p className="text-slate-500">
+          些細なご相談やお見積りのみでも歓迎いたします。<br className="hidden md:block" />
+          以下のフォームよりお気軽にご連絡ください。
+        </p>
+      </div>
+      <div className="bg-white rounded-[2rem] p-6 md:p-10 border border-slate-100 shadow-xl max-w-3xl mx-auto relative overflow-hidden">
+        {/* 装飾 */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none opacity-60"></div>
       
       <div className="relative z-10 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
         <div>
@@ -247,5 +261,6 @@ export function BusinessContactForm() {
         </div>
       </form>
     </div>
+    </>
   );
 }

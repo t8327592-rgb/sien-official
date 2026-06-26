@@ -148,16 +148,7 @@ export default function BusinessContactPage() {
       {/* 4. お問い合わせフォーム */}
       <section id="contact-form" className="py-24 bg-slate-50 relative">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">お問い合わせ・ご相談</h2>
-            <p className="text-slate-500">
-              些細なご相談やお見積りのみでも歓迎いたします。<br className="hidden md:block" />
-              以下のフォームよりお気軽にご連絡ください。
-            </p>
-          </div>
-          
           <BusinessContactForm />
-          
         </div>
       </section>
       
