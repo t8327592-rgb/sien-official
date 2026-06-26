@@ -65,13 +65,13 @@ export default async function Home() {
             {siteSetting.acceptingOrders ? "受付状況：" : "お知らせ："} {siteSetting.announcement || (siteSetting.acceptingOrders ? "現在スケジュール調整可能" : "現在満枠のため受付を停止しております")}
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 sm:mb-8 leading-[1.2] drop-shadow-xl">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-4 sm:mb-8 leading-[1.3] md:leading-[1.2] drop-shadow-xl">
             あなたの歌声を、<br className="md:hidden" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 drop-shadow-md">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 drop-shadow-md inline-block mt-1 md:mt-0">
               “一番輝く形”へ
             </span>
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-slate-800 mb-10 max-w-3xl font-bold leading-relaxed drop-shadow-lg px-2 break-keep">
+          <p className="text-sm sm:text-lg md:text-xl text-slate-800 mb-8 md:mb-10 max-w-3xl font-bold leading-relaxed drop-shadow-lg px-2 break-keep">
             ボーカルMIXから、あなただけの完全オリジナル楽曲制作まで。<br />
             「あなたらしさ」を活かしたプロクオリティの音源を提案します。
           </p>
@@ -130,11 +130,11 @@ export default async function Home() {
           <h2 className="text-3xl font-extrabold text-slate-900 mb-4">サービス内容</h2>
           <div className="w-12 h-1 bg-gradient-to-r from-orange-500 to-amber-500 mx-auto mb-16 rounded-full" />
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
             {/* Mix Card */}
-            <Link href="/mix" className="group block p-10 rounded-[2rem] bg-white border border-slate-200 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 relative text-left">
-              <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Link href="/mix" className="group block p-6 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-slate-200 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 relative text-left">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-5 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 md:w-8 md:h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
               </div>
@@ -146,9 +146,9 @@ export default async function Home() {
             </Link>
 
             {/* Original Card */}
-            <Link href="/original" className="group block p-10 rounded-[2rem] bg-white border border-slate-200 hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 relative text-left">
-              <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Link href="/original" className="group block p-6 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-slate-200 hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 relative text-left">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-amber-50 flex items-center justify-center mb-5 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 md:w-8 md:h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
@@ -238,8 +238,8 @@ export default async function Home() {
               { step: "03", title: "MIX・マスタリング", desc: "お預かりしたデータを丁寧にエディットし、プロクオリティに仕上げます。" },
               { step: "04", title: "ご確認・納品", desc: "完成した音源をご確認いただきます。必要に応じて無料の修正にも対応いたします。" },
             ].map((item, i) => (
-              <div key={i} className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-16 h-16 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center mb-6 shadow-sm group-hover:border-orange-500 group-hover:scale-110 transition-all duration-300">
+              <div key={i} className="relative z-10 flex flex-col items-center text-center group bg-white md:bg-transparent p-6 md:p-0 rounded-2xl shadow-sm md:shadow-none border border-orange-100 md:border-none mb-4 md:mb-0">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center mb-4 md:mb-6 shadow-sm group-hover:border-orange-500 group-hover:scale-110 transition-all duration-300">
                   <span className="text-lg font-black text-orange-500">{item.step}</span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-3">{item.title}</h3>
@@ -253,12 +253,12 @@ export default async function Home() {
       {/* 6. 最終CTA */}
       <section className="py-24 bg-gradient-to-br from-orange-50 to-amber-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-5 blur-sm"></div>
-        <div className="container px-4 mx-auto text-center relative z-10 border border-orange-200/50 bg-white/60 backdrop-blur-md rounded-[3rem] p-8 md:p-20 shadow-xl shadow-orange-500/5 max-w-4xl mx-4 sm:mx-auto">
-          <p className="text-orange-600 text-sm font-bold tracking-widest uppercase mb-4">Get Started</p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-8 leading-tight">
-            最高の作品を、<br />一緒に作りましょう。
+        <div className="container px-4 mx-auto text-center relative z-10 border border-orange-200/50 bg-white/70 backdrop-blur-md rounded-3xl md:rounded-[3rem] p-6 md:p-20 shadow-xl shadow-orange-500/5 max-w-4xl">
+          <p className="text-orange-600 text-xs md:text-sm font-bold tracking-widest uppercase mb-3 md:mb-4">Get Started</p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 md:mb-8 leading-tight">
+            最高の作品を、<br className="md:hidden" />一緒に作りましょう。
           </h2>
-          <div className="text-slate-600 mb-10 max-w-xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed font-bold bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-orange-100">
+          <div className="text-slate-600 mb-8 md:mb-10 max-w-xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed font-bold bg-white/60 backdrop-blur-sm p-5 md:p-6 rounded-2xl border border-orange-100">
             <p className="mb-4">
               「初めてのMIX依頼で不安」<br />
               「どのプランを選べばいいかわからない」

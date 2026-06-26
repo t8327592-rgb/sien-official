@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ArrowRight } from 'lucide-react';
 
 export function Header() {
   const pathname = usePathname();
@@ -59,13 +59,23 @@ export function Header() {
 
       {/* Mobile Nav Menu (Dropdown) */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-orange-100 shadow-xl py-4 px-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
-          <Link href="/profile" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">プロフィール</Link>
-          <Link href="/mix" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">ミックス/マスタリング</Link>
-          <Link href="/original" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">オリジナル楽曲制作</Link>
-          <Link href="/works" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">制作実績</Link>
-          <Link href="/blog" className="text-base font-bold text-slate-700 hover:text-orange-500 py-2 border-b border-slate-50">ブログ</Link>
-          <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold mt-2 h-12">
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-orange-100 shadow-xl py-6 px-6 flex flex-col gap-3 animate-in slide-in-from-top-2">
+          <Link href="/profile" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+            プロフィール <ArrowRight className="w-4 h-4 opacity-50" />
+          </Link>
+          <Link href="/mix" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+            ミックス/マスタリング <ArrowRight className="w-4 h-4 opacity-50" />
+          </Link>
+          <Link href="/original" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+            オリジナル楽曲制作 <ArrowRight className="w-4 h-4 opacity-50" />
+          </Link>
+          <Link href="/works" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+            制作実績 <ArrowRight className="w-4 h-4 opacity-50" />
+          </Link>
+          <Link href="/blog" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+            ブログ <ArrowRight className="w-4 h-4 opacity-50" />
+          </Link>
+          <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold mt-4 h-14">
             <Link href="/order">ご依頼・お見積りはこちら</Link>
           </Button>
         </div>

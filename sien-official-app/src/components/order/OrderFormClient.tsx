@@ -280,7 +280,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
         <form onSubmit={handleSubmit} className="space-y-12 pb-32">
           
           {/* 01 ご希望のサービス */}
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">01</span>
@@ -315,7 +315,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
 
           {/* 02 オプション */}
           {initialOptions && initialOptions.filter(opt => opt.category === formData.serviceType || opt.category === "COMMON").length > 0 && (
-            <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+            <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">02</span>
@@ -355,7 +355,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           )}
 
           {/* 03 基本情報 */}
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">03</span>
@@ -392,7 +392,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           </section>
 
           {/* 04 楽曲情報 */}
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">04</span>
@@ -536,7 +536,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           </section>
 
           {/* 05 自由記述 */}
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">05</span>
@@ -559,7 +559,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
 
           {/* 06 素材提出 */}
           {isMix && (
-            <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+            <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">06</span>
@@ -594,7 +594,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           )}
 
           {/* 07 お支払い方法 */}
-          <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center text-sm font-black tracking-tighter">{isMix ? "07" : "06"}</span>
@@ -611,7 +611,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           </section>
 
           {/* 送信とリアルタイム見積もり */}
-          <div className="bg-orange-50 border border-orange-100 p-8 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center gap-10 mx-auto w-full mt-16 relative overflow-hidden">
+          <div className="bg-orange-50 border border-orange-100 p-6 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center gap-8 md:gap-10 mx-auto w-full mt-12 md:mt-16 relative overflow-hidden">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
             
             <div className="text-center relative z-10 w-full">

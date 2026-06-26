@@ -33,24 +33,24 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="flex flex-col gap-3">
-          <h4 className="font-bold text-foreground">コンテンツ</h4>
-          <Link href="/mix" className="text-muted-foreground hover:text-primary transition-colors">ミックス・マスタリング</Link>
-          <Link href="/original" className="text-muted-foreground hover:text-primary transition-colors">オリジナル楽曲制作</Link>
-          <Link href="/works" className="text-muted-foreground hover:text-primary transition-colors">制作実績</Link>
-          <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">ブログ</Link>
+        <div className="flex flex-col gap-2 md:gap-3">
+          <h4 className="font-bold text-foreground mb-1 md:mb-0">コンテンツ</h4>
+          <Link href="/mix" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">ミックス・マスタリング</Link>
+          <Link href="/original" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">オリジナル楽曲制作</Link>
+          <Link href="/works" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">制作実績</Link>
+          <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">ブログ</Link>
         </div>
-        <div className="flex flex-col gap-3">
-          <h4 className="font-bold text-foreground">ご依頼・サポート</h4>
-          <Link href="/order" className="text-muted-foreground hover:text-primary transition-colors">ご依頼フォーム</Link>
-          <Link href="/business" className="text-muted-foreground hover:text-primary transition-colors">法人・企業様お問い合わせ</Link>
-          <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">よくある質問（FAQ）</Link>
+        <div className="flex flex-col gap-2 md:gap-3">
+          <h4 className="font-bold text-foreground mb-1 md:mb-0">ご依頼・サポート</h4>
+          <Link href="/order" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">ご依頼フォーム</Link>
+          <Link href="/business" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">法人・企業様お問い合わせ</Link>
+          <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">よくある質問（FAQ）</Link>
         </div>
-        <div className="flex flex-col gap-3">
-          <h4 className="font-bold text-foreground">規約・ポリシー</h4>
-          <Link href="/policy/guidelines" className="text-muted-foreground hover:text-primary transition-colors">ご依頼に関する留意事項</Link>
-          <Link href="/policy/privacy" className="text-muted-foreground hover:text-primary transition-colors">プライバシーポリシー</Link>
-          <Link href="/policy/law" className="text-muted-foreground hover:text-primary transition-colors">特定商取引法に基づく表記</Link>
+        <div className="flex flex-col gap-2 md:gap-3">
+          <h4 className="font-bold text-foreground mb-1 md:mb-0">規約・ポリシー</h4>
+          <Link href="/policy/guidelines" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">ご依頼に関する留意事項</Link>
+          <Link href="/policy/privacy" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">プライバシーポリシー</Link>
+          <Link href="/policy/law" className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">特定商取引法に基づく表記</Link>
         </div>
       </div>
       <div className="container mx-auto px-4 mt-16 border-t pt-8 text-center text-xs text-muted-foreground">

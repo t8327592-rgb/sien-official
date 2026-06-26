@@ -110,49 +110,49 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
   return (
     <div className="space-y-4">
       {/* 上部フィルター (サービス種別 ＋ 検索 ＋ ソート) */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex overflow-x-auto items-center gap-1.5 p-1 bg-slate-100 rounded-lg scrollbar-hide">
           <button 
             onClick={() => setServiceFilter("ALL")}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${serviceFilter === 'ALL' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'ALL' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             すべて
           </button>
           <button 
             onClick={() => setServiceFilter("mix")}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${serviceFilter === 'mix' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'mix' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             MIX・マスタリング
           </button>
           <button 
             onClick={() => setServiceFilter("original")}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${serviceFilter === 'original' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`whitespace-nowrap px-3 py-2 md:py-1.5 rounded-md text-sm md:text-xs font-bold transition-all ${serviceFilter === 'original' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             オリジナル楽曲制作
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          <div className="relative w-full lg:w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
             <input 
               type="text" 
               placeholder="名前, 曲名, メールで検索..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-slate-200 rounded-lg text-sm bg-slate-50 p-2 pl-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
+              className="w-full border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 p-2.5 md:p-2 pl-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
             />
           </div>
-          <div className="relative flex-1 lg:flex-none group">
+          <div className="relative flex-1 sm:flex-none group">
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-              className="w-full appearance-none border-slate-200 rounded-lg text-sm bg-slate-50 p-2 pl-3 pr-8 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
+              className="w-full appearance-none border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 p-2.5 md:p-2 pl-3 pr-8 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
             >
               <option value="desc">新しい順</option>
               <option value="asc">古い順</option>
             </select>
-            <ArrowUpDown className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none group-focus-within:text-orange-500" />
+            <ArrowUpDown className="absolute right-2.5 top-3 md:top-2.5 h-4 w-4 text-slate-400 pointer-events-none group-focus-within:text-orange-500" />
           </div>
         </div>
       </div>
@@ -194,8 +194,93 @@ export function OrderListClient({ initialOrders }: { initialOrders: Order[] }) {
       </div>
 
       {/* リスト表示 */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible animate-in fade-in duration-300">
-        <div className="overflow-x-auto overflow-y-visible pb-20">
+      <div className="bg-white md:rounded-xl shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0">
+        
+        {/* スマホ用カード表示 (md:hidden) */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {displayOrders.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-500">
+              該当する依頼データはありません。
+            </div>
+          ) : (
+            displayOrders.map((order) => (
+              <div 
+                key={order.id} 
+                onClick={() => router.push(`/admin/orders/${order.id}`)}
+                className="p-4 hover:bg-orange-50/50 transition-colors cursor-pointer group text-sm relative"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="relative overflow-visible">
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingStatusId(editingStatusId === order.id ? null : order.id);
+                      }}
+                      className={`flex items-center gap-1 w-max px-2.5 py-1 rounded-md text-xs font-bold border cursor-pointer hover:opacity-80 transition-opacity ${
+                        order.status === 'PENDING' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                        order.status === 'ESTIMATING' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                        order.status === 'WAITING_PAYMENT' ? 'bg-sky-50 text-sky-600 border-sky-200' :
+                        order.status === 'WORKING' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                        order.status === 'COMPLETED' ? 'bg-green-50 text-green-600 border-green-200' :
+                        (order.status === 'CANCELED' || order.status === 'CANCELLED') ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                        'bg-slate-50 text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {STATUS_LABELS[order.status] || order.status}
+                      <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+                    </div>
+                    {/* ステータス変更ポップアップ */}
+                    {editingStatusId === order.id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute z-50 mt-1 left-0 w-44 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                      >
+                        <div className="py-1">
+                          {STATUS_OPTIONS.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={(e) => handleStatusChange(order.id, opt.value, e)}
+                              className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center"
+                            >
+                              <span className={`px-2 py-1 rounded-md text-xs font-bold inline-block border ${opt.colorClass}`}>
+                                {opt.label}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-xs text-right shrink-0">
+                    {new Date(order.createdAt).toLocaleDateString("ja-JP")}
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-700 text-sm">{order.clientName}</span>
+                    {order.isRepeater && (
+                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-bold">リピーター</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100">
+                  <div className="text-slate-600 text-xs bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                    {order.serviceType === "mix" ? "MIX・マスタリング" : "オリジナル楽曲制作"}
+                  </div>
+                  <div className="font-bold text-slate-900 text-base">
+                    {order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* PC用テーブル表示 (hidden md:block) */}
+        <div className="hidden md:block overflow-x-auto overflow-y-visible pb-20">
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
