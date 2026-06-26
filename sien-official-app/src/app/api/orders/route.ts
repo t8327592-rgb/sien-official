@@ -111,7 +111,7 @@ export async function POST(request: Request) {
         await sendMail({
           to: process.env.SMTP_USER,
           subject: `【新規依頼】${clientName}様よりご依頼がありました`,
-          text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\nhttps://sien-official.com/admin/orders`,
+          text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\nhttps://www.sien-official.com/admin/orders`,
         });
       }
     } catch (emailError) {

@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { OpeningAnimation } from "@/components/ui/OpeningAnimation";
 import { Toaster } from "react-hot-toast";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-sans",
@@ -13,13 +14,13 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sien-official.vercel.app"),
+  metadataBase: new URL("https://www.sien-official.com"),
   title: "Sien-Official | 歌ってみたMIX・オリジナル楽曲制作",
   description: "【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。",
   openGraph: {
     title: "Sien-Official | 歌ってみたMIX・オリジナル楽曲制作",
     description: "【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。",
-    url: "https://sien-official.vercel.app", // 本番URLに変更してください
+    url: "https://www.sien-official.com", // 本番URLに変更してください
     siteName: "Sien-Official",
     images: [
       {
@@ -60,6 +61,7 @@ export default function RootLayout({
         <Footer />
         <Toaster position="top-center" />
       </body>
+      <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
     </html>
   );
 }

@@ -83,7 +83,7 @@ ${message}
 
 --------------------------------------------------
 Sien-Official
-https://sien-official.com
+https://www.sien-official.com
 --------------------------------------------------`,
         });
 
@@ -96,7 +96,7 @@ https://sien-official.com
 ご用件: ${inquiryType}
 管理画面より詳細をご確認ください。
 
-https://sien-official.com/admin/business`,
+https://www.sien-official.com/admin/business`,
         });
       }
     } catch (emailError) {
