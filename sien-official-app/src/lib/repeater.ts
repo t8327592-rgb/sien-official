@@ -9,13 +9,15 @@ import { prisma } from "@/lib/prisma";
  * @param twitterId クライアントのX(Twitter)ID
  * @param name クライアントの氏名
  * @param excludeOrderId 更新時に自身のIDを除外する場合に指定
+ * @param createdAtBefore この日時より前に作成された依頼のみを対象とする場合に指定（通常は自身のcreatedAtを渡す）
  * @returns リピーターであれば true, 新規であれば false
  */
 export async function checkIsRepeater(
   email: string | null | undefined,
   twitterId: string | null | undefined,
   name: string | null | undefined,
-  excludeOrderId?: string
+  excludeOrderId?: string,
+  createdAtBefore?: Date
 ): Promise<boolean> {
   const orConditions: any[] = [];
   
@@ -52,6 +54,14 @@ export async function checkIsRepeater(
     whereClause.AND.push({
       id: {
         not: excludeOrderId
+      }
+    });
+  }
+
+  if (createdAtBefore) {
+    whereClause.AND.push({
+      createdAt: {
+        lt: createdAtBefore
       }
     });
   }

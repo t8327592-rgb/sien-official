@@ -43,7 +43,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const newName = clientName !== undefined ? clientName : currentOrder.clientName;
       
       const { checkIsRepeater } = await import("@/lib/repeater");
-      dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id);
+      dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
     }
 
     const updatedOrder = await prisma.order.update({

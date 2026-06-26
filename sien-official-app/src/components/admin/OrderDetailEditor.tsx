@@ -77,6 +77,29 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
       if (res.ok) {
         setOrder((prev: any) => ({ ...prev, [field]: valueToSave }));
         toast.success("更新しました");
+        
+        // カレンダー同期処理
+        if (field === "deadline" && valueToSave) {
+          fetch('/api/admin/calendar/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id, deadline: valueToSave })
+          }).then(async (syncRes) => {
+            const syncData = await syncRes.json();
+            if (syncData.success) {
+              if (syncData.message && syncData.message.includes("skipped")) {
+                toast.success("納期を保存しました（連携未設定のためカレンダー同期はスキップ）");
+              } else {
+                toast.success("Googleカレンダーに同期しました");
+              }
+            } else {
+              toast.error("カレンダー同期に失敗しました: " + syncData.error);
+            }
+          }).catch(err => {
+            console.error("Calendar sync error:", err);
+            toast.error("カレンダー同期でエラーが発生しました");
+          });
+        }
       } else {
         toast.error("更新に失敗しました");
       }
@@ -88,7 +111,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     }
   };
 
-  const renderEditable = (field: string, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
+  const renderEditable = (field: string, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' | 'date' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
     if (editingField === field) {
       return (
         <div className="flex gap-2 items-start w-full">
@@ -120,7 +143,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
               onChange={e => setEditValue(e.target.value)}
               onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
               placeholder={placeholder}
-              className="w-full border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+              className={`w-full border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500 ${type === 'date' ? 'min-h-[30px]' : ''}`}
             />
           )}
           <div className="flex flex-col gap-1 shrink-0">
@@ -215,7 +238,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">希望納期</p>
-              {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>)}
+              {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>, 'date')}
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">金額 (円)</p>

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     const { checkIsRepeater } = await import("@/lib/repeater");
-    const isRepeater = await checkIsRepeater(clientEmail, twitterId, clientName);
+    const isRepeater = await checkIsRepeater(clientEmail, twitterId, clientName, undefined, new Date());
 
     const newOrder = await prisma.order.create({
       data: {
