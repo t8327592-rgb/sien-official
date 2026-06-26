@@ -15,7 +15,7 @@ export function AdminSidebar({ pendingOrdersCount }: { pendingOrdersCount: numbe
     { href: "/admin/portfolio", label: "実績管理" },
     { href: "/admin/reviews", label: "お客様の声管理" },
     { href: "/admin/plans", label: "料金プラン管理" },
-    { href: "/admin/finance", label: "金額・確定申告" },
+    // { href: "/admin/finance", label: "金額・確定申告" },
     { href: "/admin/settings", label: "設定" },
   ];
 

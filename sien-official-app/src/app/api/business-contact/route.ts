@@ -52,7 +52,6 @@ export async function POST(request: Request) {
             embeds: [embed]
           }),
         });
-        console.log("Business contact Discord notification sent successfully.");
       }
     } catch (discordError) {
       console.error("Failed to send Discord notification for business contact:", discordError);
@@ -99,10 +98,6 @@ https://sien-official.com
 
 https://sien-official.com/admin/business`,
         });
-
-        console.log("Email notification sent successfully.");
-      } else {
-        console.warn("SMTP credentials are not set. Skipping Email notification.");
       }
     } catch (emailError) {
       console.error("Failed to send Email notification:", emailError);

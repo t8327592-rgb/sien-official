@@ -95,10 +95,6 @@ export async function POST(request: Request) {
             embeds: [embed]
           }),
         });
-        
-        console.log("Discord webhook notification sent successfully.");
-      } else {
-        console.warn("DISCORD_WEBHOOK_URL is not set. Skipping Discord notification.");
       }
     } catch (discordError) {
       console.error("Failed to send Discord notification:", discordError);
@@ -117,10 +113,6 @@ export async function POST(request: Request) {
           subject: `【新規依頼】${clientName}様よりご依頼がありました`,
           text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\nhttps://sien-official.com/admin/orders`,
         });
-
-        console.log("Email notification sent successfully.");
-      } else {
-        console.warn("SMTP credentials are not set. Skipping Email notification.");
       }
     } catch (emailError) {
       console.error("Failed to send Email notification:", emailError);

@@ -379,7 +379,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
                   <input required type="text" className={inputStyle} placeholder="山田 太郎" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-brand-text">Twitter ID <span className="text-xs text-slate-500 font-normal ml-1">（任意）</span></label>
+                  <label className="text-sm font-bold text-brand-text">X (Twitter) ID <span className="text-xs text-slate-500 font-normal ml-1">（任意）</span></label>
                   <input type="text" className={inputStyle} placeholder="例：@sien_mc09" value={formData.twitterId} onChange={e => setFormData({...formData, twitterId: e.target.value})} />
                 </div>
               </div>
