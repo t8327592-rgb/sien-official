@@ -360,23 +360,10 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
-            <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
-            {renderHybridField('serviceType', 'サービス種別', 'select', [
-              {value: 'MIX', label: 'ボーカルMIX'}, 
-              {value: 'ORIGINAL', label: 'オリジナル楽曲制作'}
-            ])}
-          </div>
-          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
-            <span className="text-[11px] font-bold text-slate-400 mt-1">選択プラン</span>
-            {isEditMode ? (
-              renderHybridField('planId', '選択プラン', 'select', [
-                {value: 'lite', label: 'ライトプラン'},
-                {value: 'std', label: 'スタンダードプラン'},
-                {value: 'pro', label: 'プロプラン'}
-              ])
-            ) : (
-              <span className="font-medium text-slate-800">{order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : <span className="text-slate-400">指定なし</span>}</span>
-            )}
+            <span className="text-[11px] font-bold text-slate-400 mt-1">プラン名</span>
+            <span className="font-medium text-slate-800">
+              {order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : <span className="text-slate-400">指定なし</span>}
+            </span>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">曲名</span>
