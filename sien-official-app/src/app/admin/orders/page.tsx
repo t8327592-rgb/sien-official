@@ -7,6 +7,8 @@ export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
   });
+  
+  const plans = await prisma.plan.findMany();
 
   return (
     <div className="space-y-6">
@@ -14,7 +16,7 @@ export default async function AdminOrdersPage() {
         <h1 className="text-3xl font-bold text-slate-900">ご依頼管理</h1>
       </div>
       
-      <OrderListClient initialOrders={orders} />
+      <OrderListClient initialOrders={orders} plans={plans} />
     </div>
   );
 }
