@@ -197,8 +197,11 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
       if (isLyricsProvided) finalLyricsStatus = "歌詞あり（持ち込み）";
     }
 
+    const selectedPlanObj = initialPlans?.find(p => p.id === formData.planId);
+
     const submissionData = {
       ...formData,
+      planId: selectedPlanObj?.name || formData.planId, // 保存するplanIdをプランの日本語名にする
       options: optionsText,
       lyricsStatus: finalLyricsStatus
     };

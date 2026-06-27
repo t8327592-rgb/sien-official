@@ -356,7 +356,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">プラン名</span>
             <span className="font-medium text-slate-800">
-              {order.planId ? (planDetails?.name || order.planId) : <span className="text-slate-400">指定なし</span>}
+              {order.planId || <span className="text-slate-400">指定なし</span>}
             </span>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
