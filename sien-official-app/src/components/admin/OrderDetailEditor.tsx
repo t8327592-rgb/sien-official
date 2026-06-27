@@ -36,6 +36,16 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
   const [order, setOrder] = useState<Order>(initialOrder);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  
+  // ハイブリッド型のための全体編集モード状態
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [bulkEditData, setBulkEditData] = useState<Partial<Order>>({});
+
+  const handleCopyText = (text: string | null) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success("コピーしました");
+  };
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(order.clientEmail);
@@ -111,6 +121,31 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     }
   };
 
+  const handleBulkSave = async () => {
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bulkEditData)
+      });
+      if (res.ok) {
+        setOrder((prev: any) => ({ ...prev, ...bulkEditData }));
+        toast.success("更新しました");
+        setIsEditMode(false);
+      } else {
+        toast.error("更新に失敗しました");
+      }
+    } catch (error) {
+      console.error("Failed to update bulk data:", error);
+      toast.error("エラーが発生しました");
+    }
+  };
+
+  const cancelBulkEdit = () => {
+    setBulkEditData({});
+    setIsEditMode(false);
+  };
+
   const renderEditable = (field: string, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' | 'date' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
     if (editingField === field) {
       return (
@@ -176,9 +211,68 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     );
   };
 
+  const renderHybridField = (field: string, label: string, type: 'text' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[]) => {
+    const value = isEditMode && bulkEditData[field] !== undefined ? bulkEditData[field] : order[field];
+    
+    if (!isEditMode) {
+      let displayVal = value;
+      if (type === 'select' && options) {
+        displayVal = options.find(o => o.value === value)?.label || value;
+      }
+      return <span className={`font-medium ${displayVal ? 'text-slate-800' : 'text-slate-400'}`}>{displayVal || "未設定"}</span>;
+    }
+
+    if (type === 'textarea') {
+      return (
+        <textarea 
+          value={value || ""}
+          onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
+          className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"
+        />
+      );
+    }
+    
+    if (type === 'select') {
+      return (
+        <select
+          value={value || ""}
+          onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
+          className="w-full border border-slate-300 rounded p-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">未設定</option>
+          {options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+      );
+    }
+
+    return (
+      <input 
+        type="text"
+        value={value || ""}
+        onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
+        className="w-full border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+      />
+    );
+  };
+
   return (
     <div className="space-y-6">
       
+      {/* 画面トップ：モード切替ボタン */}
+      <div className="flex justify-end gap-2">
+        {isEditMode ? (
+          <>
+            <button onClick={cancelBulkEdit} className="px-4 py-2 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">キャンセル</button>
+            <button onClick={handleBulkSave} className="px-4 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg hover:bg-slate-700 shadow-sm">保存して閲覧モードに戻る</button>
+          </>
+        ) : (
+          <button onClick={() => { setBulkEditData({}); setIsEditMode(true); }} className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 shadow-sm rounded-lg hover:bg-slate-50 flex items-center gap-2">
+            <Edit2 className="w-4 h-4" />
+            詳細情報を編集する
+          </button>
+        )}
+      </div>
+
       {/* 2カラム トップパネル */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
@@ -209,14 +303,10 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">顧客ステータス</p>
-              {renderEditable('isRepeater',
-                order.isRepeater ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規</span>
-                ),
-                'select',
-                [{value: 'false', label: '新規'}, {value: 'true', label: 'リピーター'}]
+              {order.isRepeater ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規</span>
               )}
             </div>
           </div>
@@ -271,47 +361,52 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
-            {renderEditable('serviceType', 
-              <span className="font-medium text-slate-800">{order.serviceType === "MIX" ? "ボーカルMIX" : "オリジナル楽曲制作"}</span>,
-              'select',
-              [{value: 'MIX', label: 'ボーカルMIX'}, {value: 'ORIGINAL', label: 'オリジナル楽曲制作'}]
-            )}
+            {renderHybridField('serviceType', 'サービス種別', 'select', [
+              {value: 'MIX', label: 'ボーカルMIX'}, 
+              {value: 'ORIGINAL', label: 'オリジナル楽曲制作'}
+            ])}
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">選択プラン</span>
-            {renderEditable('planId', 
+            {isEditMode ? (
+              renderHybridField('planId', '選択プラン', 'select', [
+                {value: 'lite', label: 'ライトプラン'},
+                {value: 'std', label: 'スタンダードプラン'},
+                {value: 'pro', label: 'プロプラン'}
+              ])
+            ) : (
               <span className="font-medium text-slate-800">{order.planId ? (planDetails?.name || PLAN_LABELS[order.planId] || order.planId) : <span className="text-slate-400">指定なし</span>}</span>
             )}
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">曲名</span>
-            {renderEditable('songTitle', <span className="font-medium text-slate-800">{order.songTitle || <span className="text-slate-400">未設定</span>}</span>)}
+            {renderHybridField('songTitle', '曲名')}
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">歌唱キー</span>
-            {renderEditable('vocalKey', <span className="font-medium text-slate-800">{order.vocalKey || <span className="text-slate-400">未設定</span>}</span>)}
+            {renderHybridField('vocalKey', '歌唱キー')}
           </div>
           
           {order.serviceType === "ORIGINAL" && (
             <>
               <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
                 <span className="text-[11px] font-bold text-slate-400 mt-1">希望ジャンル</span>
-                {renderEditable('genre', <span className="font-medium text-slate-800">{order.genre || <span className="text-slate-400">未設定</span>}</span>)}
+                {renderHybridField('genre', '希望ジャンル')}
               </div>
               <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
                 <span className="text-[11px] font-bold text-slate-400 mt-1">作詞の有無</span>
-                {renderEditable('lyricsStatus', <span className="font-medium text-slate-800">{order.lyricsStatus || <span className="text-slate-400">未設定</span>}</span>)}
+                {renderHybridField('lyricsStatus', '作詞の有無')}
               </div>
               <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
                 <span className="text-[11px] font-bold text-slate-400 mt-1">仮歌の有無</span>
-                {renderEditable('vocalGuideStatus', <span className="font-medium text-slate-800">{order.vocalGuideStatus || <span className="text-slate-400">未設定</span>}</span>)}
+                {renderHybridField('vocalGuideStatus', '仮歌の有無')}
               </div>
             </>
           )}
 
           <div className="md:col-span-2 grid grid-cols-[100px_1fr] items-start">
             <span className="text-[11px] font-bold text-slate-400 mt-1">オプション</span>
-            {renderEditable('options', <span className="font-medium text-slate-800">{order.options || <span className="text-slate-400">なし</span>}</span>, 'textarea')}
+            {renderHybridField('options', 'オプション', 'textarea')}
           </div>
         </div>
       </div>
@@ -326,36 +421,42 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
         <div className="p-6 grid grid-cols-1 gap-5">
           <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start border-b border-slate-100 pb-3">
             <span className="text-[11px] font-bold text-slate-400 mt-1">素材提出URL</span>
-            {renderEditable('materialsUrl', 
-              order.materialsUrl ? (
+            <div className="flex items-start justify-between group">
+              {order.materialsUrl ? (
                 <a href={order.materialsUrl} target="_blank" rel="noreferrer" className="text-orange-600 hover:text-orange-700 font-medium underline underline-offset-4 break-all">{order.materialsUrl}</a>
               ) : (
                 <span className="text-slate-400">未提出</span>
-              )
-            )}
+              )}
+              {order.materialsUrl && (
+                <button onClick={() => handleCopyText(order.materialsUrl)} className="text-slate-300 hover:text-slate-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0" title="URLをコピー">
+                  <Copy className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start border-b border-slate-100 pb-3">
             <span className="text-[11px] font-bold text-slate-400 mt-1">参考曲URL</span>
-            {renderEditable('referenceUrl', 
-              order.referenceUrl ? (
+            <div className="flex items-start justify-between group">
+              {order.referenceUrl ? (
                 <a href={order.referenceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-4 break-all">{order.referenceUrl}</a>
               ) : (
                 <span className="text-slate-400">なし</span>
-              )
-            )}
+              )}
+              {order.referenceUrl && (
+                <button onClick={() => handleCopyText(order.referenceUrl)} className="text-slate-300 hover:text-slate-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0" title="URLをコピー">
+                  <Copy className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start">
             <span className="text-[11px] font-bold text-slate-400 mt-1">リファレンス再現度</span>
-            {renderEditable('referenceFidelity', 
-              <span className="font-medium text-slate-800">
-                {order.referenceFidelity === "1" && "1. お任せ"}
-                {order.referenceFidelity === "2" && "2. 参考にしつつお任せ"}
-                {order.referenceFidelity === "3" && "3. 完全準拠"}
-                {!order.referenceFidelity && <span className="text-slate-400">未設定</span>}
-              </span>,
-              'select',
-              [{value: '1', label: '1. お任せ'}, {value: '2', label: '2. 参考にしつつお任せ'}, {value: '3', label: '3. 完全準拠'}]
-            )}
+            <span className="font-medium text-slate-800">
+              {order.referenceFidelity === "1" && "1. お任せ"}
+              {order.referenceFidelity === "2" && "2. 参考にしつつお任せ"}
+              {order.referenceFidelity === "3" && "3. 完全準拠"}
+              {!order.referenceFidelity && <span className="text-slate-400">未設定</span>}
+            </span>
           </div>
         </div>
       </div>
@@ -368,11 +469,12 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           </h2>
         </div>
         <div className="p-6">
-          {renderEditable('message', 
+          {isEditMode ? (
+            renderHybridField('message', 'ご要望・メッセージ', 'textarea')
+          ) : (
             <div className="text-sm whitespace-pre-wrap leading-relaxed text-slate-700 min-h-[4rem]">
               {order.message || <span className="text-slate-400">メッセージはありません</span>}
-            </div>,
-            'textarea'
+            </div>
           )}
         </div>
       </div>
