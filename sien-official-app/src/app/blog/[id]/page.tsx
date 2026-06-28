@@ -139,9 +139,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
               </div>
 
               {/* 記事末尾の各種モジュール */}
-              <AuthorProfile />
-              
               <CallToAction />
+              
+              <AuthorProfile />
 
               {/* 関連記事 */}
               {relatedPosts.length > 0 && (

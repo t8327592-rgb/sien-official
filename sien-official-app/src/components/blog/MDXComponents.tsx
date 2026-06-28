@@ -3,6 +3,7 @@ import { InfoBox } from "./InfoBox";
 import { ArticleSummary } from "./ArticleSummary";
 import { KeyPoints } from "./KeyPoints";
 import { ProsCons } from "./ProsCons";
+import { SummaryCard } from "./SummaryCard";
 
 // MarkdownのHTMLをReactコンポーネントにマッピングする
 export const MDXComponents: any = {
@@ -49,7 +50,7 @@ export const MDXComponents: any = {
   // 見出し2
   h2: ({ node, children, ...props }: any) => {
     return (
-      <div className="mt-16 mb-8">
+      <div className="mt-20 md:mt-24 mb-6 md:mb-8">
         <h2 
           className="text-[28px] md:text-[32px] font-extrabold text-slate-900 pb-4 border-b border-slate-200 relative before:absolute before:bottom-[-1px] before:left-0 before:w-16 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-amber-500"
           {...props}
@@ -64,10 +65,9 @@ export const MDXComponents: any = {
   h3: ({ node, children, ...props }: any) => {
     return (
       <h3 
-        className="text-[20px] md:text-[24px] font-bold mt-12 mb-6 text-slate-800 flex items-center gap-3"
+        className="text-[22px] md:text-[24px] font-bold mt-12 mb-6 text-slate-900 flex items-center gap-3 pl-4 border-l-4 border-orange-500 bg-slate-50 py-2 rounded-r-lg"
         {...props}
       >
-        <span className="w-1.5 h-6 bg-orange-500 rounded-full inline-block"></span>
         {children}
       </h3>
     );
@@ -77,6 +77,7 @@ export const MDXComponents: any = {
   articlesummary: ArticleSummary,
   keypoints: KeyPoints,
   proscons: ProsCons,
+  summarycard: SummaryCard,
   
   // テーブル (レスポンシブ対応)
   table: ({ node, children, ...props }: any) => (
@@ -97,11 +98,11 @@ export const MDXComponents: any = {
     </td>
   ),
 
-  // 画像 (画面幅いっぱいに広げる)
+  // 画像 (小さめに、中央寄せ。キャプションとの余白をセットにする)
   img: ({ node, src, alt, ...props }: any) => {
     return (
-      <span className="block my-12 md:my-16">
-        <span className="block w-full relative rounded-2xl overflow-hidden shadow-md">
+      <span className="block mt-8 mb-10 md:mt-10 md:mb-12 text-center">
+        <span className="inline-block w-full max-w-[480px] relative rounded-2xl overflow-hidden shadow-md mx-auto">
           <img 
             src={src} 
             alt={alt || ""} 
@@ -111,7 +112,7 @@ export const MDXComponents: any = {
           />
         </span>
         {alt && (
-          <span className="block text-center text-[15px] text-slate-500 mt-4 font-medium">
+          <span className="block text-center text-[15px] text-slate-500 mt-3 mb-0 font-medium">
             {alt}
           </span>
         )}

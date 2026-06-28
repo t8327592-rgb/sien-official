@@ -169,9 +169,4 @@
   .blog-prose p {
     @apply mb-10;
   }
-
-  /* ブログ内の画像はフルサイズ化＋下部余白をさらに広げる (48px以上) */
-  .blog-prose img {
-    @apply w-full h-auto rounded-2xl shadow-sm mb-12 md:mb-16 mt-8;
-  }
 }

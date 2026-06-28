@@ -79,22 +79,22 @@ export function TableOfContents({ content, isInline = false }: { content: string
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm sticky top-24">
-      <h3 className="text-base font-extrabold text-slate-900 mb-5 flex items-center gap-2 pb-4 border-b border-slate-100">
-        <List className="w-5 h-5 text-orange-500" />
-        目次
+    <div className="sticky top-24 pt-2">
+      <h3 className="text-[13px] font-extrabold text-slate-400 mb-4 tracking-wider uppercase flex items-center gap-2">
+        <List className="w-4 h-4" />
+        Table of Contents
       </h3>
-      <nav className="flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto scrollbar-hide pr-2">
+      <nav className="flex flex-col gap-2 max-h-[70vh] overflow-y-auto scrollbar-hide pr-2">
         {toc.map((item) => (
           <Link
             key={item.id}
             href={`#${item.id}`}
-            className={`text-[15px] font-medium transition-all duration-200 line-clamp-2 leading-relaxed ${
-              item.level === 3 ? "ml-5 text-sm" : ""
+            className={`text-[14px] font-medium transition-all duration-200 line-clamp-2 leading-relaxed border-l-2 pl-3 py-1 ${
+              item.level === 3 ? "ml-3 text-[13px]" : ""
             } ${
               activeId === item.id
-                ? "text-orange-600 font-extrabold translate-x-1"
-                : "text-slate-600 hover:text-slate-900 hover:translate-x-0.5"
+                ? "text-orange-600 border-orange-500 font-extrabold"
+                : "text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300"
             }`}
             onClick={(e) => {
               e.preventDefault();
