@@ -151,4 +151,23 @@
     background-position: center;
     background-repeat: no-repeat;
   }
+
+  /* ブログ可読性最適化ルールの追加 */
+  .blog-prose {
+    /* 本文最大幅: 760〜800px */
+    @apply max-w-[800px] mx-auto;
+    
+    /* フォントサイズ: PC 18px / SP 16px */
+    @apply text-[16px] md:text-[18px];
+    
+    /* 行間: 1.8〜2.0 */
+    @apply leading-[1.8] md:leading-[1.9];
+    
+    /* 1行の文字数は max-w-[800px] で約40文字前後に制限される */
+  }
+
+  /* ブログ内の画像は少し広げる */
+  .blog-prose img {
+    @apply max-w-[900px] w-[calc(100%+2rem)] -ml-4 md:w-full md:ml-0;
+  }
 }

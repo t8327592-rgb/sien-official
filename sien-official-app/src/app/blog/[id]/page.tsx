@@ -1,10 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Calendar, Tag, User } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, Tag, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypeSlug from "rehype-slug";
 import { Metadata } from "next";
+
+// コンポーネント群
+import { MDXComponents } from "@/components/blog/MDXComponents";
+import { TableOfContents } from "@/components/blog/TableOfContents";
+import { AuthorProfile } from "@/components/blog/AuthorProfile";
+import { CallToAction } from "@/components/blog/CallToAction";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +39,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     }),
     prisma.post.findMany({
       where: { type: "BLOG", published: true },
-      select: { category: true },
+      select: { id: true, title: true, category: true, imageUrl: true, createdAt: true },
+      orderBy: { createdAt: 'desc' }
     })
   ]);
 
@@ -39,48 +48,61 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     notFound();
   }
 
+  // カテゴリー一覧
   const categories = Array.from(
     new Set(allBlogPosts.map(p => p.category).filter(Boolean))
   ) as string[];
 
+  // 関連記事 (同じカテゴリの最新3件)
+  const relatedPosts = allBlogPosts
+    .filter(p => p.id !== post.id && p.category === post.category)
+    .slice(0, 3);
+    
+  // 読了時間の計算 (400文字で1分換算)
+  const readingTime = Math.max(1, Math.ceil(post.content.length / 400));
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/50">
       
-      {/* ヒーローヘッダー（アイキャッチ） */}
+      {/* ヒーローヘッダー（アイキャッチ） - 拡張版 */}
       <section className="relative bg-slate-900 overflow-hidden">
         {post.imageUrl ? (
           <>
             <div className="absolute inset-0 z-0">
-              <img src={post.imageUrl} alt="" className="w-full h-full object-cover opacity-40 blur-sm scale-105" />
+              <img src={post.imageUrl} alt="" className="w-full h-full object-cover opacity-30 blur-md scale-105" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent z-10" />
           </>
         ) : (
-          <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-900 to-slate-900" />
+          <div className="absolute inset-0 z-0 bg-gradient-to-br from-slate-900 to-orange-950" />
         )}
         
         <div className="relative z-20 container mx-auto max-w-6xl px-4 pt-32 pb-24 md:pt-40 md:pb-32 flex flex-col items-center text-center">
           {post.category && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold mb-6 border border-blue-500/30 backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-400 text-sm font-bold mb-6 border border-orange-500/30 backdrop-blur-md">
               <Tag className="w-3.5 h-3.5" />
               {post.category}
             </div>
           )}
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-8 max-w-4xl drop-shadow-lg">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-[1.3] mb-8 max-w-4xl drop-shadow-lg">
             {post.title}
           </h1>
           
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-300 font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-300 font-medium bg-slate-900/50 backdrop-blur-md px-6 py-3 rounded-full border border-slate-700">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 text-orange-400" />
               <time dateTime={post.createdAt.toISOString()}>
                 {new Date(post.createdAt).toLocaleDateString('ja-JP')}
               </time>
             </div>
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>Sien</span>
+              <Clock className="w-4 h-4 text-orange-400" />
+              <span>約 {readingTime} 分で読めます</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-orange-400" />
+              <span>監修: Sien</span>
             </div>
           </div>
         </div>
@@ -93,7 +115,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
           {/* 戻るリンク */}
           <Link 
             href="/blog" 
-            className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors mb-8"
+            className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             ブログ一覧へ戻る
@@ -102,36 +124,69 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
           <div className="grid lg:grid-cols-[1fr_320px] gap-8 md:gap-12 items-start">
             
             {/* メインカラム */}
-            <article className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden p-8 md:p-14">
-              <div className="prose prose-lg md:prose-xl prose-slate prose-blue max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-2xl prose-img:shadow-sm">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <article className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8 md:p-14">
+              <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]} 
+                  rehypePlugins={[rehypeRaw, rehypeSlug]}
+                  components={MDXComponents}
+                >
                   {post.content}
                 </ReactMarkdown>
               </div>
+
+              {/* 記事末尾の各種モジュール */}
+              <AuthorProfile />
+              
+              <CallToAction />
+
+              {/* 関連記事 */}
+              {relatedPosts.length > 0 && (
+                <div className="mt-16 pt-8 border-t border-slate-200">
+                  <h2 className="text-2xl font-bold text-slate-800 mb-8 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-orange-500 rounded-full inline-block"></span>
+                    おすすめの関連記事
+                  </h2>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {relatedPosts.map(rp => (
+                      <Link href={`/blog/${rp.id}`} key={rp.id} className="group flex flex-col bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all">
+                        <div className="aspect-[16/9] w-full bg-slate-200 overflow-hidden relative">
+                          {rp.imageUrl ? (
+                            <img src={rp.imageUrl} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300" />
+                          )}
+                          {rp.category && (
+                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md">
+                              {rp.category}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-5 flex flex-col flex-1">
+                          <h3 className="font-bold text-slate-800 text-sm line-clamp-2 leading-relaxed mb-3 group-hover:text-orange-600 transition-colors">
+                            {rp.title}
+                          </h3>
+                          <time className="text-xs text-slate-500 font-medium mt-auto">
+                            {new Date(rp.createdAt).toLocaleDateString('ja-JP')}
+                          </time>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </article>
 
             {/* サイドバー */}
-            <aside className="flex flex-col gap-8 sticky top-24">
-              {/* プロフィール */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center">
-                <div className="w-20 h-20 mx-auto rounded-full bg-orange-100 mb-4 overflow-hidden border-2 border-white shadow-md relative">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sien" alt="Sien" className="w-full h-full object-cover" />
-                </div>
-                <h3 className="text-lg font-black text-slate-900 mb-1">Sien</h3>
-                <p className="text-xs font-bold text-orange-500 mb-4 tracking-widest uppercase">Mix Engineer</p>
-                <p className="text-sm text-slate-600 text-left leading-relaxed mb-6">
-                  ボーカルMIX、オリジナル楽曲制作を中心に活動しています。歌ってみた初心者の方も大歓迎です！
-                </p>
-                <Link href="/order" className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors">
-                  ご依頼はこちら <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
+            <aside className="hidden lg:flex flex-col gap-8">
+              {/* スクロール追従目次 */}
+              <TableOfContents content={post.content} />
 
               {/* カテゴリー */}
               {categories.length > 0 && (
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm sticky top-[calc(24px+400px)]">
                   <h3 className="text-base font-extrabold text-slate-900 mb-5 flex items-center gap-2">
-                    <span className="w-1 h-4 bg-blue-500 rounded-full"></span>
+                    <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
                     カテゴリー
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -139,7 +194,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
                       <Link 
                         key={cat} 
                         href={`/blog?category=${encodeURIComponent(cat)}`}
-                        className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center gap-1"
                       >
                         {cat}
                       </Link>
