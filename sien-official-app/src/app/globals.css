@@ -154,20 +154,24 @@
 
   /* ブログ可読性最適化ルールの追加 */
   .blog-prose {
-    /* 本文最大幅: 760〜800px */
-    @apply max-w-[800px] mx-auto;
+    /* 左寄せレイアウトのため max-w 制限と中央寄せを解除（コンテナ側で制御） */
+    @apply max-w-none w-full;
     
     /* フォントサイズ: PC 18px / SP 16px */
     @apply text-[16px] md:text-[18px];
     
     /* 行間: 1.8〜2.0 */
-    @apply leading-[1.8] md:leading-[1.9];
+    @apply leading-[1.8] md:leading-loose;
     
-    /* 1行の文字数は max-w-[800px] で約40文字前後に制限される */
+    /* 段落間の余白を大胆に取る (40px以上) */
   }
 
-  /* ブログ内の画像は少し広げる */
+  .blog-prose p {
+    @apply mb-10;
+  }
+
+  /* ブログ内の画像はフルサイズ化＋下部余白をさらに広げる (48px以上) */
   .blog-prose img {
-    @apply max-w-[900px] w-[calc(100%+2rem)] -ml-4 md:w-full md:ml-0;
+    @apply w-full h-auto rounded-2xl shadow-sm mb-12 md:mb-16 mt-8;
   }
 }

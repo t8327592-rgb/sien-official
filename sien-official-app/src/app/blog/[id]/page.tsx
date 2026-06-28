@@ -62,7 +62,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
   const readingTime = Math.max(1, Math.ceil(post.content.length / 400));
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50/50">
+    <div className="flex flex-col min-h-screen bg-white">
       
       {/* ヒーローヘッダー（アイキャッチ） - 拡張版 */}
       <section className="relative bg-slate-900 overflow-hidden">
@@ -109,22 +109,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
       </section>
 
       {/* 記事本文＆サイドバー (2カラム) */}
-      <section className="py-12 px-4 flex-1">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-16 md:py-24 px-4 flex-1">
+        <div className="container mx-auto max-w-7xl">
           
           {/* 戻るリンク */}
-          <Link 
-            href="/blog" 
-            className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-orange-600 transition-colors mb-8"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            ブログ一覧へ戻る
-          </Link>
+          <div className="mb-10 pl-2 md:pl-4">
+            <Link 
+              href="/blog" 
+              className="inline-flex items-center text-[15px] font-bold text-slate-500 hover:text-orange-600 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1.5" />
+              ブログ一覧へ戻る
+            </Link>
+          </div>
 
-          <div className="grid lg:grid-cols-[1fr_320px] gap-8 md:gap-12 items-start">
+          <div className="grid lg:grid-cols-[1fr_320px] gap-12 md:gap-16 items-start">
             
             {/* メインカラム */}
-            <article className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8 md:p-14">
+            <article className="w-full">
+              <TableOfContents content={post.content} isInline={true} />
               <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500">
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]} 

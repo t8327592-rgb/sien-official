@@ -14,11 +14,7 @@ export function ProsCons({ children }: { children: React.ReactNode }) {
     <div className="grid md:grid-cols-2 gap-4 my-10">
       {/* メリット */}
       <div className="bg-emerald-50 rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
-        <div className="bg-emerald-100/50 px-5 py-3 border-b border-emerald-100 flex items-center gap-2">
-          <ThumbsUp className="w-5 h-5 text-emerald-600" />
-          <span className="font-bold text-emerald-800">メリット</span>
-        </div>
-        <div className="p-5 text-slate-700 font-medium [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-2 [&>ul>li]:mb-3 [&>ul>li::before]:hidden">
+        <div className="p-5 md:p-6 text-slate-700 font-medium [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-2 md:[&>ul>li]:gap-3 [&>ul>li]:mb-4 md:[&>ul>li]:mb-5 [&>ul>li::before]:hidden">
           {prosList ? (() => {
             const ulElement = prosList as React.ReactElement<any>;
             return React.cloneElement(ulElement, {}, 
@@ -26,9 +22,9 @@ export function ProsCons({ children }: { children: React.ReactNode }) {
                 if (React.isValidElement(li)) {
                   const liElement = li as React.ReactElement<any>;
                   return (
-                    <li className="flex items-start gap-2 mb-3">
-                      <span className="flex-shrink-0 text-emerald-500 mt-0.5">●</span>
-                      <span className="flex-1 pt-0.5">{liElement.props.children}</span>
+                    <li className="flex items-start gap-2 md:gap-3 mb-4 md:mb-5">
+                      <span className="flex-shrink-0 text-emerald-500 mt-0.5 md:mt-1">●</span>
+                      <span className="flex-1 pt-0.5 leading-relaxed">{liElement.props.children}</span>
                     </li>
                   );
                 }
@@ -43,11 +39,11 @@ export function ProsCons({ children }: { children: React.ReactNode }) {
 
       {/* デメリット */}
       <div className="bg-rose-50 rounded-2xl border border-rose-100 overflow-hidden shadow-sm">
-        <div className="bg-rose-100/50 px-5 py-3 border-b border-rose-100 flex items-center gap-2">
-          <ThumbsDown className="w-5 h-5 text-rose-600" />
-          <span className="font-bold text-rose-800">デメリット</span>
+        <div className="bg-rose-100/50 px-5 py-3 md:py-4 border-b border-rose-100 flex items-center gap-2">
+          <ThumbsDown className="w-5 h-5 md:w-6 md:h-6 text-rose-600" />
+          <span className="font-bold md:text-lg text-rose-800">デメリット</span>
         </div>
-        <div className="p-5 text-slate-700 font-medium [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-2 [&>ul>li]:mb-3 [&>ul>li::before]:hidden">
+        <div className="p-5 md:p-6 text-slate-700 font-medium [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-2 md:[&>ul>li]:gap-3 [&>ul>li]:mb-4 md:[&>ul>li]:mb-5 [&>ul>li::before]:hidden">
           {consList ? (() => {
             const ulElement = consList as React.ReactElement<any>;
             return React.cloneElement(ulElement, {}, 
@@ -55,9 +51,9 @@ export function ProsCons({ children }: { children: React.ReactNode }) {
                 if (React.isValidElement(li)) {
                   const liElement = li as React.ReactElement<any>;
                   return (
-                    <li className="flex items-start gap-2 mb-3">
-                      <span className="flex-shrink-0 text-rose-500 mt-0.5">●</span>
-                      <span className="flex-1 pt-0.5">{liElement.props.children}</span>
+                    <li className="flex items-start gap-2 md:gap-3 mb-4 md:mb-5">
+                      <span className="flex-shrink-0 text-rose-500 mt-0.5 md:mt-1">●</span>
+                      <span className="flex-1 pt-0.5 leading-relaxed">{liElement.props.children}</span>
                     </li>
                   );
                 }

@@ -37,10 +37,10 @@ export function CallToAction({ title, buttonText, href = "/order" }: { title?: s
         <div className="w-full md:w-auto flex-shrink-0">
           <Link 
             href={href}
-            className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-4 rounded-full bg-orange-500 text-white font-bold text-lg hover:bg-orange-400 hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all duration-300 group/btn"
+            className="flex items-center justify-center gap-2 w-full md:w-auto px-10 py-5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xl shadow-[0_10px_25px_-5px_rgba(249,115,22,0.4)] hover:scale-105 transition-all duration-300 group/btn border-none"
           >
             {buttonText || "無料で相談してみる"}
-            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1.5 transition-transform" />
           </Link>
           <p className="text-slate-500 text-xs text-center mt-3 font-medium">
             ※まずはご相談だけでもOKです

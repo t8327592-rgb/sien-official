@@ -49,12 +49,14 @@ export const MDXComponents: any = {
   // 見出し2
   h2: ({ node, children, ...props }: any) => {
     return (
-      <h2 
-        className="text-2xl md:text-3xl font-bold mt-12 mb-6 pb-2 border-b-2 border-slate-100 flex items-center relative pl-4 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:bg-orange-500 before:rounded-full"
-        {...props}
-      >
-        {children}
-      </h2>
+      <div className="mt-16 mb-8">
+        <h2 
+          className="text-[28px] md:text-[32px] font-extrabold text-slate-900 pb-4 border-b border-slate-200 relative before:absolute before:bottom-[-1px] before:left-0 before:w-16 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-amber-500"
+          {...props}
+        >
+          {children}
+        </h2>
+      </div>
     );
   },
 
@@ -62,9 +64,10 @@ export const MDXComponents: any = {
   h3: ({ node, children, ...props }: any) => {
     return (
       <h3 
-        className="text-xl md:text-2xl font-bold mt-8 mb-4 text-slate-800"
+        className="text-[20px] md:text-[24px] font-bold mt-12 mb-6 text-slate-800 flex items-center gap-3"
         {...props}
       >
+        <span className="w-1.5 h-6 bg-orange-500 rounded-full inline-block"></span>
         {children}
       </h3>
     );
@@ -77,28 +80,28 @@ export const MDXComponents: any = {
   
   // テーブル (レスポンシブ対応)
   table: ({ node, children, ...props }: any) => (
-    <div className="w-full overflow-x-auto my-8 rounded-xl border border-slate-200 shadow-sm">
+    <div className="w-full overflow-x-auto my-12 rounded-xl border border-slate-200 shadow-sm">
       <table className="w-full text-left border-collapse min-w-[600px]" {...props}>
         {children}
       </table>
     </div>
   ),
   th: ({ node, children, ...props }: any) => (
-    <th className="bg-slate-50 p-4 font-bold text-slate-700 border-b border-slate-200 whitespace-nowrap" {...props}>
+    <th className="bg-slate-50 p-4 font-bold text-slate-700 border-b border-slate-200 whitespace-nowrap text-lg" {...props}>
       {children}
     </th>
   ),
   td: ({ node, children, ...props }: any) => (
-    <td className="p-4 border-b border-slate-100 text-slate-600 align-top" {...props}>
+    <td className="p-4 border-b border-slate-100 text-slate-600 align-top text-lg" {...props}>
       {children}
     </td>
   ),
 
-  // 画像 (大きく、角丸、影)
+  // 画像 (画面幅いっぱいに広げる)
   img: ({ node, src, alt, ...props }: any) => {
     return (
-      <span className="block my-10 md:my-14 -mx-4 md:-mx-8">
-        <span className="block max-w-[900px] mx-auto relative rounded-2xl overflow-hidden shadow-md">
+      <span className="block my-12 md:my-16">
+        <span className="block w-full relative rounded-2xl overflow-hidden shadow-md">
           <img 
             src={src} 
             alt={alt || ""} 
@@ -108,7 +111,7 @@ export const MDXComponents: any = {
           />
         </span>
         {alt && (
-          <span className="block text-center text-sm text-slate-500 mt-3 font-medium">
+          <span className="block text-center text-[15px] text-slate-500 mt-4 font-medium">
             {alt}
           </span>
         )}

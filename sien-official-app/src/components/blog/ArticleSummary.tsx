@@ -10,7 +10,7 @@ export function ArticleSummary({ children }: { children: React.ReactNode }) {
           この記事でわかること
         </span>
       </div>
-      <div className="text-slate-700 font-medium space-y-3 [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-3 [&>ul>li]:mb-3 [&>ul>li::before]:hidden">
+      <div className="text-slate-700 font-bold md:text-lg space-y-4 [&>ul]:list-none [&>ul]:p-0 [&>ul>li]:flex [&>ul>li]:items-start [&>ul>li]:gap-3 md:[&>ul>li]:gap-4 [&>ul>li]:mb-4 md:[&>ul>li]:mb-5 [&>ul>li::before]:hidden">
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child) && child.type === "ul") {
              const ulElement = child as React.ReactElement<any>;
@@ -19,9 +19,9 @@ export function ArticleSummary({ children }: { children: React.ReactNode }) {
                   if (React.isValidElement(li)) {
                     const liElement = li as React.ReactElement<any>;
                     return (
-                      <li className="flex items-start gap-3 mb-3">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center mt-0.5 shadow-sm">
-                          <Check className="w-4 h-4 stroke-[3]" />
+                      <li className="flex items-start gap-3 md:gap-4 mb-4 md:mb-5">
+                        <span className="flex-shrink-0 w-6 h-6 md:w-7 md:h-7 rounded-full bg-orange-500 text-white flex items-center justify-center mt-0.5 md:mt-0 shadow-sm">
+                          <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3]" />
                         </span>
                         <span className="flex-1 pt-0.5">{liElement.props.children}</span>
                       </li>

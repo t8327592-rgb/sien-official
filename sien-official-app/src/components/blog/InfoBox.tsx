@@ -66,12 +66,12 @@ export function InfoBox({ type, children }: InfoBoxProps) {
   }
 
   return (
-    <div className={`my-8 p-5 rounded-xl border ${bgClass} ${borderClass} shadow-sm`}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`w-5 h-5 ${iconClass}`} />
-        <span className={`font-bold text-sm ${titleClass}`}>{defaultTitle}</span>
+    <div className={`my-10 p-6 md:p-8 rounded-2xl border-2 ${bgClass} ${borderClass} shadow-sm`}>
+      <div className="flex items-center gap-2.5 mb-4">
+        <Icon className={`w-6 h-6 md:w-7 md:h-7 ${iconClass}`} />
+        <span className={`font-bold text-[17px] md:text-[19px] ${titleClass}`}>{defaultTitle}</span>
       </div>
-      <div className="text-slate-700 text-[15px] leading-relaxed [&>p:last-child]:mb-0 [&>p:first-child]:mt-0">
+      <div className="text-slate-800 text-[16px] md:text-[18px] leading-relaxed [&>p:last-child]:mb-0 [&>p:first-child]:mt-0">
         {children}
       </div>
     </div>
