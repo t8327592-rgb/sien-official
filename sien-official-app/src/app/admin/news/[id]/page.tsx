@@ -22,7 +22,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
     
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
-    const type = formData.get("type") as string;
+    const type = "NEWS";
     const category = formData.get("category") as string;
     const imageUrl = formData.get("imageUrl") as string;
     const published = formData.get("published") === "true";
@@ -41,7 +41,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
       },
     });
 
-    redirect("/admin/posts");
+    redirect("/admin/news");
   }
 
   // 削除アクション
@@ -50,20 +50,20 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
     await prisma.post.delete({
       where: { id },
     });
-    redirect("/admin/posts");
+    redirect("/admin/news");
   }
 
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">投稿を編集</h1>
+        <h1 className="text-3xl font-bold">お知らせを編集</h1>
         <form action={deletePost}>
           <button 
             type="submit" 
             className="text-red-600 hover:text-red-800 font-medium text-sm hover:underline"
             title="完全に削除する"
           >
-            この投稿を削除
+            このお知らせを削除
           </button>
         </form>
       </div>
@@ -80,32 +80,6 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
                 defaultValue={post.title}
                 className="w-full p-2 border rounded-md"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">投稿タイプ</label>
-              <select name="type" defaultValue={post.type} className="w-full p-2 border rounded-md bg-white">
-                <option value="NEWS">お知らせ</option>
-                <option value="WORKS">制作実績</option>
-                <option value="BLOG">ブログ</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">カテゴリー (ブログ用)</label>
-              <input 
-                name="category" 
-                type="text" 
-                defaultValue={post.category || ""}
-                placeholder="例: 音楽制作, 日常, チュートリアル"
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">サムネイル画像 (ブログ・実績用)</label>
-              <ImageUploader defaultValue={post.imageUrl || ""} />
-              <p className="text-xs text-slate-500 mt-2">※画像を選択すると自動で圧縮されて保存されます。設定しない場合はデフォルトのアイコンが表示されます。</p>
             </div>
 
             <div className="col-span-1 md:col-span-2">
@@ -138,7 +112,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
               更新する
             </button>
             <Link 
-              href="/admin/posts"
+              href="/admin/news"
               className="px-8 py-2 border rounded-md font-medium hover:bg-slate-50 transition-colors inline-block"
             >
               キャンセル
