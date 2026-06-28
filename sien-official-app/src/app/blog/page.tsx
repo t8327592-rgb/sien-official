@@ -162,14 +162,14 @@ export default async function BlogIndexPage({
               {/* プロフィール */}
               <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center">
                 <div className="w-20 h-20 mx-auto rounded-full bg-orange-100 mb-4 overflow-hidden border-2 border-white shadow-md relative">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sien" alt="Sien" className="w-full h-full object-cover" />
+                  <img src="/profile.jpg" alt="Sien" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-lg font-black text-slate-900 mb-1">Sien</h3>
-                <p className="text-xs font-bold text-orange-500 mb-4 tracking-widest uppercase">Mix Engineer</p>
-                <p className="text-sm text-slate-600 text-left leading-relaxed mb-6">
-                  ボーカルMIX、オリジナル楽曲制作を中心に活動しています。歌ってみた初心者の方も大歓迎です！
+                <p className="text-[11px] font-bold text-orange-500 mb-4 tracking-widest uppercase">Mix Engineer / Sound Creator</p>
+                <p className="text-[13px] text-slate-600 text-left leading-relaxed mb-6 font-medium">
+                  音楽制作歴15年。歌ってみたMIXからオリジナル楽曲制作まで幅広く対応するミックスエンジニア。初めての方でも安心してご依頼いただけるよう、丁寧なコミュニケーションを心がけています。
                 </p>
-                <Link href="/order" className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors">
+                <Link href="/order" className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm font-bold shadow-[0_5px_15px_-3px_rgba(249,115,22,0.4)] hover:scale-105 transition-all duration-300">
                   ご依頼はこちら <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
