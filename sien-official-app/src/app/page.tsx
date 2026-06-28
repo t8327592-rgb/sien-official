@@ -9,7 +9,7 @@ import { getSiteSetting } from "@/app/actions/settings";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [mixPortfolios, originalPortfolios, reviews, siteSetting] = await Promise.all([
+  const [mixPortfolios, originalPortfolios, reviews, siteSetting, newsPosts] = await Promise.all([
     prisma.portfolio.findMany({
       where: { isFeatured: true, serviceCategory: { not: "オリジナル楽曲制作" } },
       orderBy: { orderIndex: "asc" },
@@ -25,7 +25,12 @@ export default async function Home() {
       orderBy: { orderIndex: "asc" },
       take: 3,
     }),
-    getSiteSetting()
+    getSiteSetting(),
+    prisma.post.findMany({
+      where: { type: "NEWS", published: true },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    })
   ]);
 
   return (
@@ -108,6 +113,42 @@ export default async function Home() {
           <div className="w-[2px] h-12 bg-gradient-to-b from-orange-500 to-transparent rounded-full shadow-sm"></div>
         </div>
       </section>
+
+      {/* 1.2. お知らせ (NEWS) */}
+      {newsPosts.length > 0 && (
+        <section className="py-12 bg-white border-b border-orange-100">
+          <div className="container px-4 mx-auto max-w-4xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <span className="w-2 h-6 bg-orange-500 rounded-full inline-block"></span>
+                お知らせ
+              </h2>
+              <Link href="/news" className="text-sm font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors">
+                すべて見る <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="flex flex-col gap-3">
+              {newsPosts.map((post) => (
+                <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 py-4 px-5 rounded-2xl hover:bg-orange-50/50 transition-colors border border-transparent hover:border-orange-100">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <time className="text-sm font-bold text-slate-500 font-mono tracking-tight">
+                      {new Date(post.createdAt).toLocaleDateString('ja-JP')}
+                    </time>
+                    {post.category && (
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        {post.category}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-slate-800 font-bold sm:text-base group-hover:text-orange-600 transition-colors line-clamp-1 flex-1">
+                    {post.title}
+                  </h3>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 1.5. こんな方に最適 */}
       <section className="py-16 bg-white border-b border-orange-100">
