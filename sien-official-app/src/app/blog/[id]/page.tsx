@@ -127,16 +127,44 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             
             {/* メインカラム */}
             <article className="w-full">
-              <TableOfContents content={post.content} isInline={true} />
-              <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]} 
-                  rehypePlugins={[rehypeRaw, rehypeSlug]}
-                  components={MDXComponents}
-                >
-                  {post.content}
-                </ReactMarkdown>
-              </div>
+              {(() => {
+                // <articlesummary> と本文を分離し、間にインライン目次を挟む
+                let summaryContent = "";
+                let mainContent = post.content;
+                const summaryMatch = post.content.match(/(<articlesummary>[\s\S]*?<\/articlesummary>)/i);
+                if (summaryMatch) {
+                  summaryContent = summaryMatch[1];
+                  mainContent = post.content.replace(summaryMatch[1], "");
+                }
+
+                return (
+                  <>
+                    {summaryContent && (
+                      <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500 mb-8">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]} 
+                          rehypePlugins={[rehypeRaw, rehypeSlug]}
+                          components={MDXComponents}
+                        >
+                          {summaryContent}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                    
+                    <TableOfContents content={post.content} isInline={true} />
+                    
+                    <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]} 
+                        rehypePlugins={[rehypeRaw, rehypeSlug]}
+                        components={MDXComponents}
+                      >
+                        {mainContent}
+                      </ReactMarkdown>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* 記事末尾の各種モジュール */}
               <CallToAction />

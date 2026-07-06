@@ -50,14 +50,12 @@ export const MDXComponents: any = {
   // 見出し2
   h2: ({ node, children, ...props }: any) => {
     return (
-      <div className="mt-20 md:mt-24 mb-6 md:mb-8">
-        <h2 
-          className="text-[28px] md:text-[32px] font-extrabold text-slate-900 pb-4 border-b border-slate-200 relative before:absolute before:bottom-[-1px] before:left-0 before:w-16 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-amber-500"
-          {...props}
-        >
-          {children}
-        </h2>
-      </div>
+      <h2 
+        className="mt-20 md:mt-24 mb-6 md:mb-8 text-[28px] md:text-[32px] font-extrabold text-slate-900 pb-4 border-b border-slate-200 relative before:absolute before:bottom-[-1px] before:left-0 before:w-16 before:h-[3px] before:bg-gradient-to-r before:from-orange-500 before:to-amber-500"
+        {...props}
+      >
+        {children}
+      </h2>
     );
   },
 
@@ -101,8 +99,8 @@ export const MDXComponents: any = {
   // 画像 (小さめに、中央寄せ。キャプションとの余白をセットにする)
   img: ({ node, src, alt, ...props }: any) => {
     return (
-      <span className="block mt-8 mb-10 md:mt-10 md:mb-12 text-center">
-        <span className="inline-block w-full max-w-[480px] relative rounded-2xl overflow-hidden shadow-md mx-auto">
+      <span className="flex flex-col items-center mt-8 mb-10 md:mt-10 md:mb-12">
+        <span className="block w-full max-w-[480px] relative rounded-2xl overflow-hidden shadow-md">
           <img 
             src={src} 
             alt={alt || ""} 

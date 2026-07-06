@@ -154,8 +154,8 @@
 
   /* ブログ可読性最適化ルールの追加 */
   .blog-prose {
-    /* 左寄せレイアウトのため max-w 制限と中央寄せを解除（コンテナ側で制御） */
-    @apply max-w-none w-full;
+    /* 左寄せレイアウトにしつつ、文字幅が広がりすぎないように制限 */
+    @apply max-w-[800px] w-full;
     
     /* フォントサイズ: PC 18px / SP 16px */
     @apply text-[16px] md:text-[18px];
