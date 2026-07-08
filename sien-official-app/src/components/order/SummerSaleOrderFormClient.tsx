@@ -432,6 +432,23 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
             </div>
           </section>
 
+          {/* 06 お支払い方法 */}
+          <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-200 group-hover:bg-cyan-400 transition-colors"></div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+              <span className="w-10 h-10 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center text-sm font-black">06</span>
+              お支払い方法
+            </h2>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">お支払い方法 {requiredMark}</label>
+              <select required className={inputStyle} value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})}>
+                <option value="銀行振込">銀行振込</option>
+                <option value="クレジットカード">クレジットカード</option>
+                <option value="その他">その他</option>
+              </select>
+            </div>
+          </section>
+
           {/* 送信とリアルタイム見積もり */}
           <div className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-100 p-6 md:p-10 rounded-3xl shadow-xl flex flex-col items-center gap-8 md:gap-10 mx-auto w-full relative overflow-hidden">
             <div className="text-center relative z-10 w-full">
