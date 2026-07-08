@@ -7,7 +7,7 @@ import FaqAccordion from "@/components/summer-sale/FaqAccordion";
 
 export const metadata = {
   title: "Summer MIX Sale 2026 | Sien-Official",
-  description: "1週間限定！Sien-OfficialのサマーMIXセール開催中。スタンダードプランが一律2,000円OFF。",
+  description: "10日間限定！Sien-OfficialのサマーMIXセール開催中。スタンダードプランが一律2,000円OFF。",
 };
 
 export default function SummerSalePage() {
@@ -38,7 +38,7 @@ export default function SummerSalePage() {
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-50 border border-cyan-100 text-cyan-700 font-bold text-sm mb-8 animate-in slide-in-from-bottom-4 duration-700">
             <Sparkles className="w-4 h-4" />
-            1週間限定の特別キャンペーン
+            10日間限定の特別キャンペーン
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 animate-in slide-in-from-bottom-6 duration-700 delay-100 leading-tight">
@@ -390,7 +390,7 @@ export default function SummerSalePage() {
             最高の1曲を一緒に創りましょう。
           </h2>
           <p className="text-cyan-100 mb-10 max-w-xl mx-auto">
-            1週間限定の特別なご案内です。<br/>
+            10日間限定の特別なご案内です。<br/>
             専用のご依頼フォームからお申し込みください。
           </p>
           
