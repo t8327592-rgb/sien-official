@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, Calendar, Tag, ChevronLeft } from "lucide-react";
+import { Calendar, Tag, ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +44,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
             </h1>
           </header>
           
-          <div className="prose prose-slate prose-orange max-w-none">
-            {post.content.split('\n').map((line, i) => (
-              <p key={i} className="min-h-[1.5rem]">{line}</p>
-            ))}
+          <div className="prose prose-slate prose-orange max-w-none prose-p:leading-relaxed prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-headings:font-bold prose-h2:border-b prose-h2:border-slate-100 prose-h2:pb-2">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+            >
+              {post.content}
+            </ReactMarkdown>
           </div>
         </article>
       </div>
