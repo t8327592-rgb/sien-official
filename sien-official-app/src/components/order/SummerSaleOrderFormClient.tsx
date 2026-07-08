@@ -95,7 +95,22 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   
+  useEffect(() => {
+    // 期限切れチェック
+    const checkExpiration = () => {
+      const targetDate = new Date("2026-07-17T23:59:59+09:00").getTime();
+      const now = new Date().getTime();
+      if (now > targetDate) {
+        setIsExpired(true);
+      }
+    };
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const BASE_PRICE = 10000;
   const DISCOUNT_PRICE = 2000;
 
@@ -186,6 +201,29 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [status]);
+
+  if (isExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cyan-50 px-4 py-20">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-cyan-100 text-center max-w-lg w-full">
+          <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">サマーMIXセールは<br/>終了いたしました</h2>
+          <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <p className="mb-2">たくさんのご依頼、誠にありがとうございました！</p>
+            <p className="text-xs text-slate-500">通常のMIX依頼につきましては、引き続き通常プランよりお申し込みいただけます。</p>
+          </div>
+          <Button asChild className="w-full rounded-full px-10 h-14 bg-gradient-to-r from-slate-700 to-slate-900 text-white font-bold hover:brightness-110 shadow-lg">
+            <a href="/mix">通常プランのご依頼はこちら</a>
+          </Button>
+          <div className="mt-4">
+            <a href="/" className="text-sm font-bold text-cyan-600 hover:text-cyan-700 underline underline-offset-4">トップページに戻る</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "success") {
     return (
