@@ -22,10 +22,15 @@ export function BeforeAfterPlayer() {
   const afterAudioRef = useRef<HTMLAudioElement | null>(null);
   const isDraggingRef = useRef(false);
   const animationRef = useRef<number | null>(null);
+  const isAfterRef = useRef(isAfter);
+
+  useEffect(() => {
+    isAfterRef.current = isAfter;
+  }, [isAfter]);
   
   const updateProgress = useCallback(() => {
     if (!isDraggingRef.current) {
-      const activeAudio = afterAudioRef.current;
+      const activeAudio = isAfterRef.current ? afterAudioRef.current : beforeAudioRef.current;
       if (activeAudio) {
         setCurrentTime(activeAudio.currentTime);
       }
@@ -111,29 +116,18 @@ export function BeforeAfterPlayer() {
       otherAudio.pause();
       currentAudio.pause();
     }
-  }, [isAfter, masterVolume, isMuted]);
+  }, [isAfter, masterVolume, isMuted, isPlaying]);
 
   const togglePlay = () => {
-    if (!beforeAudioRef.current || !afterAudioRef.current) return;
-    
-    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
-    
-    if (isPlaying) {
-      currentAudio.pause();
-      setIsPlaying(false);
-    } else {
-      currentAudio.play()
-        .then(() => setIsPlaying(true))
-        .catch(e => console.error("Play prevented:", e));
-    }
+    setIsPlaying(prev => !prev);
   };
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = Number(e.target.value);
     setCurrentTime(time);
     
-    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
-    if (currentAudio) currentAudio.currentTime = time;
+    if (beforeAudioRef.current) beforeAudioRef.current.currentTime = time;
+    if (afterAudioRef.current) afterAudioRef.current.currentTime = time;
   };
 
   const handleSeekMouseUp = () => isDraggingRef.current = false;
@@ -142,8 +136,8 @@ export function BeforeAfterPlayer() {
   const skipTime = (amount: number) => {
     if (!beforeAudioRef.current || !afterAudioRef.current) return;
     const newTime = Math.max(0, Math.min(duration, currentTime + amount));
-    const currentAudio = isAfter ? afterAudioRef.current : beforeAudioRef.current;
-    currentAudio.currentTime = newTime;
+    if (beforeAudioRef.current) beforeAudioRef.current.currentTime = newTime;
+    if (afterAudioRef.current) afterAudioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
 

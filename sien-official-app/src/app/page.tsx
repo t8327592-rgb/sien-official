@@ -117,23 +117,45 @@ export default async function Home() {
       {/* 1.1. 新プラン告知バナー */}
       <section className="py-6 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
         <div className="container px-4 mx-auto max-w-4xl">
-          <Link href="/mix#plans" className="group block relative overflow-hidden bg-white rounded-2xl shadow-sm border border-orange-200 hover:shadow-md hover:border-orange-300 transition-all p-1 sm:p-2">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-6 relative z-10">
-              <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-xs sm:text-sm px-4 py-1.5 rounded-full tracking-widest shadow-sm shrink-0">
-                  NEW
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* サマーセールバナー */}
+            <Link href="/summer-sale" className="group block relative overflow-hidden bg-white rounded-2xl shadow-sm border border-blue-200 hover:shadow-md hover:border-blue-300 transition-all p-1 sm:p-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 relative z-10">
+                <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+                  <div className="bg-gradient-to-r from-sky-500 to-blue-500 text-white font-black text-xs px-3 py-1 rounded-full tracking-widest shadow-sm shrink-0">
+                    SALE
+                  </div>
+                  <div>
+                    <div className="text-blue-600 font-bold text-xs mb-1">期間限定キャンペーン</div>
+                    <h3 className="text-slate-900 font-extrabold text-base">サマーセール <span className="text-blue-600">開催中！</span></h3>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-orange-600 font-bold text-xs sm:text-sm mb-1">毎日投稿・継続活動を応援！</div>
-                  <h3 className="text-slate-900 font-extrabold text-lg sm:text-xl">ショートMIX <span className="text-orange-600">まとめ依頼プラン</span> 開始</h3>
+                <div className="flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform shrink-0">
+                  詳細 <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm font-bold text-orange-600 group-hover:translate-x-1 transition-transform shrink-0">
-                詳細を見る <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            {/* 新プランバナー */}
+            <Link href="/mix#plans" className="group block relative overflow-hidden bg-white rounded-2xl shadow-sm border border-orange-200 hover:shadow-md hover:border-orange-300 transition-all p-1 sm:p-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 relative z-10">
+                <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+                  <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-xs px-3 py-1 rounded-full tracking-widest shadow-sm shrink-0">
+                    NEW
+                  </div>
+                  <div>
+                    <div className="text-orange-600 font-bold text-xs mb-1">毎日投稿・継続活動を応援！</div>
+                    <h3 className="text-slate-900 font-extrabold text-base">ショートMIX <span className="text-orange-600">まとめ依頼</span></h3>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform shrink-0">
+                  詳細 <ArrowRight className="w-3 h-3" />
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
         </div>
       </section>
 
