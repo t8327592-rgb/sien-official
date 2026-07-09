@@ -6,9 +6,9 @@ import { Play } from "lucide-react";
 import { Portfolio } from "@prisma/client";
 
 type FeaturedWorksListProps = {
-  portfolios?: any[];
-  mixPortfolios?: any[];
-  originalPortfolios?: any[];
+  portfolios?: Portfolio[];
+  mixPortfolios?: Portfolio[];
+  originalPortfolios?: Portfolio[];
 };
 
 export function FeaturedWorksList({ portfolios, mixPortfolios, originalPortfolios }: FeaturedWorksListProps) {

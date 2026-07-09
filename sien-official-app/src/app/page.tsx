@@ -42,7 +42,7 @@ export default async function Home() {
         
         {/* 背景動画 */}
         <div className="absolute inset-0 opacity-100">
-          <HeroVideoPlayer src="/Video%20Project%201.mp4" />
+          <HeroVideoPlayer src="/Video%20Project%201.webm" />
         </div>
         
         {/* 透明感のある白っぽいフィルター（爽やかさ重視） */}
@@ -114,6 +114,29 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 1.1. 新プラン告知バナー */}
+      <section className="py-6 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
+        <div className="container px-4 mx-auto max-w-4xl">
+          <Link href="/mix#plans" className="group block relative overflow-hidden bg-white rounded-2xl shadow-sm border border-orange-200 hover:shadow-md hover:border-orange-300 transition-all p-1 sm:p-2">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-6 relative z-10">
+              <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-xs sm:text-sm px-4 py-1.5 rounded-full tracking-widest shadow-sm shrink-0">
+                  NEW
+                </div>
+                <div>
+                  <div className="text-orange-600 font-bold text-xs sm:text-sm mb-1">毎日投稿・継続活動を応援！</div>
+                  <h3 className="text-slate-900 font-extrabold text-lg sm:text-xl">ショートMIX <span className="text-orange-600">まとめ依頼プラン</span> 開始</h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm font-bold text-orange-600 group-hover:translate-x-1 transition-transform shrink-0">
+                詳細を見る <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       {/* 1.2. お知らせ (NEWS) */}
       {newsPosts.length > 0 && (
         <section className="py-12 bg-white border-b border-orange-100">
@@ -135,7 +158,13 @@ export default async function Home() {
                       {new Date(post.createdAt).toLocaleDateString('ja-JP')}
                     </time>
                     {post.category && (
-                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                        post.category.includes("SALE") || post.category.includes("サマーセール") || post.category.includes("キャンペーン")
+                          ? "bg-red-50 text-red-600 border-red-200 shadow-[0_0_8px_rgba(239,68,68,0.2)] animate-pulse"
+                          : post.category.includes("NEW") || post.category.includes("新プラン")
+                          ? "bg-orange-50 text-orange-600 border-orange-200"
+                          : "bg-slate-100 text-slate-600 border-slate-200"
+                      }`}>
                         {post.category}
                       </span>
                     )}
@@ -233,7 +262,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 4. お客様の声 */}
+      {/* 4. お客様の声（現在非表示） */}
+      {/* 
       <section className="py-24 bg-white border-b border-slate-100">
         <div className="container px-4 mx-auto max-w-6xl">
           <div className="text-center mb-16">
@@ -268,6 +298,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      */}
 
       {/* 5. ご依頼の流れ */}
       <section className="py-24 bg-orange-50/30 border-b border-slate-100">

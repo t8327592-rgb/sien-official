@@ -33,7 +33,7 @@ export function HeroVideoPlayer({ src }: { src: string }) {
         playsInline
         className="absolute inset-0 z-0 w-full h-full object-cover"
       >
-        <source src={src} type="video/mp4" />
+        <source src={src} />
       </video>
       
       {/* オーバーレイは外部（親コンポーネント）で制御するため、ここでのベースフィルターは削除 */}

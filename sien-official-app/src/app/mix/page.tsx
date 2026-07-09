@@ -5,6 +5,7 @@ import { PlanCard } from "@/components/ui/PlanCard";
 import { BeforeAfterPlayer } from "@/components/ui/BeforeAfterPlayer";
 import { CheckCircle2, Sliders, Headphones, Sparkles, Clock, ArrowRight, HelpCircle, Play } from "lucide-react";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
+import { PlanListClient } from "@/components/ui/PlanListClient";
 
 export const metadata = {
   title: "歌ってみたMIX依頼 | Sien-Official",
@@ -194,26 +195,41 @@ export default async function MixPage() {
       </section>
 
       {/* 5. 料金プラン */}
-      <section className="py-24 bg-white border-b border-slate-100">
+      <section id="plans" className="py-24 bg-white border-b border-slate-100 scroll-mt-16">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900 mb-4">料金プラン</h2>
             <p className="text-slate-500">ご希望のサポート範囲に合わせてお選びください。</p>
           </div>
           
+          {/* 新プラン告知バナー */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-3xl p-6 md:p-8 border border-orange-200 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-100/50 rounded-full blur-3xl -z-10"></div>
+              <div>
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-xs px-3 py-1 rounded-full tracking-widest shadow-sm mb-3">
+                  NEW
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">
+                  ショートMIX <span className="text-orange-600">まとめ依頼プラン</span> 開始！
+                </h3>
+                <p className="text-slate-600 text-sm md:text-base font-medium">
+                  毎日投稿やシリーズ投稿を応援。<br className="md:hidden" />
+                  まとめてのご依頼で、通常より<span className="text-orange-600 font-bold">最大30%OFF</span>になります。
+                </p>
+              </div>
+              <div className="shrink-0 bg-white p-4 rounded-2xl shadow-sm border border-orange-100 text-center w-full md:w-auto">
+                <div className="text-xs font-bold text-slate-500 mb-1">一番人気 (5本セット)</div>
+                <div className="text-2xl font-black text-slate-900 mb-1">20,000<span className="text-sm font-bold text-slate-500">円</span></div>
+                <div className="text-xs font-bold text-orange-600 bg-orange-50 py-1 px-3 rounded-full">通常より5,000円お得</div>
+              </div>
+            </div>
+          </div>
+
           {plans.length === 0 ? (
             <p className="text-center text-slate-500">現在公開されているプランはありません。</p>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {plans.map((plan) => (
-                <PlanCard 
-                  key={plan.id} 
-                  plan={plan} 
-                  isRecommended={plan.name.includes("スタンダード")} 
-                  recommendedText={plan.name.includes("スタンダード") ? "★ 一番人気" : undefined} 
-                />
-              ))}
-            </div>
+            <PlanListClient plans={plans} />
           )}
         </div>
       </section>

@@ -30,19 +30,23 @@ export function BeforeAfterPlayer() {
         setCurrentTime(activeAudio.currentTime);
       }
     }
-    if (isPlaying) {
-      animationRef.current = requestAnimationFrame(updateProgress);
-    }
-  }, [isPlaying]);
+  }, []);
 
   useEffect(() => {
+    let animationId: number;
+    const loop = () => {
+      updateProgress();
+      animationId = requestAnimationFrame(loop);
+      animationRef.current = animationId;
+    };
+
     if (isPlaying) {
-      animationRef.current = requestAnimationFrame(updateProgress);
-    } else if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+      animationId = requestAnimationFrame(loop);
+      animationRef.current = animationId;
     }
+
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (animationId) cancelAnimationFrame(animationId);
     };
   }, [isPlaying, updateProgress]);
 

@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
+import Image from "next/image";
 
 export function OpeningAnimation() {
   const [show, setShow] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // useLayoutEffect if available, or just useEffect, to avoid the specific synchronous setState warning in strict mode
   useEffect(() => {
-    setIsMounted(true);
+    // delay mounting state slightly to avoid synchronous setState warning
+    const mountTimer = setTimeout(() => setIsMounted(true), 0);
     
     // クライアントサイドでのみ実行
     const hasVisited = sessionStorage.getItem("hasVisited");
     if (hasVisited) {
       setShow(false);
-      return;
+      return () => clearTimeout(mountTimer);
     }
 
     sessionStorage.setItem("hasVisited", "true");
@@ -30,6 +33,7 @@ export function OpeningAnimation() {
     }, 2500);
 
     return () => {
+      clearTimeout(mountTimer);
       clearTimeout(fadeOutTimer);
       clearTimeout(removeTimer);
     };
@@ -52,7 +56,7 @@ export function OpeningAnimation() {
         {/* ロゴやテキストのアニメーション */}
         <div className="relative overflow-hidden mb-4">
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both ease-out">
-            <img src="/logo.png" alt="Sien-Official" className="h-16 w-auto object-contain drop-shadow-xl" />
+            <Image src="/logo.png" alt="Sien-Official" width={200} height={64} className="h-16 w-auto object-contain drop-shadow-xl" priority />
           </div>
         </div>
         

@@ -14,13 +14,13 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.sien-official.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com"),
   title: "Sien-Official | 歌ってみたMIX・オリジナル楽曲制作",
   description: "【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。",
   openGraph: {
     title: "Sien-Official | 歌ってみたMIX・オリジナル楽曲制作",
     description: "【実績800件以上】あなたの歌声に、プロの説得力を。ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。",
-    url: "https://www.sien-official.com", // 本番URLに変更してください
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com",
     siteName: "Sien-Official",
     images: [
       {
@@ -47,6 +47,16 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Sien-Official",
+  "image": `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com"}/logo.png`,
+  "url": process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com",
+  "description": "ボーカルMIX・マスタリングからオリジナル楽曲制作まで、業界標準のクオリティで制作をサポートします。",
+  "priceRange": "¥"
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,6 +64,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={`${notoSansJP.variable} h-full antialiased`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col relative">
         <OpeningAnimation />
         <Header />

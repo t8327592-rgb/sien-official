@@ -81,68 +81,30 @@ export default async function OriginalPage() {
           </div>
           
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* 実績 1 */}
-            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-              <div className="aspect-video relative w-full">
-                <iframe 
-                  className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/zTxvMNXaFoA" 
-                  title="YouTube video player" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】</h3>
-                <div className="mt-auto pt-4 flex flex-col items-start gap-2">
-                  <span className="text-xs text-slate-500 font-bold">担当：作曲・編曲</span>
-                  <span className="inline-block bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">オリジナル楽曲制作</span>
+            {portfolios.length > 0 ? (
+              portfolios.map((portfolio) => (
+                <div key={portfolio.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                  <div className="aspect-video relative w-full">
+                    <iframe 
+                      className="absolute inset-0 w-full h-full"
+                      src={(portfolio.url || "").replace("watch?v=", "embed/")} 
+                      title={portfolio.title}
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">{portfolio.title}</h3>
+                    <div className="mt-auto pt-4 flex flex-col items-start gap-2">
+                      <span className="inline-block bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">{portfolio.serviceCategory || "オリジナル楽曲制作"}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* 実績 2 */}
-            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-              <div className="aspect-video relative w-full">
-                <iframe 
-                  className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/Rc531IszCes" 
-                  title="YouTube video player" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】</h3>
-                <div className="mt-auto pt-4 flex flex-col items-start gap-2">
-                  <span className="text-xs text-slate-500 font-bold">担当：作曲・編曲</span>
-                  <span className="inline-block bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">オリジナル楽曲制作</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 実績 3 */}
-            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-              <div className="aspect-video relative w-full">
-                <iframe 
-                  className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/Ke1HAX8Z49I" 
-                  title="YouTube video player" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">週末を待て。『SODA』Music Video</h3>
-                <div className="mt-auto pt-4 flex flex-col items-start gap-2">
-                  <span className="text-xs text-slate-500 font-bold">担当：編曲・MIX・Mastering</span>
-                  <span className="inline-block bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">オリジナル楽曲制作</span>
-                </div>
-              </div>
-            </div>
+              ))
+            ) : (
+              <p className="text-slate-500 text-center col-span-3">現在公開されている実績はありません。</p>
+            )}
           </div>
         </div>
       </section>

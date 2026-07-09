@@ -51,7 +51,13 @@ export default async function NewsIndexPage() {
                     </div>
                     <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                       {post.category && (
-                        <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                          post.category.includes("SALE") || post.category.includes("サマーセール") || post.category.includes("キャンペーン")
+                            ? "bg-red-50 text-red-600 border-red-200 shadow-[0_0_8px_rgba(239,68,68,0.2)] animate-pulse"
+                            : post.category.includes("NEW") || post.category.includes("新プラン")
+                            ? "bg-orange-50 text-orange-600 border-orange-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"
+                        }`}>
                           {post.category}
                         </span>
                       )}
