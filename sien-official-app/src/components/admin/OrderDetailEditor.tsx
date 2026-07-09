@@ -66,8 +66,8 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     const field = editingField;
     let valueToSave: string | number | null = editValue.trim() === "" ? null : editValue;
     
-    // 数値型（price）のキャスト
-    if (field === "price" && valueToSave !== null) {
+    // 数値型のキャスト
+    if ((field === "price" || field === "basePrice" || field === "optionPrice") && valueToSave !== null) {
       valueToSave = parseInt(valueToSave as string, 10);
       if (isNaN(valueToSave)) valueToSave = null;
     }
@@ -338,8 +338,16 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
               {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>, 'date')}
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 mb-1">金額 (円)</p>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">合計金額 (円)</p>
               {renderEditable('price', <span className="font-bold text-slate-800">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}</span>, 'number')}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">基本料金 (内訳用)</p>
+              {renderEditable('basePrice', <span className="font-bold text-slate-800">{order.basePrice !== null ? `¥${order.basePrice.toLocaleString()}` : <span className="text-slate-400 font-normal">未入力</span>}</span>, 'number')}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">オプション料金 (内訳用)</p>
+              {renderEditable('optionPrice', <span className="font-bold text-slate-800">{order.optionPrice !== null ? `¥${order.optionPrice.toLocaleString()}` : <span className="text-slate-400 font-normal">未入力</span>}</span>, 'number')}
             </div>
           </div>
         </div>
