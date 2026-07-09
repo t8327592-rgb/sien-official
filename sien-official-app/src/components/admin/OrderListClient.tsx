@@ -97,6 +97,35 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
     }
   };
 
+  const toggleRepeater = async (orderId: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = !currentStatus;
+    if (!window.confirm(`この顧客を「${newStatus ? 'リピーター' : '新規'}」に変更しますか？\n※リピーターに変更した場合、同じメールアドレスの過去の依頼もすべてリピーター扱いになります。`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isRepeater: newStatus })
+      });
+      if (res.ok) {
+        // 同じメアドを持つオーダーも更新する
+        const updatedOrder = orders.find(o => o.id === orderId);
+        if (updatedOrder && newStatus) {
+          setOrders(prev => prev.map(o => (o.clientEmail === updatedOrder.clientEmail || o.id === orderId) ? { ...o, isRepeater: newStatus } : o));
+        } else {
+          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, isRepeater: newStatus } : o));
+        }
+        router.refresh();
+      } else {
+        alert("更新に失敗しました。");
+      }
+    } catch (error) {
+      console.error("Failed to update repeater status:", error);
+      alert("エラーが発生しました。");
+    }
+  };
+
   const startEditing = (orderId: string, field: string, initialValue: string | number | null, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingField({ orderId, field });
@@ -185,6 +214,14 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
 
   const repeatRate = totalClientsCount > 0 
     ? Math.round((repeaterClientsCount / totalClientsCount) * 100) 
+    : 0;
+
+  // 注文ベースのリピート率計算（キャンセルされたものを除く全注文）
+  const validOrders = orders.filter((o) => !isCanceled(o.status));
+  const totalValidOrdersCount = validOrders.length;
+  const repeatedOrdersCount = validOrders.filter((o) => o.isRepeater).length;
+  const orderRepeatRate = totalValidOrdersCount > 0 
+    ? Math.round((repeatedOrdersCount / totalValidOrdersCount) * 100) 
     : 0;
 
   // 最終的に表示するリスト
@@ -287,10 +324,18 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
         </nav>
         
         {/* リピート率表示 */}
-        <div className="flex items-center gap-2 px-1 sm:px-0 text-sm">
-          <span className="text-slate-500 font-bold">リピート率</span>
-          <span className="text-indigo-600 font-bold text-base bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{repeatRate}%</span>
-          <span className="text-slate-400 text-xs font-medium">({repeaterClientsCount}名 / 全{totalClientsCount}名)</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 px-1 sm:px-0 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-bold">リピート率 (人数)</span>
+            <span className="text-indigo-600 font-bold text-base bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{repeatRate}%</span>
+            <span className="text-slate-400 text-xs font-medium">({repeaterClientsCount}名 / 全{totalClientsCount}名)</span>
+          </div>
+          <div className="hidden sm:block text-slate-300">|</div>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-bold">リピート率 (件数)</span>
+            <span className="text-teal-600 font-bold text-base bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{orderRepeatRate}%</span>
+            <span className="text-slate-400 text-xs font-medium">({repeatedOrdersCount}件 / 全{totalValidOrdersCount}件)</span>
+          </div>
         </div>
       </div>
 
@@ -367,11 +412,13 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">顧客種別</span>
-                    {order.isRepeater ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">リピーター</span>
-                    ) : (
-                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">新規</span>
-                    )}
+                    <button onClick={(e) => toggleRepeater(order.id, order.isRepeater, e)} className="hover:opacity-80 transition-opacity">
+                      {order.isRepeater ? (
+                        <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap cursor-pointer">リピーター</span>
+                      ) : (
+                        <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap cursor-pointer">新規</span>
+                      )}
+                    </button>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">プラン名</span>
@@ -517,11 +564,13 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
                       {new Date(order.createdAt).toLocaleDateString("ja-JP")}
                     </td>
                     <td className="py-3 px-4">
-                      {order.isRepeater ? (
-                        <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">リピーター</span>
-                      ) : (
-                        <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap">新規</span>
-                      )}
+                      <button onClick={(e) => toggleRepeater(order.id, order.isRepeater, e)} className="hover:opacity-80 transition-opacity">
+                        {order.isRepeater ? (
+                          <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded font-bold whitespace-nowrap cursor-pointer">リピーター</span>
+                        ) : (
+                          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold whitespace-nowrap cursor-pointer">新規</span>
+                        )}
+                      </button>
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-800 max-w-[200px] truncate" title={order.songTitle}>
                       {order.songTitle || <span className="text-slate-400">未設定</span>}
