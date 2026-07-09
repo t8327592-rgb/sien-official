@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Search, ArrowUpDown, ChevronDown, Trash2 } from "lucide-react";
 
 // orderの型定義（簡易版）
 type Order = any; 
@@ -73,6 +73,27 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
       console.error("Failed to update status:", error);
     } finally {
       setEditingStatusId(null);
+    }
+  };
+
+  const handleArchive = async (orderId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("この依頼を非表示（アーカイブ）にしますか？\n（データベース上には残ります）")) return;
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived: true })
+      });
+      if (res.ok) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+      } else {
+        alert("非表示処理に失敗しました。");
+      }
+    } catch (error) {
+      console.error("Failed to archive:", error);
+      alert("エラーが発生しました。");
     }
   };
 
@@ -402,6 +423,18 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
                       )}
                     </div>
                   </div>
+                  
+                  {activeTab === "CANCELED" && (
+                    <div className="flex justify-end mt-4 pt-3 border-t border-slate-100">
+                      <button
+                        onClick={(e) => handleArchive(order.id, e)}
+                        className="flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        非表示にする
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -421,12 +454,13 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
                 <th className="py-3 px-4">プラン名</th>
                 <th className="py-3 px-4">納期</th>
                 <th className="py-3 px-4 pr-5 text-right">金額</th>
+                {activeTab === "CANCELED" && <th className="py-3 px-4 w-10"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {displayOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-sm text-slate-500">
+                  <td colSpan={activeTab === "CANCELED" ? 9 : 8} className="p-8 text-center text-sm text-slate-500">
                     該当する依頼データはありません。
                   </td>
                 </tr>
@@ -539,6 +573,17 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
                         <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span>
                       )}
                     </td>
+                    {activeTab === "CANCELED" && (
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={(e) => handleArchive(order.id, e)}
+                          className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                          title="非表示にする"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

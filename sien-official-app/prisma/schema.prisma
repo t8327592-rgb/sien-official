@@ -44,8 +44,9 @@ model Order {
   genre             String?  // 希望ジャンル (オリジナル用)
   lyricsStatus      String?  // 作詞の有無 (オリジナル用)
   vocalGuideStatus  String?  // 仮歌の有無 (オリジナル用)
-  status            String   @default("PENDING") // PENDING(未対応), ESTIMATING(見積中), WORKING(作業中), COMPLETED(納品済)
+  status            String   @default("PENDING") // PENDING(未対応), ESTIMATING(見積中), WORKING(作業中), COMPLETED(納品済), CANCELLED(キャンセル)
   price             Int?     // 見積もり・確定金額（売上管理用）
+  isArchived        Boolean  @default(false) // 論理削除（アーカイブ）フラグ
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
