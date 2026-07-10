@@ -138,72 +138,15 @@ Sien-Officialでは、**「作業を始めてから、後になって追加料�
 
 ## よくある質問 (FAQ)
 
-<FAQList category="MIX_FEE" />
-
-<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "トラック数が多いと追加料金ですか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "トラック数だけでは追加料金になりません。追加料金は「ピッチ補正量」や「実際の作業工数」で判断しています。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "掛け声は追加料金ですか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "掛け声や合いの手は、メインボーカルのような細かなピッチ補正を行わないことが多いため、基本的に追加料金なしで対応可能です。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "ハモリ生成は有料ですか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "ハモリ生成は基本無料です。ただし、非常に複雑なハモリや本数がかなり多い場合は、追加料金をご相談することがあります。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "歌が苦手だと追加料金ですか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "歌唱力で追加料金を判断することはありません。通常の補正範囲であれば追加料金なしで対応いたします。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "見積もりは事前にもらえますか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "はい、データを確認した上で作業開始前に必ずお見積りをご提示します。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "後から追加料金を請求されることはありますか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "ありません。追加料金が発生する場合は、必ず作業開始前にご相談し、ご納得いただいた上で作業を進めます。"
-      }
-    }
-  ]
-}) }} />`;
+<FAQList category="MIX_FEE" />`;
 
 async function main() {
-  const result = await prisma.post.create({
+  const result = await prisma.post.updateMany({
+    where: {
+      title: "「トラック数が多いと追加料金？」MIX依頼で損をしないための料金ガイド"
+    },
     data: {
-      title: "「トラック数が多いと追加料金？」MIX依頼で損をしないための料金ガイド",
       content: content,
-      type: "BLOG",
-      category: "MIX",
-      imageUrl: "/blog/blog_fee_eyecatch.png",
-      published: true,
     }
   });
   console.log("Blog post created successfully:", result.id);
