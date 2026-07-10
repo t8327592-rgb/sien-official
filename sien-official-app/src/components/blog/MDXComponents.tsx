@@ -4,6 +4,8 @@ import { ArticleSummary } from "./ArticleSummary";
 import { KeyPoints } from "./KeyPoints";
 import { ProsCons } from "./ProsCons";
 import { SummaryCard } from "./SummaryCard";
+import { FAQList } from "@/components/shared/FAQList";
+import { CallToAction } from "@/components/shared/CallToAction";
 
 // MarkdownのHTMLをReactコンポーネントにマッピングする
 export const MDXComponents: any = {
@@ -76,6 +78,8 @@ export const MDXComponents: any = {
   keypoints: KeyPoints,
   proscons: ProsCons,
   summarycard: SummaryCard,
+  FAQList: FAQList,
+  CallToAction: CallToAction,
   
   // テーブル (レスポンシブ対応)
   table: ({ node, children, ...props }: any) => (
