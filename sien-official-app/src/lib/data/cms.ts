@@ -113,6 +113,38 @@ export const getFeaturedPortfolios = unstable_cache(
   { revalidate: 60, tags: ['portfolios'] }
 );
 
+export const getMixPortfolios = unstable_cache(
+  async (limit?: number) => {
+    return await prisma.portfolio.findMany({
+      where: {
+        isPublished: true,
+        showOnMix: true,
+        serviceCategory: { not: "オリジナル楽曲制作" }, // 念のためカテゴリでも絞る
+      },
+      orderBy: { orderIndex: 'asc' },
+      ...(limit ? { take: limit } : {}),
+    });
+  },
+  ['mix-portfolios'],
+  { revalidate: 60, tags: ['portfolios'] }
+);
+
+export const getOriginalPortfolios = unstable_cache(
+  async (limit?: number) => {
+    return await prisma.portfolio.findMany({
+      where: {
+        isPublished: true,
+        showOnOriginal: true,
+        serviceCategory: "オリジナル楽曲制作",
+      },
+      orderBy: { orderIndex: 'asc' },
+      ...(limit ? { take: limit } : {}),
+    });
+  },
+  ['original-portfolios'],
+  { revalidate: 60, tags: ['portfolios'] }
+);
+
 // ---------------------------------------------------------
 // FAQ (よくある質問)
 // ---------------------------------------------------------

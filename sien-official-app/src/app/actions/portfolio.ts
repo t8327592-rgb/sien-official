@@ -13,6 +13,8 @@ export async function updatePortfolio(id: string, data: any) {
         serviceCategory: data.serviceCategory,
         tags: data.tags,
         isFeatured: data.isFeatured,
+        showOnMix: data.showOnMix,
+        showOnOriginal: data.showOnOriginal,
         isPublished: data.isPublished !== undefined ? data.isPublished : undefined,
         orderIndex: data.orderIndex !== undefined ? parseInt(data.orderIndex) : undefined,
       },
@@ -20,6 +22,8 @@ export async function updatePortfolio(id: string, data: any) {
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -41,6 +45,8 @@ export async function createPortfolio(data: any) {
         serviceCategory: data.serviceCategory || "MIX",
         tags: data.tags || "",
         isFeatured: data.isFeatured || false,
+        showOnMix: data.showOnMix || false,
+        showOnOriginal: data.showOnOriginal || false,
         isPublished: data.isPublished !== undefined ? data.isPublished : true,
         orderIndex: nextOrder,
       },
@@ -48,6 +54,8 @@ export async function createPortfolio(data: any) {
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true, data: newPortfolio };
   } catch (error) {
     console.error(error);
@@ -60,6 +68,9 @@ export async function deletePortfolio(id: string) {
     await prisma.portfolio.delete({ where: { id } });
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
+    revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -78,6 +89,8 @@ export async function updatePortfolioOrders(orders: { id: string, orderIndex: nu
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -93,6 +106,9 @@ export async function bulkDeletePortfolio(ids: string[]) {
     });
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
+    revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -110,6 +126,8 @@ export async function bulkUpdatePublishStatus(ids: string[], isPublished: boolea
     revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
+    revalidatePath("/mix");
+    revalidatePath("/original");
     return { success: true };
   } catch (error) {
     console.error(error);

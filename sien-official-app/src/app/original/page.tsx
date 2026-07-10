@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getPlans, getOptions, getFeaturedPortfolios, getFAQs } from "@/lib/data/cms";
+import { getPlans, getOptions, getOriginalPortfolios, getFAQs } from "@/lib/data/cms";
 import { PlanCard } from "@/components/ui/PlanCard";
 import { ArrowRight, CheckCircle2, Music, ListMusic, ListChecks, HelpCircle, PenTool, Mic2 } from "lucide-react";
 import { FAQList } from "@/components/shared/FAQList";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function OriginalPage() {
   const plans = await getPlans("ORIGINAL");
   const options = await getOptions("ORIGINAL");
-  const portfolios = await getFeaturedPortfolios("ORIGINAL", 2);
+  const portfolios = await getOriginalPortfolios(2);
   const faqs = await getFAQs("ORIGINAL");
 
   return (

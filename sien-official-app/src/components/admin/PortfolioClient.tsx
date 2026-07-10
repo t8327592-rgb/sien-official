@@ -15,6 +15,8 @@ type Portfolio = {
   serviceCategory: string | null;
   tags: string | null;
   isFeatured: boolean;
+  showOnMix?: boolean;
+  showOnOriginal?: boolean;
   isPublished: boolean;
   orderIndex: number;
 };
@@ -457,11 +459,24 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-center bg-slate-50 p-4 rounded-lg mt-4 border border-slate-100">
-                  <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-lg mt-4 border border-slate-100">
+                  <div className="font-bold text-sm text-slate-700 border-b border-slate-200 pb-2 mb-1">掲載場所の設定</div>
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={editingItem.isFeatured} onChange={e => handleFieldChange("isFeatured", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
-                    <span className="text-sm font-bold text-slate-700">代表作としてハイライト</span>
+                    <span className="text-sm font-medium text-slate-700">TOPページへ掲載</span>
                   </label>
+
+                  {editingItem.serviceCategory === "ORIGINAL" || editingItem.serviceCategory === "オリジナル楽曲制作" ? (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={editingItem.showOnOriginal || false} onChange={e => handleFieldChange("showOnOriginal", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
+                      <span className="text-sm font-medium text-slate-700">オリジナルページへ掲載</span>
+                    </label>
+                  ) : (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={editingItem.showOnMix || false} onChange={e => handleFieldChange("showOnMix", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
+                      <span className="text-sm font-medium text-slate-700">MIXページへ掲載</span>
+                    </label>
+                  )}
                 </div>
               
               <div className="pt-4 flex justify-end gap-3">

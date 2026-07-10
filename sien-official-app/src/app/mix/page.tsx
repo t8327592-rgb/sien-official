@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getPlans, getOptions, getFeaturedPortfolios, getFAQs } from "@/lib/data/cms";
+import { getPlans, getOptions, getFeaturedPortfolios, getFAQs, getMixPortfolios } from "@/lib/data/cms";
 import { BeforeAfterPlayer } from "@/components/ui/BeforeAfterPlayer";
 import { CheckCircle2, Sliders, Headphones, Sparkles, Clock, ArrowRight, HelpCircle, Play } from "lucide-react";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function MixPage() {
   const plans = await getPlans("MIX");
   const options = await getOptions("MIX");
-  const portfolios = await getFeaturedPortfolios("MIX", 4);
+  const portfolios = await getMixPortfolios();
   const faqs = await getFAQs("MIX");
 
   return (
@@ -128,20 +128,9 @@ export default async function MixPage() {
                 </div>
               </div>
             )) : (
-              // フォールバックダミー
-              [1, 2, 3, 4].map((item) => (
-                <div key={item} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                  <div className="aspect-video relative w-full bg-slate-100 flex items-center justify-center">
-                    <Play className="w-12 h-12 text-slate-300" fill="currentColor" />
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col text-left">
-                    <h3 className="text-base font-bold text-slate-800 mb-2 leading-tight">【歌ってみた】サンプル実績 {item}</h3>
-                    <div className="mt-auto pt-4">
-                      <span className="inline-block bg-orange-50 text-orange-600 text-[11px] px-3 py-1 rounded-full font-bold border border-orange-100">ボーカルMIX</span>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div className="col-span-1 sm:col-span-2 lg:col-span-4 text-center py-12 text-slate-500">
+                現在公開されている実績はありません。
+              </div>
             )}
           </div>
           

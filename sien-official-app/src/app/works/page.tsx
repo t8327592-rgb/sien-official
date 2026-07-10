@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 
 export default async function WorksPage() {
   const allPortfolios = await getPortfolios();
-  const mixPortfolios = allPortfolios.filter(p => p.serviceCategory !== "オリジナル楽曲制作");
-  const originalPortfolios = allPortfolios.filter(p => p.serviceCategory === "オリジナル楽曲制作");
+  const mixPortfolios = allPortfolios.filter(p => p.serviceCategory === "ボーカルMIX" || p.serviceCategory === "MIX");
+  const originalPortfolios = allPortfolios.filter(p => p.serviceCategory === "オリジナル楽曲制作" || p.serviceCategory === "ORIGINAL");
 
   return (
     <div className="container mx-auto py-20 px-4 mt-20">

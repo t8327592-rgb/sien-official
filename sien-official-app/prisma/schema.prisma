@@ -116,7 +116,9 @@ model Portfolio {
   priceRange      String?  // 価格帯 (例: "¥10,000〜¥12,000")
   serviceCategory String?  // サービスカテゴリ (例: "ボーカルミックス")
   tags            String?  // タグ (例: "ボカロ,ロック,可愛い系")
-  isFeatured      Boolean  @default(false) // 代表作かどうか
+  isFeatured      Boolean  @default(false) // 代表作(TOPページ掲載)かどうか
+  showOnMix       Boolean  @default(false) // MIXページへ掲載
+  showOnOriginal  Boolean  @default(false) // オリジナルページへ掲載
   isPublished     Boolean  @default(true)  // 公開・非公開フラグ
   orderIndex      Int      @default(0)     // 表示順
   createdAt       DateTime @default(now())
