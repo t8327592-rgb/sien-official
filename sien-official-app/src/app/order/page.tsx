@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPlans, getOptions } from "@/lib/data/cms";
 import OrderFormClient from "@/components/order/OrderFormClient";
 import { getSiteSetting } from "@/app/actions/settings";
 
@@ -33,27 +33,22 @@ export default async function OrderPage() {
     );
   }
 
-  const plans = await prisma.plan.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      name: true,
-      category: true,
-      price: true,
-    },
-    orderBy: { createdAt: "asc" }
-  });
+  const rawPlans = await getPlans();
+  const rawOptions = await getOptions();
 
-  const options = await prisma.option.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      name: true,
-      category: true,
-      priceText: true,
-    },
-    orderBy: { createdAt: "asc" }
-  });
+  const plans = rawPlans.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    price: p.price || null
+  }));
+
+  const options = rawOptions.map(o => ({
+    id: o.id,
+    name: o.name,
+    category: o.category,
+    priceText: o.priceText
+  }));
 
   return <OrderFormClient initialPlans={plans} initialOptions={options} />;
 }

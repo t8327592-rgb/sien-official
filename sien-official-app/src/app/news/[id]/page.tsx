@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPostById } from "@/lib/data/cms";
 import Link from "next/link";
 import { Calendar, Tag, ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -10,9 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const post = await prisma.post.findUnique({
-    where: { id: resolvedParams.id, type: "NEWS", published: true },
-  });
+  const post = await getPostById(resolvedParams.id);
 
   if (!post) {
     notFound();

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { prisma } from "@/lib/prisma";
 import { ArrowRight, Star, Quote, UserCircle, CheckCircle2 } from "lucide-react";
 import { HeroVideoPlayer } from "@/components/ui/HeroVideoPlayer";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
@@ -10,27 +9,11 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [mixPortfolios, originalPortfolios, reviews, siteSetting, newsPosts] = await Promise.all([
-    prisma.portfolio.findMany({
-      where: { isFeatured: true, serviceCategory: { not: "オリジナル楽曲制作" } },
-      orderBy: { orderIndex: "asc" },
-      take: 4,
-    }),
-    prisma.portfolio.findMany({
-      where: { isFeatured: true, serviceCategory: "オリジナル楽曲制作" },
-      orderBy: { orderIndex: "asc" },
-      take: 3,
-    }),
-    prisma.review.findMany({
-      where: { isPublished: true },
-      orderBy: { orderIndex: "asc" },
-      take: 3,
-    }),
+    getFeaturedPortfolios(undefined, 4, "オリジナル楽曲制作"),
+    getFeaturedPortfolios("オリジナル楽曲制作", 3),
+    getReviews(3),
     getSiteSetting(),
-    prisma.post.findMany({
-      where: { type: "NEWS", published: true },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    })
+    getNewsPosts(3)
   ]);
 
   return (

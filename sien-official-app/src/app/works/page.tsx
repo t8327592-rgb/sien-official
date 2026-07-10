@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
+import { getPortfolios } from "@/lib/data/cms";
 import WorksClient from "@/components/works/WorksClient";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default async function WorksPage() {
-  const portfolios = await prisma.portfolio.findMany({
-    orderBy: { orderIndex: 'asc' }
-  });
+  const allPortfolios = await getPortfolios();
+  const mixPortfolios = allPortfolios.filter(p => p.serviceCategory !== "オリジナル楽曲制作");
+  const originalPortfolios = allPortfolios.filter(p => p.serviceCategory === "オリジナル楽曲制作");
 
   return (
     <div className="container mx-auto py-20 px-4 mt-20">
@@ -22,33 +22,8 @@ export default async function WorksPage() {
       </p>
       
       <WorksClient 
-        mixPortfolios={portfolios} 
-        originalPortfolios={[
-          {
-            id: "orig-1",
-            title: "【誕生日MV】ハッピーエンドクリエイター！ - 草刈七海【オリジナル曲】",
-            url: "https://www.youtube.com/watch?v=zTxvMNXaFoA",
-            serviceCategory: "オリジナル楽曲制作",
-            tags: "",
-            isFeatured: true
-          },
-          {
-            id: "orig-2",
-            title: "【ボカデュオ2024】夜明けのアステロイド / YOFUKASHI 【オリジナル】",
-            url: "https://www.youtube.com/watch?v=Rc531IszCes",
-            serviceCategory: "オリジナル楽曲制作",
-            tags: "",
-            isFeatured: false
-          },
-          {
-            id: "orig-3",
-            title: "週末を待て。『SODA』Music Video",
-            url: "https://www.youtube.com/watch?v=Ke1HAX8Z49I",
-            serviceCategory: "オリジナル楽曲制作",
-            tags: "",
-            isFeatured: false
-          }
-        ]} 
+        mixPortfolios={mixPortfolios} 
+        originalPortfolios={originalPortfolios} 
       />
     </div>
   );

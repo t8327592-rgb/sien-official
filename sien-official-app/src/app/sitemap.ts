@@ -1,8 +1,8 @@
 import { MetadataRoute } from "next";
-import { prisma } from "@/lib/prisma";
+import { getAllPublishedPosts } from "@/lib/data/cms";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://www.sien-official.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com";
 
   // 静的ページのルート一覧
   const routes = [
@@ -27,10 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // ブログ記事や実績を取得して動的にサイトマップに追加
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    select: { id: true, updatedAt: true },
-  });
+  const posts = await getAllPublishedPosts();
 
   const postUrls = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.id}`,

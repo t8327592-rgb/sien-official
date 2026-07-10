@@ -61,6 +61,7 @@ export async function POST(request: Request) {
     try {
       if (process.env.SMTP_USER && process.env.SMTP_PASS) {
         const { sendMail } = await import("@/lib/mail");
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com";
         
         // お客様向け確認メール
         await sendMail({
@@ -83,7 +84,7 @@ ${message}
 
 --------------------------------------------------
 Sien-Official
-https://www.sien-official.com
+${baseUrl}
 --------------------------------------------------`,
         });
 
@@ -96,7 +97,7 @@ https://www.sien-official.com
 ご用件: ${inquiryType}
 管理画面より詳細をご確認ください。
 
-https://www.sien-official.com/admin/business`,
+${baseUrl}/admin/business`,
         });
       }
     } catch (emailError) {

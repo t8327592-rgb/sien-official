@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight } from 'lucide-react';
+import { headerNavigation } from '@/config/navigation';
+import { siteConfig } from '@/config/site';
 
 export function Header() {
   const pathname = usePathname();
@@ -31,19 +33,19 @@ export function Header() {
               }
             }}
           >
-            <img src="/logo.png" alt="Sien-Official" className="h-8 w-auto object-contain" />
+            <img src="/logo.png" alt={siteConfig.name} className="h-8 w-auto object-contain" />
           </Link>
         </div>
         
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold">
-          <Link href="/profile" className="transition-colors text-slate-600 hover:text-orange-500">プロフィール</Link>
-          <Link href="/mix" className="transition-colors text-slate-600 hover:text-orange-500">ミックス/マスタリング</Link>
-          <Link href="/original" className="transition-colors text-slate-600 hover:text-orange-500">オリジナル楽曲</Link>
-          <Link href="/works" className="transition-colors text-slate-600 hover:text-orange-500">制作実績</Link>
-          <Link href="/blog" className="transition-colors text-slate-600 hover:text-orange-500">ブログ</Link>
+          {headerNavigation.map((item) => (
+            <Link key={item.href} href={item.href} className="transition-colors text-slate-600 hover:text-orange-500">
+              {item.label}
+            </Link>
+          ))}
           <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold">
-            <Link href="/order">ご依頼フォーム</Link>
+            <Link href={siteConfig.contact.formUrl}>ご依頼フォーム</Link>
           </Button>
         </nav>
 
@@ -60,23 +62,13 @@ export function Header() {
       {/* Mobile Nav Menu (Dropdown) */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-orange-100 shadow-xl py-6 px-6 flex flex-col gap-3 animate-in slide-in-from-top-2">
-          <Link href="/profile" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
-            プロフィール <ArrowRight className="w-4 h-4 opacity-50" />
-          </Link>
-          <Link href="/mix" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
-            ミックス/マスタリング <ArrowRight className="w-4 h-4 opacity-50" />
-          </Link>
-          <Link href="/original" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
-            オリジナル楽曲制作 <ArrowRight className="w-4 h-4 opacity-50" />
-          </Link>
-          <Link href="/works" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
-            制作実績 <ArrowRight className="w-4 h-4 opacity-50" />
-          </Link>
-          <Link href="/blog" className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
-            ブログ <ArrowRight className="w-4 h-4 opacity-50" />
-          </Link>
+          {headerNavigation.map((item) => (
+            <Link key={item.href} href={item.href} className="text-base font-bold text-slate-700 hover:text-orange-500 py-3 border-b border-slate-50 flex items-center justify-between">
+              {item.label} <ArrowRight className="w-4 h-4 opacity-50" />
+            </Link>
+          ))}
           <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white shadow-md shadow-orange-500/20 border-none font-bold mt-4 h-14">
-            <Link href="/order">ご依頼・お見積りはこちら</Link>
+            <Link href={siteConfig.contact.formUrl}>ご依頼・お見積りはこちら</Link>
           </Button>
         </div>
       )}

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { prisma } from "@/lib/prisma";
-import { PlanCard } from "@/components/ui/PlanCard";
+import { getPlans, getOptions, getFeaturedPortfolios, getFAQs } from "@/lib/data/cms";
 import { BeforeAfterPlayer } from "@/components/ui/BeforeAfterPlayer";
 import { CheckCircle2, Sliders, Headphones, Sparkles, Clock, ArrowRight, HelpCircle, Play } from "lucide-react";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
 import { PlanListClient } from "@/components/ui/PlanListClient";
+import { FAQList } from "@/components/shared/FAQList";
+import { CallToAction } from "@/components/shared/CallToAction";
 
 export const metadata = {
   title: "歌ってみたMIX依頼 | Sien-Official",
@@ -16,21 +17,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function MixPage() {
-  const plans = await prisma.plan.findMany({
-    where: { isActive: true, category: "MIX" },
-    orderBy: { orderIndex: 'asc' } // DB側で指定したorderIndexでソート
-  });
-
-  const options = await prisma.option.findMany({
-    where: { isActive: true },
-    orderBy: { orderIndex: 'asc' }
-  });
-
-  const portfolios = await prisma.portfolio.findMany({
-    where: { isPublished: true },
-    orderBy: { orderIndex: 'asc' },
-    take: 4
-  });
+  const plans = await getPlans("MIX");
+  const options = await getOptions("MIX");
+  const portfolios = await getFeaturedPortfolios("MIX", 4);
+  const faqs = await getFAQs("MIX");
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -362,58 +352,11 @@ export default async function MixPage() {
             <div className="w-16 h-1 bg-orange-500 mx-auto rounded-full" />
           </div>
           
-          <div className="space-y-4">
-            {[
-              { q: "初めての依頼でも大丈夫ですか？", a: "もちろん大丈夫です！必要なデータや提出方法についても丁寧にご案内いたしますので、歌ってみたの投稿が初めての方でも安心してご依頼いただけます。" },
-              { q: "スマホ録音など、録音環境に自信がないのですが大丈夫ですか？", a: "もちろん可能です！録音環境に応じてノイズ除去などの処理を行い、できる限り自然で聴きやすい音源に仕上げます。ただし、音割れや極端な環境ノイズが含まれる場合は、録り直しをご相談させていただく場合がございます。" },
-              { q: "頭出しとは何ですか？", a: "オケ（インスト）の再生開始地点と、ボーカル録音の開始地点をピッタリ合わせることです。これがズレていると曲と歌が合わなくなってしまいます。" },
-              { q: "キー変更した音源でも依頼できますか？", a: "はい、可能です。キー変更済みのインスト音源をご提出ください。ご不明な場合は、お気軽にご相談ください。" },
-              { q: "コラボ（複数人）のMIXも依頼できますか？", a: "はい、対応可能です。人数やトラック数によって料金や納期が変動する場合がございますので、事前にご相談ください。" },
-              { q: "納期の短縮は可能ですか？", a: "スケジュール状況によっては短納期対応が可能です。お急ぎの場合は、ご依頼前にご相談ください。" },
-              { q: "修正は何回まで可能ですか？どのような内容に対応していますか？", a: "各プラン共通で5回まで無料で対応いたします。「もう少し明るい雰囲気にしたい」「エコーを控えめにしたい」などの仕上がりに関するご要望に対応しております。ただし、大幅な録り直しや追加収録による再編集など、作業内容によっては、6回目以降の修正について追加料金をご相談させていただく場合がございます。" },
-              { q: "支払いのタイミングはいつですか？", a: "お見積り内容にご納得いただけましたら、お支払いをお願いしております。ご入金確認後、制作を開始いたします。" },
-              { q: "ハモリデータの扱いはどうなりますか？", a: "ハモリ生成は基本プラン内で対応可能です。ご自身で録音されたハモリデータをご提出いただくことも可能ですが、全体のバランスや仕上がりを考慮し、ご提出いただいたハモリデータではなく、こちらで生成したハモリをご提案させていただく場合がございます。" },
-              { q: "完成した作品を公開する際、クレジット表記は必要ですか？", a: "必須ではございませんが、【MIX：しえん (https://x.com/sien_mc09)】と記載していただけますと大変嬉しいです。X（旧Twitter）でメンションいただけましたら、引用ポストにてご紹介させていただきます。" }
-            ].map((item, i) => (
-              <div key={i} className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-orange-200 transition-colors">
-                <h3 className="font-bold text-slate-800 flex gap-3 mb-3">
-                  <span className="text-orange-600">Q.</span>
-                  {item.q}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed pl-7 border-l-2 border-slate-200">
-                  <span className="text-slate-400 font-bold mr-2">A.</span>
-                  {item.a}
-                </p>
-              </div>
-            ))}
-          </div>
+          <FAQList faqs={faqs} />
         </div>
       </section>
 
-      {/* 11. 問い合わせ (CTA) */}
-      <section className="py-24 bg-orange-600 relative overflow-hidden">
-        {/* 背景装飾 */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-orange-700 to-amber-500"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-10 blur-sm"></div>
-        
-        <div className="container px-4 mx-auto text-center relative z-10">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6">
-            あなたの歌声を、<br className="md:hidden" />最高の形に仕上げます。
-          </h2>
-          <p className="text-orange-50 mb-10 max-w-2xl mx-auto text-lg">
-            「依頼が初めてで不安」「どのプランがいいかわからない」という方も、<br/>
-            まずはお気軽にご相談ください。
-          </p>
-          <Button asChild variant="outline" className="rounded-full h-16 text-lg font-bold shadow-2xl bg-white text-orange-600 hover:bg-orange-50 border-0 hover:scale-105 transition-transform">
-            <Link href="/order" className="flex items-center justify-center px-12 whitespace-nowrap">
-              無料で依頼・相談する <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
-            </Link>
-          </Button>
-          <p className="text-orange-100 text-sm mt-6 font-medium">
-            ※ご依頼前に「ご依頼に関する留意事項」をご確認ください。
-          </p>
-        </div>
-      </section>
+      <CallToAction />
 
     </div>
   );

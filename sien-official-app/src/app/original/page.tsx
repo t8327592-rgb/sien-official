@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { prisma } from "@/lib/prisma";
+import { getPlans, getOptions, getFeaturedPortfolios, getFAQs } from "@/lib/data/cms";
 import { PlanCard } from "@/components/ui/PlanCard";
 import { ArrowRight, CheckCircle2, Music, ListMusic, ListChecks, HelpCircle, PenTool, Mic2 } from "lucide-react";
+import { FAQList } from "@/components/shared/FAQList";
+import { CallToAction } from "@/components/shared/CallToAction";
 
 export const metadata = {
   title: "オリジナル楽曲制作 | Sien-Official",
@@ -12,21 +14,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function OriginalPage() {
-  const plans = await prisma.plan.findMany({
-    where: { isActive: true, category: "ORIGINAL" },
-    orderBy: { orderIndex: 'asc' } // DB側で指定したorderIndexでソート
-  });
-
-  const options = await prisma.option.findMany({
-    where: { isActive: true },
-    orderBy: { orderIndex: 'asc' }
-  });
-
-  const portfolios = await prisma.portfolio.findMany({
-    where: { serviceCategory: "ORIGINAL" },
-    orderBy: { createdAt: 'desc' },
-    take: 2,
-  });
+  const plans = await getPlans("ORIGINAL");
+  const options = await getOptions("ORIGINAL");
+  const portfolios = await getFeaturedPortfolios("ORIGINAL", 2);
+  const faqs = await getFAQs("ORIGINAL");
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -283,35 +274,6 @@ export default async function OriginalPage() {
         </div>
       </section>
 
-      {/* 8. FAQ (よくあるご質問) */}
-      <section id="faq" className="py-24 bg-slate-50 border-b border-slate-100 scroll-mt-16">
-        <div className="container px-4 mx-auto max-w-3xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4 flex items-center justify-center gap-2">
-              <HelpCircle className="w-8 h-8 text-amber-500" />
-              よくあるご質問
-            </h2>
-            <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full" />
-          </div>
-          
-          <div className="space-y-4">
-            {[
-              { q: "修正は何回まで可能ですか？", a: "基本的にワンコーラス段階での方向性確認における修正は、納得いただけるまで対応いたします。フル尺制作移行後の大幅な仕様変更や、完成後のメロディ・歌詞の全面変更につきましては、別途ご相談させていただく場合がございます。" },
-              { q: "商用利用は可能ですか？", a: "はい、可能です。YouTube投稿、ライブ利用、収益化、各種配信サービスでの配信（Apple MusicやSpotify等）やCD・グッズ等の販売にも問題なくご利用いただけます（追加料金はかかりません）。" },
-              { q: "クレジット表記は必要ですか？", a: "はい、原則として動画の概要欄やSNSでの告知時にクレジット表記（作曲・編曲・MIX：しえん 等）をお願いしております。" },
-              { q: "ボーカル収録は自分で行う必要がありますか？", a: "はい。基本的にはご自身（またはご手配のスタジオ）での収録をお願いしております。録音方法について不安な点があればサポートいたしますので、ご安心ください。" },
-              { q: "完成後のキー変更は可能ですか？", a: "軽微な調整（ピッチシフト等）であれば対応可能です。ボーカルの再録音を伴うような大幅な変更やオケの再構築については、追加料金をご相談させていただく場合がございます。" },
-              { q: "イメージが曖昧でも依頼できますか？", a: "はい、大丈夫です！「明るい感じ」「かっこいい感じ」といった抽象的な言葉や、参考になりそうな既存曲をいくつか教えていただければ、こちらでイメージを膨らませてご提案いたします。" },
-              { q: "参考曲は必要ですか？", a: "必須ではありませんが、あるとよりスムーズにイメージを共有できます。もしあれば「この曲のBメロの雰囲気が好き」など、具体的なポイントと合わせて教えていただけると助かります。" },
-              { q: "著作権はどうなりますか？", a: "制作した楽曲は、YouTube投稿・ライブ利用・収益化・各種配信サービスでの配信など、自由にご利用いただけます。なお、著作権（財産権）の譲渡は原則として行っておりません。完全買い取りをご希望の場合は、別途ご相談ください。" },
-              { q: "納期はどれくらいですか？", a: "内容や現在のスケジュールにより変動しますが、目安納期：30日〜60日程度を見込んでおります。お急ぎの場合は別途ご相談ください。" },
-            ].map((item, i) => (
-              <div key={i} className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-amber-100 transition-colors">
-                <h3 className="font-bold text-slate-800 flex gap-3 mb-3">
-                  <span className="text-amber-600">Q.</span>
-                  {item.q}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed pl-7 border-l-2 border-slate-200">
                   <span className="text-slate-400 font-bold mr-2">A.</span>
                   {item.a}
                 </p>

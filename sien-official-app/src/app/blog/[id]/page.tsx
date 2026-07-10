@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPostById, getRelatedPosts, getBlogCategories } from "@/lib/data/cms";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Calendar, Tag, User } from "lucide-react";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const post = await prisma.post.findUnique({ where: { id } });
+  const post = await getPostById(id);
   
   if (!post) {
     return { title: "記事が見つかりません | Sien-Official" };
@@ -33,30 +33,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function BlogPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
-  const [post, allBlogPosts] = await Promise.all([
-    prisma.post.findUnique({
-      where: { id },
-    }),
-    prisma.post.findMany({
-      where: { type: "BLOG", published: true },
-      select: { id: true, title: true, category: true, imageUrl: true, createdAt: true },
-      orderBy: { createdAt: 'desc' }
-    })
+  const [post, categories] = await Promise.all([
+    getPostById(id),
+    getBlogCategories()
   ]);
 
   if (!post || (!post.published && post.type !== "BLOG")) {
     notFound();
   }
 
-  // カテゴリー一覧
-  const categories = Array.from(
-    new Set(allBlogPosts.map(p => p.category).filter(Boolean))
-  ) as string[];
-
   // 関連記事 (同じカテゴリの最新3件)
-  const relatedPosts = allBlogPosts
-    .filter(p => p.id !== post.id && p.category === post.category)
-    .slice(0, 3);
+  const relatedPosts = await getRelatedPosts(post.category, post.id, 3);
     
   // 読了時間の計算 (400文字で1分換算)
   const readingTime = Math.max(1, Math.ceil(post.content.length / 400));

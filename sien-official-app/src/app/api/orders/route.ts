@@ -107,11 +107,13 @@ export async function POST(request: Request) {
         
         // ユーザー向け確認メールは送信しない（Sien様のみに通知）
 
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com";
+        
         // 管理者向け通知メール
         await sendMail({
           to: process.env.SMTP_USER,
           subject: `【新規依頼】${clientName}様よりご依頼がありました`,
-          text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\nhttps://www.sien-official.com/admin/orders`,
+          text: `${clientName}様（${clientEmail}）より、${serviceType === 'MIX' ? 'MIX' : 'オリジナル'}のご依頼がありました。\n管理画面より詳細をご確認ください。\n\n${baseUrl}/admin/orders`,
         });
       }
     } catch (emailError) {

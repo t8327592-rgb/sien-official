@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getNewsPosts } from "@/lib/data/cms";
 import Link from "next/link";
 import { ArrowRight, Calendar, Tag, ChevronLeft } from "lucide-react";
 
@@ -10,10 +10,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewsIndexPage() {
-  const posts = await prisma.post.findMany({
-    where: { type: "NEWS", published: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const posts = await getNewsPosts();
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">

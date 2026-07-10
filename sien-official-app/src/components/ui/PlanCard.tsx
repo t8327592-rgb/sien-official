@@ -1,15 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-export type Plan = {
-  id: string;
-  name: string;
-  price: number | null;
-  description: string | null;
-  period: string | null;
-  revisions: string | null;
-  features?: string | null;
-};
+import { Plan } from "@prisma/client";
 
 type PlanCardProps = {
   plan: Plan;
@@ -33,9 +24,10 @@ export function PlanCard({ plan, isRecommended = false, recommendedText = "人�
   let featuresList: string[] = [];
   if (plan.features) {
     try {
-      featuresList = JSON.parse(plan.features);
-    } catch (e) {
-      featuresList = plan.features.split('\n').filter(Boolean);
+      const parsed = JSON.parse(plan.features);
+      featuresList = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      featuresList = plan.features.split('\n');
     }
   }
 
@@ -63,8 +55,8 @@ export function PlanCard({ plan, isRecommended = false, recommendedText = "人�
       <div className="relative z-10">
         <h3 className="text-xl font-bold mb-2 text-slate-800">{plan.name}</h3>
         <div className="text-3xl font-black text-slate-900 mb-4 flex items-end gap-1">
-          {plan.price ? `${plan.price.toLocaleString()}` : "要相談"}
-          {plan.price && <span className="text-base font-bold text-slate-500 mb-1">円</span>}
+          {plan.price != null ? plan.price.toLocaleString() : "要相談"}
+          {plan.price != null && plan.price > 0 && <span className="text-base font-bold text-slate-500 mb-1">円</span>}
         </div>
         <p className="text-slate-600 text-sm mb-6 leading-relaxed whitespace-pre-wrap">
           {plan.description}

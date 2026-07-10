@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     
     const event = {
       summary: `[納品期限] ${order.clientName}様 - ${serviceName}${songName}`,
-      description: `【Sien Official 依頼】\n\nプラン: ${order.planId || 'なし'}\n金額: ${order.price ? `¥${order.price}` : '未定'}\n\n管理画面リンク: https://sien-official.com/admin/orders/${order.id}`,
+      description: `【Sien Official 依頼】\n\nプラン: ${order.planId || 'なし'}\n金額: ${order.price ? `¥${order.price}` : '未定'}\n\n管理画面リンク: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.sien-official.com'}/admin/orders/${order.id}`,
       start: {
         date: deadline, // YYYY-MM-DD フォーマットの終日予定
       },

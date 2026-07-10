@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getBlogPosts, getBlogCategories } from "@/lib/data/cms";
 import Link from "next/link";
 import { ArrowRight, Calendar, Tag, Image as ImageIcon, ChevronRight } from "lucide-react";
 
@@ -17,24 +17,10 @@ export default async function BlogIndexPage({
   const { category } = await searchParams;
 
   // カテゴリ一覧を取得（BLOGのみ）
-  const allBlogPosts = await prisma.post.findMany({
-    where: { type: "BLOG", published: true },
-    select: { category: true },
-  });
-  
-  const categories = Array.from(
-    new Set(allBlogPosts.map(p => p.category).filter(Boolean))
-  ) as string[];
+  const categories = await getBlogCategories();
 
   // 記事を取得（BLOGのみ）
-  const posts = await prisma.post.findMany({
-    where: { 
-      type: "BLOG", 
-      published: true,
-      ...(category ? { category } : {})
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const posts = await getBlogPosts(category);
 
   const featuredPost = posts.length > 0 ? posts[0] : null;
   const listPosts = posts.length > 1 ? posts.slice(1) : [];

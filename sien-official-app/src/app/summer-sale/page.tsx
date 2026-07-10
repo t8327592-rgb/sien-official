@@ -4,25 +4,15 @@ import CountdownTimer from "@/components/CountdownTimer";
 import AudioComparison from "@/components/summer-sale/AudioComparison";
 import ReviewCard from "@/components/summer-sale/ReviewCard";
 import FaqAccordion from "@/components/summer-sale/FaqAccordion";
+import { getFAQs } from "@/lib/data/cms";
 
 export const metadata = {
   title: "Summer MIX Sale 2026 | Sien-Official",
   description: "10日間限定！Sien-OfficialのサマーMIXセール開催中。スタンダードプランが一律2,000円OFF。",
 };
 
-export default function SummerSalePage() {
-  const faqItems = [
-    { question: "初めての依頼でも大丈夫ですか？", answer: "もちろん大丈夫です！必要なデータや提出方法についても丁寧にご案内いたしますので、歌ってみたの投稿が初めての方でも安心してご依頼いただけます。" },
-    { question: "スマホ録音など、録音環境に自信がないのですが大丈夫ですか？", answer: "もちろん可能です！録音環境に応じてノイズ除去などの処理を行い、できる限り自然で聴きやすい音源に仕上げます。ただし、音割れや極端な環境ノイズが含まれる場合は、録り直しをご相談させていただく場合がございます。" },
-    { question: "頭出しとは何ですか？", answer: "オケ（インスト）の再生開始地点と、ボーカル録音の開始地点をピッタリ合わせることです。これがズレていると曲と歌が合わなくなってしまいます。" },
-    { question: "キー変更した音源でも依頼できますか？", answer: "はい、可能です。キー変更済みのインスト音源をご提出ください。ご不明な場合は、お気軽にご相談ください。" },
-    { question: "コラボ（複数人）のMIXも依頼できますか？", answer: "申し訳ございません。本セールプランはソロ（1名）での歌ってみたのみ対象となります。コラボ（複数人）でのMIXをご希望の場合は、キャンペーン対象外となりますので、通常の「歌ってみたMIXプラン」よりお申し込みください。" },
-    { question: "納期の短縮は可能ですか？", answer: "スケジュール状況によっては短納期対応が可能です。お急ぎの場合は、ご依頼前にご相談ください。" },
-    { question: "修正は何回まで可能ですか？どのような内容に対応していますか？", answer: "セールプラン、通常プラン共通で5回まで無料で対応いたします。「もう少し明るい雰囲気にしたい」「エコーを控えめにしたい」などの仕上がりに関するご要望に対応しております。ただし、大幅な録り直しや追加収録による再編集など、作業内容によっては、6回目以降の修正について追加料金をご相談させていただく場合がございます。" },
-    { question: "支払いのタイミングはいつですか？", answer: "お見積り内容にご納得いただけましたら、お支払いをお願いしております。ご入金確認後、制作を開始いたします。" },
-    { question: "ハモリデータの扱いはどうなりますか？", answer: "ハモリ生成は基本プラン内で対応可能です。ご自身で録音されたハモリデータをご提出いただくことも可能ですが、全体のバランスや仕上がりを考慮し、ご提出いただいたハモリデータではなく、こちらで生成したハモリをご提案させていただく場合がございます。" },
-    { question: "完成した作品を公開する際、クレジット表記は必要ですか？", answer: "必須ではございませんが、【MIX：しえん (https://x.com/sien_mc09)】と記載していただけますと大変嬉しいです。X（旧Twitter）でメンションいただけましたら、引用ポストにてご紹介させていただきます。" }
-  ];
+export default async function SummerSalePage() {
+  const faqItems = await getFAQs("SUMMER_SALE");
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-cyan-200 selection:text-cyan-900">

@@ -140,11 +140,20 @@ model BusinessContact {
 
 // システム・サイト設定用モデル
 model SiteSetting {
-  id              String   @id @default("default")
+  id                 String   @id @default("default")
   acceptingOrders    Boolean  @default(true) // (非推奨) 旧受付ステータス
   orderStatus        String   @default("AVAILABLE") // "AVAILABLE", "BUSY", "UNAVAILABLE"
   announcement       String?  // サイト案内メッセージ
   targetMonthlySales Int      @default(0) // 今月の目標売上額
+  
+  // 以下、サイト共通情報
+  twitterUrl         String?  // Twitter (X) URL
+  youtubeUrl         String?  // YouTube URL
+  contactEmail       String?  // 問い合わせ用メールアドレス
+  ctaTitle           String?  // 共通CTAのタイトル
+  ctaDescription     String?  // 共通CTAの説明文
+  footerText         String?  // フッターのテキスト
+  
   updatedAt          DateTime @updatedAt
 }
 
@@ -159,4 +168,57 @@ model Review {
   orderIndex  Int      @default(0) // 表示順
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// 人に関する情報（プロフィール）モデル
+model Profile {
+  id          String   @id @default("default")
+  name        String   @default("Sien") // 名前
+  title       String?  // 肩書き (例: Sound Creator)
+  bioShort    String?  // 短い紹介文
+  bioLong     String?  // 長い紹介文
+  imageUrl    String?  // プロフィール画像URL
+  achievements String? // 実績情報テキスト
+  updatedAt   DateTime @updatedAt
+}
+
+// よくある質問（FAQ）モデル
+model FAQ {
+  id          String   @id @default(cuid())
+  question    String   // 質問
+  answer      String   // 回答
+  category    String   @default("COMMON") // MIX, ORIGINAL, COMMON など
+  isPublished Boolean  @default(true) // 公開フラグ
+  orderIndex  Int      @default(0) // 表示順
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// サービス情報モデル
+model Service {
+  id          String   @id @default(cuid())
+  name        String   // サービス名 (例: ボーカルMIX)
+  category    String   // カテゴリ (MIX, ORIGINAL など)
+  description String?  // サービス概要
+  iconName    String?  // アイコン名
+  features    String?  // サービスの特徴（JSONや改行テキスト）
+  isPublished Boolean  @default(true) // 公開フラグ
+  orderIndex  Int      @default(0) // 表示順
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// キャンペーン・セール用モデル
+model Campaign {
+  id              String   @id @default(cuid())
+  name            String   // キャンペーン名 (例: 春のVTuber応援セール)
+  targetPlanId    String?  // 対象となるプランID (nullの場合は全プラン対象などの運用)
+  originalPrice   Int?     // 通常価格 (参考表示用)
+  campaignPrice   Int      // キャンペーン価格
+  startDate       DateTime? // 開始日
+  endDate         DateTime? // 終了日
+  isActive        Boolean  @default(true) // 有効・無効
+  description     String?  // キャンペーンの条件や説明
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

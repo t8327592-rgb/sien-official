@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getOptions } from "@/lib/data/cms";
 import SummerSaleOrderFormClient from "@/components/order/SummerSaleOrderFormClient";
 
 export const metadata = {
@@ -8,9 +8,7 @@ export const metadata = {
 
 export default async function SummerSaleOrderPage() {
   // オプション情報をDBから取得
-  const options = await prisma.option.findMany({
-    orderBy: { createdAt: "asc" }
-  });
+  const options = await getOptions();
 
   return (
     <main>

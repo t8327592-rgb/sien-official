@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PlanCard, Plan } from "./PlanCard";
+import { PlanCard } from "./PlanCard";
+import { Plan } from "@prisma/client";
 
 export function PlanListClient({ plans }: { plans: Plan[] }) {
   const [activeTab, setActiveTab] = useState<"normal" | "express" | "bulk">("normal");
