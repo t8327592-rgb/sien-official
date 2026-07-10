@@ -9,8 +9,13 @@ import { FAQList } from "@/components/shared/FAQList";
 import { CallToAction } from "@/components/shared/CallToAction";
 
 export const metadata = {
-  title: "歌ってみたMIX依頼 | Sien-Official",
-  description: "あなたの歌声を最高の作品に仕上げます。ピッチ補正からマスタリングまで、プロクオリティの歌ってみたMIXをご提供します。",
+  title: "ボーカルMIX・マスタリング | Sien-Official",
+  description: "歌ってみた等のボーカルMIX。ピッチ・タイミング補正から、オケと馴染ませる魔法まで。あなたの声の魅力を最大限に引き出します。",
+  openGraph: {
+    title: "ボーカルMIX・マスタリング | Sien-Official",
+    description: "歌ってみた等のボーカルMIX。ピッチ・タイミング補正から、オケと馴染ませる魔法まで。あなたの声の魅力を最大限に引き出します。",
+    url: "https://www.sien-official.com/mix",
+  }
 };
 
 // データの動的取得を強制（キャッシュ無効化）

@@ -119,7 +119,7 @@ export const getMixPortfolios = unstable_cache(
       where: {
         isPublished: true,
         showOnMix: true,
-        serviceCategory: { not: "オリジナル楽曲制作" }, // 念のためカテゴリでも絞る
+        serviceCategory: { in: ["ボーカルMIX", "MIX"] },
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),
@@ -135,7 +135,7 @@ export const getOriginalPortfolios = unstable_cache(
       where: {
         isPublished: true,
         showOnOriginal: true,
-        serviceCategory: "オリジナル楽曲制作",
+        serviceCategory: { in: ["オリジナル楽曲制作", "ORIGINAL"] },
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),

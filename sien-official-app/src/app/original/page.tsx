@@ -8,7 +8,12 @@ import { CallToAction } from "@/components/shared/CallToAction";
 
 export const metadata = {
   title: "オリジナル楽曲制作 | Sien-Official",
-  description: "あなただけの完全オリジナル楽曲をプロのクオリティで制作します。作詞・作曲・編曲からMIXまで、VTuber・歌い手のための活動の顔になる1曲をご提供。",
+  description: "あなただけの完全オリジナル楽曲制作。作詞・作曲・編曲からボーカルディレクション、納品までトータルでサポートします。",
+  openGraph: {
+    title: "オリジナル楽曲制作 | Sien-Official",
+    description: "あなただけの完全オリジナル楽曲制作。作詞・作曲・編曲からボーカルディレクション、納品までトータルでサポートします。",
+    url: "https://www.sien-official.com/original",
+  }
 };
 
 export const dynamic = "force-dynamic";

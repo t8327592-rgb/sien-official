@@ -7,6 +7,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "制作実績 | Sien-Official",
   description: "これまでに手掛けたMIX・マスタリング、オリジナル楽曲の制作実績をご紹介します。ボカロ、J-POPなど幅広いジャンルに対応。",
+  openGraph: {
+    title: "制作実績 | Sien-Official",
+    description: "これまでに手掛けたMIX・マスタリング、オリジナル楽曲の制作実績をご紹介します。ボカロ、J-POPなど幅広いジャンルに対応。",
+    url: "https://www.sien-official.com/works",
+  }
 };
 
 export default async function WorksPage() {
