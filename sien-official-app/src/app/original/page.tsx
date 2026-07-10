@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function OriginalPage() {
   const plans = await getPlans("ORIGINAL");
   const options = await getOptions("ORIGINAL");
-  const portfolios = await getOriginalPortfolios(2);
+  const portfolios = await getOriginalPortfolios(6);
   const faqs = await getFAQs("ORIGINAL");
 
   return (
