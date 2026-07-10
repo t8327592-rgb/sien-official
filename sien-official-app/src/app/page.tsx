@@ -4,6 +4,7 @@ import { ArrowRight, Star, Quote, UserCircle, CheckCircle2 } from "lucide-react"
 import { HeroVideoPlayer } from "@/components/ui/HeroVideoPlayer";
 import { FeaturedWorksList } from "@/components/works/FeaturedWorksList";
 import { getSiteSetting } from "@/app/actions/settings";
+import { getFeaturedPortfolios, getReviews, getNewsPosts } from "@/lib/data/cms";
 
 export const dynamic = "force-dynamic";
 
