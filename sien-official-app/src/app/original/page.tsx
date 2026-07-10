@@ -273,38 +273,14 @@ export default async function OriginalPage() {
           )}
         </div>
       </section>
+      <FAQList faqs={faqs} />
 
-                  <span className="text-slate-400 font-bold mr-2">A.</span>
-                  {item.a}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 8. 問い合わせ (CTA) */}
-      <section className="py-24 bg-amber-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-tr from-amber-700 to-orange-500"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-10 blur-sm"></div>
-        <div className="container px-4 mx-auto text-center relative z-10">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6">オリジナル楽曲の<br className="md:hidden" />ご相談・お見積もりは無料です。</h2>
-          <p className="text-amber-50 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
-            「こんな曲作れる？」「料金はどれくらいになる？」など、<br/>まずはお気軽にご相談ください。<br/><br/>
-            <span className="font-bold bg-black/20 px-4 py-2 rounded-full inline-block backdrop-blur-sm">
-              「まだ依頼するか決まっていない」という方も大歓迎です。
-            </span>
-          </p>
-          <Button asChild variant="outline" className="rounded-full h-16 text-lg font-bold shadow-2xl bg-white text-amber-600 hover:bg-amber-50 border-0 hover:scale-105 transition-transform">
-            <Link href="/order" className="flex items-center justify-center px-12 whitespace-nowrap">
-              無料で相談する <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
-            </Link>
-          </Button>
-          <p className="text-amber-100 text-sm mt-6 font-medium flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> 24時間以内にご返信いたします
-          </p>
-        </div>
-      </section>
+      <CallToAction 
+        title="オリジナル楽曲のご相談・お見積もりは無料です。" 
+        description="「こんな曲作れる？」「料金はどれくらいになる？」など、まずはお気軽にご相談ください。\n「まだ依頼するか決まっていない」という方も大歓迎です。" 
+        buttonText="無料で相談する" 
+        href="/order" 
+      />
 
     </div>
   );
