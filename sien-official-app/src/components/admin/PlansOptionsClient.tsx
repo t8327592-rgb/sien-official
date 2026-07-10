@@ -94,6 +94,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
   const [options, setOptions] = useState(initialOptions.sort((a, b) => a.orderIndex - b.orderIndex));
 
   const [activePlanTab, setActivePlanTab] = useState<"MIX" | "ORIGINAL">("MIX");
+  const [activeOptionTab, setActiveOptionTab] = useState<"MIX" | "ORIGINAL">("MIX");
 
   const [editingPlan, setEditingPlan] = useState<any | null>(null);
   const [editingOption, setEditingOption] = useState<any | null>(null);
@@ -155,11 +156,19 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setPlans((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newArray = arrayMove(items, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
+        // 現在のタブに表示されているアイテム
+        const visibleItems = items.filter(p => p.category === activePlanTab).sort((a,b) => a.orderIndex - b.orderIndex);
+        // それ以外のアイテム
+        const hiddenItems = items.filter(p => p.category !== activePlanTab);
+        
+        const oldIndex = visibleItems.findIndex((item) => item.id === active.id);
+        const newIndex = visibleItems.findIndex((item) => item.id === over.id);
+        
+        const newVisibleArray = arrayMove(visibleItems, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
+        const newArray = [...newVisibleArray, ...hiddenItems];
+        
         setSaveStatus("saving");
-        updatePlanOrders(newArray.map(p => ({ id: p.id, orderIndex: p.orderIndex })))
+        updatePlanOrders(newVisibleArray.map(p => ({ id: p.id, orderIndex: p.orderIndex })))
           .then(() => triggerSaveStatus());
         return newArray;
       });
@@ -170,11 +179,19 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setOptions((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newArray = arrayMove(items, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
+        // 現在のタブに表示されているアイテム (COMMONも含む)
+        const visibleItems = items.filter(o => o.category === activeOptionTab || o.category === "COMMON").sort((a,b) => a.orderIndex - b.orderIndex);
+        // それ以外のアイテム
+        const hiddenItems = items.filter(o => !(o.category === activeOptionTab || o.category === "COMMON"));
+
+        const oldIndex = visibleItems.findIndex((item) => item.id === active.id);
+        const newIndex = visibleItems.findIndex((item) => item.id === over.id);
+        
+        const newVisibleArray = arrayMove(visibleItems, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
+        const newArray = [...newVisibleArray, ...hiddenItems];
+        
         setSaveStatus("saving");
-        updateOptionOrders(newArray.map(o => ({ id: o.id, orderIndex: o.orderIndex })))
+        updateOptionOrders(newVisibleArray.map(o => ({ id: o.id, orderIndex: o.orderIndex })))
           .then(() => triggerSaveStatus());
         return newArray;
       });
@@ -211,7 +228,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
 
   const handleCreateOption = async () => {
     setSaveStatus("saving");
-    const res = await createOption({});
+    const res = await createOption({ category: activeOptionTab });
     if (res.success && res.data) {
       setOptions(prev => [...prev, res.data]);
       setEditingOption(res.data);
@@ -235,7 +252,8 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     }
   };
 
-  const filteredPlans = plans.filter(p => p.category === activePlanTab);
+  const filteredPlans = plans.filter(p => p.category === activePlanTab).sort((a,b) => a.orderIndex - b.orderIndex);
+  const filteredOptions = options.filter(o => o.category === activeOptionTab || o.category === "COMMON").sort((a,b) => a.orderIndex - b.orderIndex);
 
   return (
     <div className="space-y-12">
@@ -313,6 +331,22 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
           <Button onClick={handleCreateOption}>＋ オプション追加</Button>
         </div>
 
+        {/* タブUI */}
+        <div className="flex border-b border-slate-200 mb-6">
+          <button 
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'MIX' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setActiveOptionTab('MIX')}
+          >
+            MIXオプション
+          </button>
+          <button 
+            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'ORIGINAL' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setActiveOptionTab('ORIGINAL')}
+          >
+            オリジナルオプション
+          </button>
+        </div>
+
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* ヘッダー行 */}
           <div className="flex items-center p-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
@@ -323,10 +357,10 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
           </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndOption}>
-            <SortableContext items={options.map(o => o.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext items={filteredOptions.map(o => o.id)} strategy={verticalListSortingStrategy}>
               <div className="divide-y divide-slate-100">
-                {options.length > 0 ? (
-                  options.map(opt => (
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map(opt => (
                     <SortableOptionListItem key={opt.id} opt={opt} onEdit={setEditingOption} onDelete={handleDeleteOption} />
                   ))
                 ) : (
@@ -398,6 +432,14 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
               <button onClick={() => setEditingOption(null)} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
             </div>
             <div className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
+                <select value={editingOption.category || "MIX"} onChange={e => handleOptionFieldChange("category", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white transition-all">
+                  <option value="MIX">MIXオプション</option>
+                  <option value="ORIGINAL">オリジナルオプション</option>
+                  <option value="COMMON">共通（両方に表示）</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">オプション名</label>
                 <input type="text" value={editingOption.name} onChange={e => handleOptionFieldChange("name", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
