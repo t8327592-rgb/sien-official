@@ -3,7 +3,7 @@ import Link from "next/link";
 import { 
   ArrowRight, FileText, CheckCircle2, AlertCircle, 
   Briefcase, TrendingUp, Clock, Activity, MessageSquare, Star, 
-  Calendar, Check
+  Check, AlertTriangle
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -26,31 +26,58 @@ export default async function AdminDashboard() {
   // 過去6ヶ月の範囲（グラフ用）
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
+  // 未完了のアクティブな全案件を取得し、今日締切・超過・ステータス別に振り分ける
+  const activeOrders = await prisma.order.findMany({ 
+    where: { status: { in: ["PENDING", "ESTIMATING", "WORKING"] } },
+    orderBy: { updatedAt: "desc" }
+  });
+
+  const pendingCount = activeOrders.filter(o => o.status === "PENDING").length;
+  const estimatingCount = activeOrders.filter(o => o.status === "ESTIMATING").length;
+  const workingOrders = activeOrders.filter(o => o.status === "WORKING");
+
+  let deadlineTodayCount = 0;
+  let deadlineOverdueCount = 0;
+
+  activeOrders.forEach(order => {
+    if (!order.deadline) return;
+    let parsedDate: Date | null = null;
+    
+    // "YYYY-MM-DD" or "YYYY/MM/DD" or "YYYY年MM月DD日"
+    const matchYMD = order.deadline.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})日?/);
+    if (matchYMD) {
+      parsedDate = new Date(parseInt(matchYMD[1]), parseInt(matchYMD[2]) - 1, parseInt(matchYMD[3]));
+    } else {
+      // "MM/DD" or "MM月DD日"
+      const matchMD = order.deadline.match(/(\d{1,2})[-\/月](\d{1,2})日?/);
+      if (matchMD) {
+        parsedDate = new Date(now.getFullYear(), parseInt(matchMD[1]) - 1, parseInt(matchMD[2]));
+      }
+    }
+
+    if (parsedDate && !isNaN(parsedDate.getTime())) {
+      const pTime = parsedDate.getTime();
+      const tStart = todayStart.getTime();
+      if (pTime === tStart) {
+        deadlineTodayCount++;
+      } else if (pTime < tStart) {
+        deadlineOverdueCount++;
+      }
+    }
+  });
+
   // データベースへのクエリを並列実行
   const [
     thisMonthOrders, // 今月作成された案件
     thisYearCompletedOrders, // 今年納品された案件（売上用）
-    workingOrders, // 作業中の案件
-    pendingCount, // 未対応
-    estimatingCount, // 見積中
-    todayCompletedCount, // 今日の納品件数
-    recentOrders, // 最新5件の案件
+    recentOrders, // 最新の案件（履歴用）
     recentContacts, // 最新のお問い合わせ
     recentReviews, // 最新のレビュー
     monthlyCompletedOrders // 過去6ヶ月の完了案件（グラフ用）
   ] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
     prisma.order.findMany({ where: { status: "COMPLETED", updatedAt: { gte: thisYearStart } } }),
-    prisma.order.findMany({ where: { status: "WORKING" }, orderBy: { updatedAt: "desc" } }),
-    prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.order.count({ where: { status: "ESTIMATING" } }),
-    prisma.order.count({ 
-      where: { 
-        status: "COMPLETED", 
-        updatedAt: { gte: todayStart, lt: todayEnd } 
-      } 
-    }),
-    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
+    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 10 }), // 進行中・完了問わず最新履歴
     prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.order.findMany({ 
@@ -69,10 +96,6 @@ export default async function AdminDashboard() {
     
   const thisYearRevenue = thisYearCompletedOrders.reduce((sum, order) => sum + (order.price || 0), 0);
   const completedCount = thisYearCompletedOrders.length;
-  const averagePrice = completedCount > 0 ? Math.round(thisYearRevenue / completedCount) : 0;
-
-  // 今月の売上見込（作業中・見積中などの総額）※既存の仕様を維持
-  const estimatedRevenue = thisMonthOrders.reduce((sum, order) => sum + (order.price || 0), 0);
 
   // 過去6ヶ月の売上データ生成
   const monthlyData = [];
@@ -89,10 +112,9 @@ export default async function AdminDashboard() {
     monthlyData.push({ month: monthName, revenue });
   }
 
-  // 最大売上（グラフのスケール用）
-  const maxMonthlyRevenue = Math.max(...monthlyData.map(d => d.revenue), 1); // 0除算防止
+  const maxMonthlyRevenue = Math.max(...monthlyData.map(d => d.revenue), 1);
 
-  // アクティビティの生成（Order, Contact, Review をマージしてソート）
+  // アクティビティの生成
   type ActivityItem = {
     id: string;
     type: 'ORDER' | 'CONTACT' | 'REVIEW' | 'COMPLETED';
@@ -103,48 +125,48 @@ export default async function AdminDashboard() {
   };
 
   const activities: ActivityItem[] = [
-    ...recentOrders.map(o => ({
+    ...recentOrders.filter(o => o.status !== "COMPLETED").map(o => ({
       id: `order-${o.id}`,
       type: 'ORDER' as const,
-      title: '新規依頼を受信',
-      description: `${o.clientName}様から新しいご依頼がありました。`,
+      title: 'ご依頼を受信',
+      description: `${o.clientName}様から「${o.songTitle || o.serviceType}」のご依頼。`,
       date: o.createdAt,
       link: `/admin/orders/${o.id}`
     })),
-    ...thisYearCompletedOrders.filter(o => o.updatedAt >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)).map(o => ({ // 過去7日間の納品
+    ...thisYearCompletedOrders.filter(o => o.updatedAt >= new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)).map(o => ({
       id: `comp-${o.id}`,
       type: 'COMPLETED' as const,
-      title: '案件を納品済みに変更',
-      description: `${o.clientName}様の案件を完了しました。`,
+      title: '納品完了',
+      description: `${o.clientName}様の案件「${o.songTitle || o.serviceType}」を納品。`,
       date: o.updatedAt,
       link: `/admin/orders/${o.id}`
     })),
     ...recentContacts.map(c => ({
       id: `contact-${c.id}`,
       type: 'CONTACT' as const,
-      title: 'お問い合わせを受信',
-      description: `${c.companyName}様からお問い合わせがありました。`,
+      title: 'お問い合わせ',
+      description: `${c.companyName}様から。`,
       date: c.createdAt,
       link: `/admin/business`
     })),
     ...recentReviews.map(r => ({
       id: `rev-${r.id}`,
       type: 'REVIEW' as const,
-      title: '新しいレビューが投稿されました',
-      description: `${r.name}様からのレビューが追加されました。`,
+      title: 'レビュー投稿',
+      description: `${r.name}様からのレビュー。`,
       date: r.createdAt,
       link: `/admin/reviews`
     }))
-  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6);
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5); // 最大5件
 
-  // ステータスバッジのコンポーネント
+  // 統一された色のルールバッジ
   const StatusBadge = ({ status }: { status: string }) => {
     switch (status) {
-      case "PENDING": return <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs rounded-full font-bold inline-flex items-center gap-1.5"><AlertCircle className="w-3 h-3" />未対応</span>;
-      case "ESTIMATING": return <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-bold inline-flex items-center gap-1.5"><Clock className="w-3 h-3" />見積中</span>;
-      case "WORKING": return <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-bold inline-flex items-center gap-1.5"><Activity className="w-3 h-3" />作業中</span>;
-      case "COMPLETED": return <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full font-bold inline-flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" />納品済</span>;
-      default: return <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-full font-bold">{status}</span>;
+      case "PENDING": return <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] sm:text-xs rounded border border-red-200 font-bold inline-flex items-center gap-1"><AlertCircle className="w-3 h-3" />未対応</span>;
+      case "ESTIMATING": return <span className="px-2 py-0.5 bg-yellow-50 text-yellow-600 text-[10px] sm:text-xs rounded border border-yellow-200 font-bold inline-flex items-center gap-1"><Clock className="w-3 h-3" />見積中</span>;
+      case "WORKING": return <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] sm:text-xs rounded border border-orange-200 font-bold inline-flex items-center gap-1"><Activity className="w-3 h-3" />作業中</span>;
+      case "COMPLETED": return <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] sm:text-xs rounded border border-green-200 font-bold inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />納品済</span>;
+      default: return <span className="px-2 py-0.5 bg-slate-50 text-slate-600 text-[10px] sm:text-xs rounded border border-slate-200 font-bold">{status}</span>;
     }
   };
 
@@ -153,298 +175,270 @@ export default async function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">ホームダッシュボード</h1>
-          <p className="text-slate-500 font-medium">現在の状況とタスクを一目で確認できます。</p>
-        </div>
+    <div className="space-y-6 pb-12 font-sans max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-black text-slate-900">ダッシュボード</h1>
+        <p className="text-slate-500 text-sm mt-1 font-medium">次のアクションを決定し、作業を進行しましょう。</p>
       </div>
       
-      {/* 1. 今日やること ＆ サマリー上段 */}
+      {/* ========================================================
+          1. ファーストビュー：今日やること ＆ 売上サマリー
+      ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* 左側: 今日やること */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-1 shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-          <div className="bg-white/95 backdrop-blur-sm rounded-[22px] p-6 sm:p-8 h-full relative z-10 flex flex-col justify-center">
-            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-orange-600" />
-              </span>
-              今すぐアクションが必要なタスク
+        {/* ① 今日やること (最重要 / 数字を最大化) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-slate-400" />
+              今日対応すべきこと
             </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-red-50/50 border border-red-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center transition-all hover:bg-red-50 hover:shadow-sm">
-                <div className="text-sm font-bold text-red-600 mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" />未対応（新規）</div>
-                <div className="text-3xl font-black text-slate-900">{pendingCount}<span className="text-sm text-slate-500 ml-1 font-medium">件</span></div>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
+            {/* 未対応 (赤) */}
+            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors">
+              <div className={`text-5xl font-black mb-2 transition-colors ${pendingCount > 0 ? 'text-red-600 group-hover:text-red-700' : 'text-slate-300'}`}>
+                {pendingCount}
               </div>
-              <div className="bg-yellow-50/50 border border-yellow-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center transition-all hover:bg-yellow-50 hover:shadow-sm">
-                <div className="text-sm font-bold text-yellow-600 mb-1 flex items-center gap-1.5"><Clock className="w-4 h-4" />見積中（連絡待）</div>
-                <div className="text-3xl font-black text-slate-900">{estimatingCount}<span className="text-sm text-slate-500 ml-1 font-medium">件</span></div>
+              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${pendingCount > 0 ? 'bg-red-500' : 'bg-slate-300'}`}></span>
+                新規未対応
               </div>
-              <div className="bg-orange-50/50 border border-orange-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center transition-all hover:bg-orange-50 hover:shadow-sm">
-                <div className="text-sm font-bold text-orange-600 mb-1 flex items-center gap-1.5"><Activity className="w-4 h-4" />作業中（修正等）</div>
-                <div className="text-3xl font-black text-orange-600">{workingOrders.length}<span className="text-sm text-orange-400 ml-1 font-medium">件</span></div>
+            </Link>
+
+            {/* 見積中 (黄) */}
+            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors border-l border-slate-100">
+              <div className={`text-5xl font-black mb-2 transition-colors ${estimatingCount > 0 ? 'text-yellow-500 group-hover:text-yellow-600' : 'text-slate-300'}`}>
+                {estimatingCount}
+              </div>
+              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${estimatingCount > 0 ? 'bg-yellow-400' : 'bg-slate-300'}`}></span>
+                見積・連絡待
+              </div>
+            </Link>
+
+            {/* 期限超過・今日締切 (赤 or グレー) */}
+            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-t sm:border-t-0 sm:border-l border-slate-100">
+              <div className={`text-5xl font-black mb-2 ${deadlineOverdueCount > 0 ? 'text-red-600' : deadlineTodayCount > 0 ? 'text-orange-600' : 'text-slate-300'}`}>
+                {deadlineOverdueCount > 0 ? deadlineOverdueCount : deadlineTodayCount}
+              </div>
+              <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                {deadlineOverdueCount > 0 ? (
+                  <><AlertTriangle className="w-3 h-3 text-red-500" /> 期限超過</>
+                ) : deadlineTodayCount > 0 ? (
+                  <><Clock className="w-3 h-3 text-orange-500" /> 今日締切</>
+                ) : (
+                  <><Check className="w-3 h-3 text-slate-300" /> 期限超過なし</>
+                )}
               </div>
             </div>
-            {pendingCount === 0 && estimatingCount === 0 ? (
-              <p className="text-sm text-slate-500 mt-6 text-center">🎉 現在お急ぎの対応タスクはありません。作業に集中できます！</p>
-            ) : (
-              <p className="text-sm text-slate-500 mt-6 text-center">お客様をお待たせしないよう、未対応・見積中の案件からご対応ください。</p>
-            )}
-          </div>
-        </div>
 
-        {/* 右側: 概要カード4種（2x2グリッド） */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-            <h3 className="text-xs font-bold text-slate-500 mb-2 tracking-wider">今月の新規依頼</h3>
-            <div className="text-2xl font-black text-slate-900">{thisMonthOrders.length}<span className="text-sm font-medium text-slate-400 ml-1">件</span></div>
-          </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-            <h3 className="text-xs font-bold text-slate-500 mb-2 tracking-wider">作業中の案件</h3>
-            <div className="text-2xl font-black text-orange-600">{workingOrders.length}<span className="text-sm font-medium text-orange-400 ml-1">件</span></div>
-          </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-            <h3 className="text-xs font-bold text-slate-500 mb-2 tracking-wider">今月の売上見込</h3>
-            <div className="text-xl font-black text-slate-900">¥{estimatedRevenue.toLocaleString()}</div>
-          </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-            <h3 className="text-xs font-bold text-slate-500 mb-2 tracking-wider">今日の納品件数</h3>
-            <div className="text-2xl font-black text-green-600">{todayCompletedCount}<span className="text-sm font-medium text-green-400 ml-1">件</span></div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. 納期が近い（作業中）案件 ＆ 売上サマリー */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        {/* 作業中の案件一覧 (2カラム) */}
-        <div className="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-slate-600" />
-              </span>
-              作業中の案件（納期確認）
-            </h2>
-            <Link href="/admin/orders" className="text-sm font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition-colors">
-              すべて見る <ArrowRight className="w-4 h-4" />
+            {/* 作業中 (オレンジ) */}
+            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors border-l border-t sm:border-t-0 border-slate-100">
+              <div className={`text-5xl font-black mb-2 transition-colors ${workingOrders.length > 0 ? 'text-orange-500 group-hover:text-orange-600' : 'text-slate-300'}`}>
+                {workingOrders.length}
+              </div>
+              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${workingOrders.length > 0 ? 'bg-orange-400' : 'bg-slate-300'}`}></span>
+                作業中案件
+              </div>
             </Link>
           </div>
-          
-          <div className="p-0 overflow-x-auto">
-            {workingOrders.length > 0 ? (
-              <table className="w-full text-left min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">依頼者</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">案件内容</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">希望納期</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">ステータス</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {workingOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <Link href={`/admin/orders/${order.id}`} className="block">
-                          <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{order.clientName} 様</div>
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-700">{order.songTitle || "曲名未定"}</div>
-                        <div className="text-xs text-slate-500 mt-1">{order.serviceType} / {order.planId}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-slate-800 bg-slate-100 inline-block px-3 py-1 rounded-md">
-                          {order.deadline || "指定なし"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={order.status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="p-12 text-center text-slate-500">現在、作業中の案件はありません。</div>
-            )}
-          </div>
         </div>
 
-        {/* 売上サマリー ＆ グラフ (1カラム) */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-slate-50 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-slate-600" />
-              </span>
-              売上サマリー（納品ベース）
-            </h2>
-          </div>
+        {/* ② 売上サマリー (コンパクト化) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
+          <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-slate-400" />
+            売上サマリー
+          </h2>
           
-          <div className="p-6 space-y-6 flex-grow">
-            {/* KPI */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <div className="text-xs font-bold text-slate-500 mb-1">今月売上</div>
-                <div className="text-xl font-black text-slate-900">¥{thisMonthRevenue.toLocaleString()}</div>
+          <div className="flex-1 flex flex-col justify-between">
+            {/* 上部 KPI */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <div className="text-[10px] font-bold text-slate-500">今月の売上</div>
+                <div className="text-2xl font-black text-slate-900">¥{thisMonthRevenue.toLocaleString()}</div>
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <div className="text-xs font-bold text-slate-500 mb-1">今年累計売上</div>
-                <div className="text-xl font-black text-slate-900">¥{thisYearRevenue.toLocaleString()}</div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-500">今年の累計</div>
+                <div className="text-xl font-bold text-slate-700 mt-1">¥{thisYearRevenue.toLocaleString()}</div>
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <div className="text-xs font-bold text-slate-500 mb-1">完了案件数(年)</div>
-                <div className="text-xl font-black text-slate-900">{completedCount}<span className="text-xs text-slate-400 font-medium ml-1">件</span></div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-500">今月の新規依頼</div>
+                <div className="text-lg font-bold text-slate-700">{thisMonthOrders.length}<span className="text-[10px] font-normal ml-1">件</span></div>
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl">
-                <div className="text-xs font-bold text-slate-500 mb-1">平均単価</div>
-                <div className="text-xl font-black text-slate-900">¥{averagePrice.toLocaleString()}</div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-500">今年の納品数</div>
+                <div className="text-lg font-bold text-slate-700">{completedCount}<span className="text-[10px] font-normal ml-1">件</span></div>
               </div>
             </div>
 
-            {/* 簡易バーグラフ */}
-            <div className="pt-4 border-t border-slate-100">
-              <div className="text-xs font-bold text-slate-500 mb-6 text-center tracking-wider">過去6ヶ月の売上推移</div>
-              <div className="flex items-end justify-between h-32 gap-2 px-2">
+            {/* 下部 簡易グラフ */}
+            <div className="border-t border-slate-100 pt-3">
+              <div className="flex items-end justify-between gap-1 h-16 px-1">
                 {monthlyData.map((data, index) => {
-                  const heightPercent = maxMonthlyRevenue > 0 ? (data.revenue / maxMonthlyRevenue) * 100 : 0;
+                  const heightPercent = maxMonthlyRevenue > 0 ? Math.max((data.revenue / maxMonthlyRevenue) * 100, 4) : 4;
                   return (
-                    <div key={index} className="flex flex-col items-center gap-2 flex-1 group relative">
-                      <div className="relative w-full flex justify-center h-full items-end">
-                        <div 
-                          className="w-full max-w-[32px] bg-gradient-to-t from-orange-400 to-amber-300 rounded-t-md transition-all duration-500 group-hover:brightness-110"
-                          style={{ height: `${Math.max(heightPercent, 2)}%` }} // 最低2%は高さを出す
-                        ></div>
-                        {/* ツールチップ風表示 */}
-                        <div className="absolute -top-8 bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                          ¥{data.revenue.toLocaleString()}
-                        </div>
+                    <div key={index} className="flex-1 flex flex-col justify-end h-full group relative cursor-default">
+                      <div 
+                        className="w-full bg-slate-200 rounded-sm group-hover:bg-orange-400 transition-colors"
+                        style={{ height: `${heightPercent}%` }}
+                      ></div>
+                      {/* Tooltip */}
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
+                        ¥{data.revenue.toLocaleString()}
                       </div>
-                      <div className="text-[10px] font-bold text-slate-400">{data.month}</div>
                     </div>
                   );
                 })}
               </div>
+              <div className="flex justify-between text-[9px] text-slate-400 font-bold mt-1 px-1">
+                <span>{monthlyData[0].month}</span>
+                <span>{monthlyData[monthlyData.length-1].month}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. 最近の案件 ＆ 最近のアクティビティ */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* ========================================================
+          2. ファーストビュー：作業中案件一覧
+      ======================================================== */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-orange-500" />
+            進行中の案件一覧
+          </h2>
+          <Link href="/admin/orders" className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1 transition-colors">
+            すべて見る <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
         
-        {/* 最近の案件 */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-slate-600" />
-              </span>
-              最近のご依頼
+        <div className="overflow-x-auto">
+          {workingOrders.length > 0 ? (
+            <table className="w-full text-left min-w-[600px]">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-1/4">依頼者</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-1/3">案件名</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-1/4">納期</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider w-1/6">ステータス</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {workingOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-6 py-3">
+                      <Link href={`/admin/orders/${order.id}`} className="block">
+                        <div className="font-bold text-sm text-slate-900 group-hover:text-orange-600 transition-colors truncate">{order.clientName} 様</div>
+                      </Link>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="text-sm text-slate-700 truncate font-medium">{order.songTitle || "曲名未定"}</div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="text-xs font-bold text-slate-700 bg-slate-100 inline-block px-2 py-1 rounded">
+                        {order.deadline || "指定なし"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <StatusBadge status={order.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-8 text-center text-sm font-medium text-slate-500 bg-slate-50/50">
+              現在進行中の案件はありません。
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================
+          3. スクロール後：最近の依頼履歴 ＆ アクティビティ
+      ======================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+        
+        {/* 最近の依頼（履歴） */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-slate-400" />
+              最新のご依頼履歴
             </h2>
-            <Link href="/admin/orders" className="text-sm font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition-colors">
-              すべて見る <ArrowRight className="w-4 h-4" />
+            <Link href="/admin/orders" className="text-[10px] font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-colors">
+              一覧へ
             </Link>
           </div>
-          <div className="p-0 overflow-x-auto">
+          <div className="p-0">
             {recentOrders.length > 0 ? (
-              <table className="w-full text-left min-w-[500px]">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">依頼者</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">案件</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">受付日時</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">ステータス</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {recentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <Link href={`/admin/orders/${order.id}`} className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
-                          {order.clientName} 様
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-700 truncate max-w-[150px]">{order.songTitle || order.serviceType}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={order.status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ul className="divide-y divide-slate-100">
+                {recentOrders.map((order) => (
+                  <li key={order.id} className="hover:bg-slate-50 transition-colors">
+                    <Link href={`/admin/orders/${order.id}`} className="px-5 py-3 flex items-center justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <StatusBadge status={order.status} />
+                          <span className="text-[10px] text-slate-400 font-bold">{formatDate(order.createdAt)}</span>
+                        </div>
+                        <div className="font-bold text-sm text-slate-900 truncate">{order.clientName} 様</div>
+                        <div className="text-xs text-slate-500 truncate">{order.songTitle || order.serviceType}</div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <div className="p-12 text-center text-slate-500">最近の依頼はありません。</div>
+              <div className="p-8 text-center text-xs text-slate-500">最近の依頼履歴はありません。</div>
             )}
           </div>
         </div>
 
-        {/* 最近のアクティビティ（タイムライン） */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-50 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-slate-600" />
-              </span>
-              最近のアクティビティ
+        {/* 最近のアクティビティ（コンパクト化） */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-slate-400" />
+              アクティビティ
             </h2>
           </div>
-          <div className="p-6">
+          <div className="p-5">
             {activities.length > 0 ? (
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+              <div className="space-y-4">
                 {activities.map((item, index) => {
                   let Icon = FileText;
-                  let colorClass = "bg-blue-100 text-blue-600 border-blue-200";
+                  let colorClass = "bg-slate-100 text-slate-500";
                   
-                  if (item.type === 'ORDER') {
-                    Icon = Briefcase;
-                    colorClass = "bg-orange-100 text-orange-600 border-orange-200";
-                  } else if (item.type === 'COMPLETED') {
-                    Icon = Check;
-                    colorClass = "bg-green-100 text-green-600 border-green-200";
-                  } else if (item.type === 'CONTACT') {
-                    Icon = MessageSquare;
-                    colorClass = "bg-purple-100 text-purple-600 border-purple-200";
-                  } else if (item.type === 'REVIEW') {
-                    Icon = Star;
-                    colorClass = "bg-yellow-100 text-yellow-600 border-yellow-200";
-                  }
+                  if (item.type === 'ORDER') { Icon = Briefcase; colorClass = "bg-red-100 text-red-600"; }
+                  else if (item.type === 'COMPLETED') { Icon = Check; colorClass = "bg-green-100 text-green-600"; }
+                  else if (item.type === 'CONTACT') { Icon = MessageSquare; colorClass = "bg-purple-100 text-purple-600"; }
+                  else if (item.type === 'REVIEW') { Icon = Star; colorClass = "bg-yellow-100 text-yellow-600"; }
 
                   return (
-                    <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      {/* Icon */}
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full border-[3px] border-white ${colorClass} shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm relative z-10`}>
-                        <Icon className="w-4 h-4" />
+                    <div key={item.id} className="flex gap-3 items-start group">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass} mt-0.5`}>
+                        <Icon className="w-3.5 h-3.5" />
                       </div>
-                      
-                      {/* Content */}
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors shadow-sm">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="font-bold text-slate-900 text-sm">{item.title}</div>
-                          <time className="text-[11px] font-bold text-slate-400">{formatDate(item.date)}</time>
+                      <div className="flex-1 min-w-0 border-b border-slate-50 pb-4 group-last:border-0 group-last:pb-0">
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <p className="text-sm font-bold text-slate-900 truncate pr-2">{item.title}</p>
+                          <time className="text-[10px] font-bold text-slate-400 shrink-0">{formatDate(item.date)}</time>
                         </div>
-                        <div className="text-slate-600 text-sm mb-3">{item.description}</div>
-                        <Link href={item.link} className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 bg-white px-3 py-1.5 rounded-full border border-slate-200 transition-colors">
-                          詳細を見る <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        <p className="text-xs text-slate-600 truncate mb-1">{item.description}</p>
+                        <Link href={item.link} className="text-[10px] font-bold text-orange-500 hover:underline">確認する</Link>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center text-slate-500 py-8">最近のアクティビティはありません。</div>
+              <div className="text-center text-xs text-slate-500 py-8">アクティビティはありません。</div>
             )}
           </div>
         </div>
