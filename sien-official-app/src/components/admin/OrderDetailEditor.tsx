@@ -303,6 +303,24 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">新規</span>
               )}
             </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">希望する連絡手段</p>
+              <span className="font-bold text-slate-800">{order.contactMethod || <span className="text-slate-400 font-normal">未設定</span>}</span>
+            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3 mt-1">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 mb-1">受付日時 (作成日時)</p>
+                <span className="text-xs font-medium text-slate-600">
+                  {order.createdAt ? new Date(order.createdAt).toLocaleString('ja-JP') : <span className="text-slate-400">不明</span>}
+                </span>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 mb-1">最終更新日時</p>
+                <span className="text-xs font-medium text-slate-600">
+                  {order.updatedAt ? new Date(order.updatedAt).toLocaleString('ja-JP') : <span className="text-slate-400">不明</span>}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -361,6 +379,12 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           </h2>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
+            <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
+            <span className="font-medium text-slate-800">
+              {order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType}
+            </span>
+          </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">プラン名</span>
             <span className="font-medium text-slate-800">
