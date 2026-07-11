@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { RevenueSummaryClient } from "@/components/admin/RevenueSummaryClient";
 import { 
   ArrowRight, FileText, CheckCircle2, AlertCircle, 
   Briefcase, TrendingUp, Clock, Activity, MessageSquare, Star, 
@@ -77,7 +78,7 @@ export default async function AdminDashboard() {
   ] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
     prisma.order.findMany({ where: { status: "COMPLETED", updatedAt: { gte: thisYearStart } } }),
-    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 10 }), // 進行中・完了問わず最新履歴
+    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }), // 進行中・完了問わず最新履歴
     prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.order.findMany({ 
@@ -247,60 +248,15 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* ② 売上サマリー (コンパクト化) */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
-          <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-slate-400" />
-            売上サマリー
-          </h2>
-          
-          <div className="flex-1 flex flex-col justify-between">
-            {/* 上部 KPI */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <div className="text-[10px] font-bold text-slate-500">今月の売上</div>
-                <div className="text-2xl font-black text-slate-900">¥{thisMonthRevenue.toLocaleString()}</div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-500">今年の累計</div>
-                <div className="text-xl font-bold text-slate-700 mt-1">¥{thisYearRevenue.toLocaleString()}</div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-500">今月の新規依頼</div>
-                <div className="text-lg font-bold text-slate-700">{thisMonthOrders.length}<span className="text-[10px] font-normal ml-1">件</span></div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-500">今年の納品数</div>
-                <div className="text-lg font-bold text-slate-700">{completedCount}<span className="text-[10px] font-normal ml-1">件</span></div>
-              </div>
-            </div>
-
-            {/* 下部 簡易グラフ */}
-            <div className="border-t border-slate-100 pt-3">
-              <div className="flex items-end justify-between gap-1 h-16 px-1">
-                {monthlyData.map((data, index) => {
-                  const heightPercent = maxMonthlyRevenue > 0 ? Math.max((data.revenue / maxMonthlyRevenue) * 100, 4) : 4;
-                  return (
-                    <div key={index} className="flex-1 flex flex-col justify-end h-full group relative cursor-default">
-                      <div 
-                        className="w-full bg-slate-200 rounded-sm group-hover:bg-orange-400 transition-colors"
-                        style={{ height: `${heightPercent}%` }}
-                      ></div>
-                      {/* Tooltip */}
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
-                        ¥{data.revenue.toLocaleString()}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex justify-between text-[9px] text-slate-400 font-bold mt-1 px-1">
-                <span>{monthlyData[0].month}</span>
-                <span>{monthlyData[monthlyData.length-1].month}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ② 売上サマリー (金額マスキング機能付きクライアントコンポーネント) */}
+        <RevenueSummaryClient
+          thisMonthRevenue={thisMonthRevenue}
+          thisYearRevenue={thisYearRevenue}
+          thisMonthOrdersCount={thisMonthOrders.length}
+          completedCount={completedCount}
+          monthlyData={monthlyData}
+          maxMonthlyRevenue={maxMonthlyRevenue}
+        />
       </div>
 
       {/* ========================================================

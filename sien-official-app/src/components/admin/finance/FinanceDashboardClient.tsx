@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Download, Trash2, Edit2, Check, X, Target } from "lucide-react";
+import { Download, Trash2, Edit2, Check, X, Target, Eye, EyeOff } from "lucide-react";
 
 type Order = {
   id: string;
@@ -37,6 +37,7 @@ export function FinanceDashboardClient({
   const router = useRouter();
   
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isAmountsVisible, setIsAmountsVisible] = useState(false);
   const [targetSales, setTargetSales] = useState<number>(initialTargetSales);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState(initialTargetSales.toString());
@@ -218,7 +219,15 @@ export function FinanceDashboardClient({
   return (
     <div className="space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-slate-800">金額・確定申告管理</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-slate-800">金額・確定申告管理</h1>
+          <button 
+            onClick={() => setIsAmountsVisible(!isAmountsVisible)}
+            className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 text-xs font-bold bg-white shadow-sm border border-slate-200 px-3 py-1.5 rounded-lg"
+          >
+            {isAmountsVisible ? <><EyeOff className="w-4 h-4"/> 隠す</> : <><Eye className="w-4 h-4"/> 金額を表示</>}
+          </button>
+        </div>
         <div className="flex items-center gap-3">
           <select 
             value={selectedYear} 
@@ -247,8 +256,8 @@ export function FinanceDashboardClient({
           </div>
           <h3 className="text-sm font-bold text-slate-500 mb-1 z-10">今月の売上 (目標達成率)</h3>
           <div className="flex items-baseline gap-2 z-10 mb-3">
-            <p className="text-3xl font-black text-slate-900">¥{thisMonthSales.toLocaleString()}</p>
-            <p className="text-sm font-bold text-slate-500">/ {targetSales.toLocaleString()}</p>
+            <p className="text-3xl font-black text-slate-900">{isAmountsVisible ? `¥${thisMonthSales.toLocaleString()}` : '¥ ***,***'}</p>
+            <p className="text-sm font-bold text-slate-500">/ {isAmountsVisible ? targetSales.toLocaleString() : '***,***'}</p>
           </div>
           {/* プログレスバー */}
           <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2 z-10 overflow-hidden">
@@ -282,16 +291,16 @@ export function FinanceDashboardClient({
         
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-center">
           <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の総売上</h3>
-          <p className="text-3xl font-black text-slate-900">¥{thisYearSales.toLocaleString()}</p>
+          <p className="text-3xl font-black text-slate-900">{isAmountsVisible ? `¥${thisYearSales.toLocaleString()}` : '¥ ***,***'}</p>
         </div>
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-center">
           <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の総経費</h3>
-          <p className="text-3xl font-black text-red-500">¥{thisYearExpenses.toLocaleString()}</p>
+          <p className="text-3xl font-black text-red-500">{isAmountsVisible ? `¥${thisYearExpenses.toLocaleString()}` : '¥ ***,***'}</p>
         </div>
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-center">
           <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の最終利益</h3>
           <p className={`text-3xl font-black ${thisYearProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            ¥{thisYearProfit.toLocaleString()}
+            {isAmountsVisible ? `¥${thisYearProfit.toLocaleString()}` : '¥ ***,***'}
           </p>
         </div>
       </div>
@@ -307,7 +316,7 @@ export function FinanceDashboardClient({
                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `¥${value.toLocaleString()}`} />
                 <RechartsTooltip 
-                  formatter={(value: any) => [`¥${value.toLocaleString()}`, undefined]}
+                  formatter={(value: any) => [isAmountsVisible ? `¥${value.toLocaleString()}` : '¥ ***,***', undefined]}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
@@ -339,7 +348,7 @@ export function FinanceDashboardClient({
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(value: any) => [`¥${value.toLocaleString()}`, undefined]} />
+                  <RechartsTooltip formatter={(value: any) => [isAmountsVisible ? `¥${value.toLocaleString()}` : '¥ ***,***', undefined]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -404,7 +413,7 @@ export function FinanceDashboardClient({
                         {editingExpenseId === exp.id ? (
                           <input type="number" value={expenseEditData.amount} onChange={e => setExpenseEditData({...expenseEditData, amount: parseInt(e.target.value, 10)})} className="border rounded px-2 py-1 outline-none text-xs w-24 text-right" />
                         ) : (
-                          `¥${exp.amount.toLocaleString()}`
+                          isAmountsVisible ? `¥${exp.amount.toLocaleString()}` : '¥ ***,***'
                         )}
                       </td>
                       <td className="px-5 py-3 text-center">
