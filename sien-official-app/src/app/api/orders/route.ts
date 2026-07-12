@@ -9,7 +9,8 @@ export async function POST(request: Request) {
       clientName, clientEmail, twitterId, contactMethod,
       serviceType, planId, songTitle, options, vocalKey,
       referenceUrl, referenceFidelity, materialsUrl, paymentMethod, deadline, message,
-      activityPurpose, genre, lyricsStatus, vocalGuideStatus
+      activityPurpose, genre, lyricsStatus, vocalGuideStatus,
+      price, basePrice, optionPrice
     } = body;
 
     // 基本的なバリデーション（必須項目の空チェック）
@@ -50,6 +51,9 @@ export async function POST(request: Request) {
         genre,
         lyricsStatus,
         vocalGuideStatus,
+        price,
+        basePrice,
+        optionPrice,
         status: "PENDING",
       },
     });

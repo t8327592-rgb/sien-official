@@ -126,6 +126,8 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
   }, [formData.serviceType]);
 
   const calculateTotal = () => {
+    let basePrice = 0;
+    let optionPrice = 0;
     let total = 0;
     let hasConsultation = false;
 
@@ -133,6 +135,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
       if (selectedPlanObj.price === null) {
         hasConsultation = true;
       } else {
+        basePrice += selectedPlanObj.price;
         total += selectedPlanObj.price;
       }
     }
@@ -150,7 +153,9 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
           const priceMatch = opt.priceText.match(/[0-9,]+/);
           if (priceMatch) {
             const priceStr = priceMatch[0].replace(/,/g, "");
-            total += parseInt(priceStr, 10);
+            const val = parseInt(priceStr, 10);
+            optionPrice += val;
+            total += val;
           }
           if (opt.priceText.includes("〜") || opt.priceText.includes("~")) {
             hasConsultation = true;
@@ -167,11 +172,12 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
 
     if (hasEncode) {
       if (total < 10000) {
+        optionPrice += 1000;
         total += 1000;
       }
     }
 
-    return { total, hasConsultation };
+    return { basePrice, optionPrice, total, hasConsultation };
   };
 
   const estimate = calculateTotal();
@@ -203,7 +209,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
       ...formData,
       planId: selectedPlanObj?.name || formData.planId, // 保存するplanIdをプランの日本語名にする
       options: optionsText,
-      lyricsStatus: finalLyricsStatus
+      lyricsStatus: finalLyricsStatus,
+      price: estimate.total,
+      basePrice: estimate.basePrice,
+      optionPrice: estimate.optionPrice
     };
 
     try {
@@ -249,7 +258,8 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
   }
 
   const inputStyle = "w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all";
-  const requiredMark = <span className="text-brand-amber ml-1 font-bold">*</span>;
+  const requiredMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200 align-middle relative -top-0.5">必須</span>;
+  const optionalMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 align-middle relative -top-0.5">任意</span>;
 
   const isMix = formData.serviceType === "MIX";
   const isOriginal = formData.serviceType === "ORIGINAL";
@@ -382,7 +392,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
                   <input required type="text" className={inputStyle} placeholder="山田 太郎" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-brand-text">X (Twitter) ID <span className="text-xs text-slate-500 font-normal ml-1">（任意）</span></label>
+                  <label className="text-sm font-bold text-brand-text">X (Twitter) ID {optionalMark}</label>
                   <input type="text" className={inputStyle} placeholder="例：@sien_mc09" value={formData.twitterId} onChange={e => setFormData({...formData, twitterId: e.target.value})} />
                 </div>
               </div>
@@ -420,7 +430,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
                   <input required type="text" className={inputStyle} placeholder="例: モニタリング / 未定" value={formData.songTitle} onChange={e => setFormData({...formData, songTitle: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-brand-text">ご希望の納期</label>
+                  <label className="text-sm font-bold text-brand-text">ご希望の納期 {optionalMark}</label>
                   <input type="text" className={inputStyle} placeholder="例: 10月末まで" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
                 </div>
               </div>
@@ -512,7 +522,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-brand-text">
-                  参考曲 (YouTubeなどのURL)
+                  参考曲 (YouTubeなどのURL) {optionalMark}
                   <HelpTooltip text="「この曲みたいにしてほしい！」「こんな曲調にしてほしい！」という憧れの曲や参考イメージがあればURLを貼ってください。なければ空欄で大丈夫です。" />
                 </label>
                 <input type="url" className={inputStyle} placeholder="https://..." value={formData.referenceUrl} onChange={e => setFormData({...formData, referenceUrl: e.target.value})} />
@@ -520,7 +530,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
 
               {isMix && (
                 <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <label className="text-sm font-bold text-brand-text">リファレンス音源の再現度の希望</label>
+                  <label className="text-sm font-bold text-brand-text">リファレンス音源の再現度の希望 {optionalMark}</label>
                   <div className="space-y-3">
                     <label className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.referenceFidelity === "1" ? 'border-orange-500 bg-orange-500/5' : 'border-transparent hover:bg-slate-50'}`}>
                       <input type="radio" name="fidelity" className="mt-1 w-5 h-5 text-orange-500 focus:ring-orange-500 shrink-0" checked={formData.referenceFidelity === "1"} onChange={() => setFormData({...formData, referenceFidelity: "1"})} />
@@ -557,7 +567,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
               自由記述
             </h2>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-text">ご要望・ご質問・特記事項など</label>
+              <label className="text-sm font-bold text-brand-text">ご要望・ご質問・特記事項など {optionalMark}</label>
               <textarea 
                 rows={6} 
                 className={`${inputStyle} resize-none`} 
@@ -581,7 +591,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
               </h2>
               <div className="space-y-4">
                 <label className="text-sm font-bold text-brand-text">
-                  レコーディング済み音源のアップロードURL
+                  レコーディング済み音源のアップロードURL {optionalMark}
                   <HelpTooltip text="ボーカルデータ（WAV推奨）とカラオケ音源をGigaFile便などで一つにまとめ、URLを貼り付けてください。まだ録音中の方は空欄のままでOKです！" />
                 </label>
                 <input type="url" className={inputStyle} placeholder="Gigafile便、Google DriveなどのURL" value={formData.materialsUrl} onChange={e => setFormData({...formData, materialsUrl: e.target.value})} />
@@ -657,7 +667,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [] }: {
                   <button type="button" onClick={() => setIsPolicyModalOpen(true)} className="text-orange-600 hover:text-orange-700 underline underline-offset-4 decoration-orange-500/50 transition-colors mx-1">
                     ご依頼に関する留意事項
                   </button>
-                  に同意する <span className="text-brand-amber ml-0.5">*</span>
+                  に同意する {requiredMark}
                 </span>
               </label>
               

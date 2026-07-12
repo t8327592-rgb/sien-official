@@ -115,6 +115,7 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
   const DISCOUNT_PRICE = 2000;
 
   const calculateTotal = () => {
+    let optionPrice = 0;
     let subtotal = BASE_PRICE;
     let hasConsultation = false;
 
@@ -130,7 +131,9 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
           const priceMatch = opt.priceText.match(/[0-9,]+/);
           if (priceMatch) {
             const priceStr = priceMatch[0].replace(/,/g, "");
-            subtotal += parseInt(priceStr, 10);
+            const val = parseInt(priceStr, 10);
+            optionPrice += val;
+            subtotal += val;
           }
           if (opt.priceText.includes("〜") || opt.priceText.includes("~")) {
             hasConsultation = true;
@@ -145,14 +148,22 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
     });
 
     if (hasEncode) {
-      if (subtotal < 10000) {
+      if ((subtotal - DISCOUNT_PRICE) < 10000) {
+        optionPrice += 1000;
         subtotal += 1000;
       }
     }
 
     const total = subtotal - DISCOUNT_PRICE;
 
-    return { subtotal, total, discount: DISCOUNT_PRICE, hasConsultation };
+    return { 
+      basePrice: BASE_PRICE - DISCOUNT_PRICE, // ベース料金は割引適用後の価格とする
+      optionPrice, 
+      subtotal, 
+      total, 
+      discount: DISCOUNT_PRICE, 
+      hasConsultation 
+    };
   };
 
   const estimate = calculateTotal();
@@ -178,6 +189,9 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
       ...formData,
       planId: "サマーセール特別スタンダードプラン",
       options: finalOptionsText,
+      price: estimate.total,
+      basePrice: estimate.basePrice,
+      optionPrice: estimate.optionPrice
     };
 
     try {
@@ -247,7 +261,8 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
   }
 
   const inputStyle = "w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all";
-  const requiredMark = <span className="text-cyan-500 ml-1 font-bold">*</span>;
+  const requiredMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200 align-middle relative -top-0.5">必須</span>;
+  const optionalMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 align-middle relative -top-0.5">任意</span>;
 
   return (
     <>
@@ -355,7 +370,7 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
                   <input required type="text" className={inputStyle} placeholder="山田 太郎" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">X (Twitter) ID <span className="text-xs text-slate-500 font-normal ml-1">（任意）</span></label>
+                  <label className="text-sm font-bold text-slate-700">X (Twitter) ID {optionalMark}</label>
                   <input type="text" className={inputStyle} placeholder="例：@sien_mc09" value={formData.twitterId} onChange={e => setFormData({...formData, twitterId: e.target.value})} />
                 </div>
               </div>
@@ -412,14 +427,14 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">
-                  参考曲URL (任意)
+                  参考曲URL {optionalMark}
                   <HelpTooltip text="「この曲みたいにしてほしい！」「こんな曲調にしてほしい！」という憧れの曲や参考イメージがあればURLを貼ってください。なければ空欄で大丈夫です。" />
                 </label>
                 <input type="url" className={inputStyle} placeholder="https://..." value={formData.referenceUrl} onChange={e => setFormData({...formData, referenceUrl: e.target.value})} />
               </div>
 
               <div className="space-y-3 pt-4 border-t border-slate-100">
-                <label className="text-sm font-bold text-slate-700">リファレンス音源の再現度の希望</label>
+                <label className="text-sm font-bold text-slate-700">リファレンス音源の再現度の希望 {optionalMark}</label>
                 <div className="space-y-3">
                   <label className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.referenceFidelity === "1" ? 'border-cyan-500 bg-cyan-50/50' : 'border-transparent hover:bg-slate-50'}`}>
                     <input type="radio" name="fidelity" className="mt-1 w-5 h-5 text-cyan-500 focus:ring-cyan-500 shrink-0" checked={formData.referenceFidelity === "1"} onChange={() => setFormData({...formData, referenceFidelity: "1"})} />
@@ -456,12 +471,12 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
             </h2>
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">ご要望・特記事項など</label>
+                <label className="text-sm font-bold text-slate-700">ご要望・特記事項など {optionalMark}</label>
                 <textarea rows={4} className={`${inputStyle} resize-none`} placeholder="MIXへのご要望など" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})}></textarea>
               </div>
               <div className="space-y-2 pt-4 border-t border-slate-100">
                 <label className="text-sm font-bold text-slate-700">
-                  音源素材アップロードURL <span className="text-xs text-slate-500 font-normal ml-1">（7/20提出〆切）</span>
+                  音源素材アップロードURL {optionalMark} <span className="text-xs text-slate-500 font-normal ml-2">（7/20提出〆切）</span>
                   <HelpTooltip text="ボーカルデータ（WAV推奨）とカラオケ音源をGigaFile便などで一つにまとめ、URLを貼り付けてください。まだ録音中の方は空欄のままでOKです！" />
                 </label>
                 <input type="url" className={inputStyle} placeholder="Gigafile便、Google DriveなどのURL" value={formData.materialsUrl} onChange={e => setFormData({...formData, materialsUrl: e.target.value})} />
@@ -490,8 +505,8 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
           {/* 送信とリアルタイム見積もり */}
           <div className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-100 p-6 md:p-10 rounded-3xl shadow-xl flex flex-col items-center gap-8 md:gap-10 mx-auto w-full relative overflow-hidden">
             <div className="text-center relative z-10 w-full">
-              <p className="text-cyan-700 text-sm font-bold mb-2 tracking-widest uppercase">現在のお見積り概算</p>
-              <div className="w-full max-w-sm mb-4 space-y-2 border-b border-cyan-200/50 pb-4">
+              <p className="text-cyan-700 text-sm font-bold mb-4 tracking-widest uppercase">現在のお見積り概算</p>
+              <div className="w-full max-w-xs mx-auto mb-6 space-y-2 border-b border-cyan-200/50 pb-4 text-sm sm:text-base">
                 <div className="flex justify-between text-cyan-800 font-medium">
                   <span>小計（基本料金＋オプション）</span>
                   <span>¥{estimate.subtotal.toLocaleString()}</span>
@@ -528,7 +543,7 @@ export default function SummerSaleOrderFormClient({ initialOptions = [] }: { ini
                   <button type="button" onClick={() => setIsPolicyModalOpen(true)} className="text-cyan-600 hover:text-cyan-700 underline underline-offset-4 decoration-cyan-500/50 transition-colors mx-1">
                     ご依頼に関する留意事項
                   </button>
-                  に同意する <span className="text-cyan-500 ml-0.5">*</span>
+                  に同意する {requiredMark}
                 </span>
               </label>
 
