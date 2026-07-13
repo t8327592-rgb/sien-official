@@ -57,11 +57,7 @@ export function Footer() {
       </div>
       <div className="container mx-auto px-4 mt-16 border-t pt-8 text-center text-xs text-muted-foreground">
         <p>
-          Copyright &copy; {currentYear}{" "}
-          <Link href="/login" className="hover:text-slate-400 transition-colors">
-            {siteConfig.name}
-          </Link>
-          . All Rights Reserved.
+          Copyright &copy; {currentYear} {siteConfig.name}. All Rights Reserved.
         </p>
       </div>
     </footer>
