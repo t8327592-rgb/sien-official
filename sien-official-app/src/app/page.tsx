@@ -61,31 +61,31 @@ export default async function Home() {
             {siteSetting.orderStatus === "UNAVAILABLE" ? "お知らせ：" : "受付状況："} {siteSetting.announcement || (siteSetting.orderStatus === "AVAILABLE" ? "現在スケジュール調整可能" : siteSetting.orderStatus === "BUSY" ? "現在混雑中（納期は要相談）" : "現在満枠のため受付を停止しております")}
           </div>
           
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-4 sm:mb-8 leading-[1.3] md:leading-[1.2] drop-shadow-xl">
+          <h1 className="text-2xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-4 sm:mb-8 leading-snug sm:leading-[1.3] md:leading-[1.2] drop-shadow-xl px-4 sm:px-0">
             あなたの歌声を、<br className="md:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 drop-shadow-md inline-block mt-1 md:mt-0">
               “一番輝く形”へ
             </span>
           </h1>
-          <p className="text-sm sm:text-lg md:text-xl text-slate-800 mb-8 md:mb-10 max-w-3xl font-bold leading-relaxed drop-shadow-lg px-2 break-keep">
+          <p className="text-xs sm:text-lg md:text-xl text-slate-800 mb-8 md:mb-10 max-w-3xl font-medium sm:font-bold leading-loose sm:leading-relaxed drop-shadow-lg px-6 sm:px-2 break-keep">
             ボーカルMIXから、あなただけの完全オリジナル楽曲制作まで。<br />
             「あなたらしさ」を活かしたプロクオリティの音源を提案します。
           </p>
 
-          <div className="flex flex-col items-center gap-4 w-full sm:w-auto px-4 sm:px-0">
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <Button asChild className="rounded-full h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-bold bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-xl shadow-orange-500/30 w-full sm:w-auto hover:scale-105 transition-transform border-none text-white">
+          <div className="flex flex-col items-center gap-4 w-full sm:w-auto px-6 sm:px-0">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+              <Button asChild className="rounded-full h-12 sm:h-16 px-6 sm:px-10 text-sm sm:text-lg font-bold bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-xl shadow-orange-500/30 w-full sm:w-auto hover:scale-105 transition-transform border-none text-white">
                 <Link href="/order" className="flex items-center justify-center">
-                  すぐにお見積り依頼 <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
+                  すぐにお見積り依頼 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 shrink-0" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="rounded-full h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-bold bg-white/90 backdrop-blur-md text-slate-800 border-white/50 hover:bg-white shadow-lg w-full sm:w-auto hover:scale-105 transition-all">
+              <Button asChild variant="outline" className="rounded-full h-12 sm:h-16 px-6 sm:px-10 text-sm sm:text-lg font-bold bg-white/90 backdrop-blur-md text-slate-800 border-white/50 hover:bg-white shadow-lg w-full sm:w-auto hover:scale-105 transition-all">
                 <Link href="#services" className="flex items-center justify-center">
                   サービス詳細を見る
                 </Link>
               </Button>
             </div>
-            <p className="text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 drop-shadow-md text-slate-800 mt-2">
+            <p className="text-[10px] sm:text-sm font-bold flex items-center justify-center gap-1.5 drop-shadow-md text-slate-800 mt-2">
               <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600" /> お見積り・ご相談だけでも無料です
             </p>
           </div>

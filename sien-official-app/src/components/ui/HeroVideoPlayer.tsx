@@ -31,7 +31,7 @@ export function HeroVideoPlayer({ src }: { src: string }) {
         loop
         muted
         playsInline
-        className="absolute inset-0 z-0 w-full h-full object-cover"
+        className="absolute inset-0 z-0 w-full h-full object-cover object-[50%_25%] sm:object-center"
       >
         <source src={src} />
       </video>
