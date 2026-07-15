@@ -340,7 +340,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-5 blur-sm"></div>
         <div className="container px-4 mx-auto text-center relative z-10 border border-orange-200/50 bg-white/70 backdrop-blur-md rounded-3xl md:rounded-[3rem] p-6 md:p-20 shadow-xl shadow-orange-500/5 max-w-4xl">
           <p className="text-orange-600 text-xs md:text-sm font-bold tracking-widest uppercase mb-3 md:mb-4">Get Started</p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 md:mb-8 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-extrabold text-slate-900 mb-6 md:mb-8 leading-tight break-keep whitespace-nowrap sm:whitespace-normal">
             最高の作品を、<br className="md:hidden" />一緒に作りましょう。
           </h2>
           <div className="text-slate-600 mb-8 md:mb-10 max-w-xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed font-bold bg-white/60 backdrop-blur-sm p-5 md:p-6 rounded-2xl border border-orange-100">
