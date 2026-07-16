@@ -12,19 +12,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
     const body = await request.json();
     const { 
-      status, price, deadline, 
-      serviceType, planId, songTitle, vocalKey, options, message,
+      status, price, basePrice, optionPrice, paymentMethod, deadline, 
+      serviceType, planId, songTitle, vocalKey, genre, lyricsStatus, vocalGuideStatus, referenceFidelity, options, message,
       clientName, clientEmail, twitterId, isRepeater, isArchived
     } = body;
 
     const dataToUpdate: any = {};
     if (status !== undefined) dataToUpdate.status = status;
     if (price !== undefined) dataToUpdate.price = price;
+    if (basePrice !== undefined) dataToUpdate.basePrice = basePrice;
+    if (optionPrice !== undefined) dataToUpdate.optionPrice = optionPrice;
+    if (paymentMethod !== undefined) dataToUpdate.paymentMethod = paymentMethod;
     if (deadline !== undefined) dataToUpdate.deadline = deadline;
     if (serviceType !== undefined) dataToUpdate.serviceType = serviceType;
     if (planId !== undefined) dataToUpdate.planId = planId;
     if (songTitle !== undefined) dataToUpdate.songTitle = songTitle;
     if (vocalKey !== undefined) dataToUpdate.vocalKey = vocalKey;
+    if (genre !== undefined) dataToUpdate.genre = genre;
+    if (lyricsStatus !== undefined) dataToUpdate.lyricsStatus = lyricsStatus;
+    if (vocalGuideStatus !== undefined) dataToUpdate.vocalGuideStatus = vocalGuideStatus;
+    if (referenceFidelity !== undefined) dataToUpdate.referenceFidelity = referenceFidelity;
     if (options !== undefined) dataToUpdate.options = options;
     if (message !== undefined) dataToUpdate.message = message;
     if (clientName !== undefined) dataToUpdate.clientName = clientName;
