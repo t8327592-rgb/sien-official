@@ -11,6 +11,7 @@ export default async function AdminFinancePage() {
     select: {
       id: true,
       createdAt: true,
+      updatedAt: true,
       price: true,
       basePrice: true,
       optionPrice: true,

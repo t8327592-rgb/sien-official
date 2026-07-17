@@ -8,6 +8,7 @@ import { Download, Trash2, Edit2, Check, X, Target, Eye, EyeOff } from "lucide-r
 type Order = {
   id: string;
   createdAt: Date;
+  updatedAt: Date;
   price: number | null;
   basePrice: number | null;
   optionPrice: number | null;
@@ -49,14 +50,14 @@ export function FinanceDashboardClient({
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     years.add(new Date().getFullYear());
-    initialOrders.forEach(o => years.add(new Date(o.createdAt).getFullYear()));
+    initialOrders.forEach(o => years.add(new Date(o.updatedAt).getFullYear()));
     initialExpenses.forEach(e => years.add(new Date(e.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
   }, [initialOrders, initialExpenses]);
 
   // 指定された年度のデータに絞り込み
   const yearOrders = useMemo(() => 
-    initialOrders.filter(o => new Date(o.createdAt).getFullYear() === selectedYear),
+    initialOrders.filter(o => new Date(o.updatedAt).getFullYear() === selectedYear),
   [initialOrders, selectedYear]);
 
   const yearExpenses = useMemo(() => 
@@ -69,7 +70,7 @@ export function FinanceDashboardClient({
   const isCurrentYear = selectedYear === currentYear;
   
   const thisMonthSales = isCurrentYear 
-    ? yearOrders.filter(o => new Date(o.createdAt).getMonth() === currentMonth).reduce((sum, o) => sum + (o.price || 0), 0)
+    ? yearOrders.filter(o => new Date(o.updatedAt).getMonth() === currentMonth).reduce((sum, o) => sum + (o.price || 0), 0)
     : 0;
 
   // 年間サマリー
@@ -92,7 +93,7 @@ export function FinanceDashboardClient({
     }));
 
     yearOrders.forEach(o => {
-      const month = new Date(o.createdAt).getMonth();
+      const month = new Date(o.updatedAt).getMonth();
       data[month].売上 += (o.price || 0);
     });
 
@@ -192,7 +193,7 @@ export function FinanceDashboardClient({
     
     // 売上
     yearOrders.forEach(o => {
-      const d = new Date(o.createdAt);
+      const d = new Date(o.updatedAt);
       const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
       csvContent += `${dateStr},売上,案件報酬,"Order ID: ${o.id}",${o.price || 0}\n`;
     });
