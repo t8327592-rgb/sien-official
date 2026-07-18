@@ -340,12 +340,12 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
       </div>
 
       {/* リスト表示 */}
-      <div className="bg-white md:rounded-xl shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0">
+      <div className="bg-slate-50 md:bg-white md:rounded-xl md:shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0 p-4 md:p-0">
         
         {/* スマホ用カード表示 (md:hidden) */}
-        <div className="md:hidden divide-y divide-slate-100">
+        <div className="md:hidden flex flex-col gap-3">
           {displayOrders.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-500">
+            <div className="p-8 text-center text-sm text-slate-500 bg-white rounded-xl border border-slate-200 shadow-sm">
               該当する依頼データはありません。
             </div>
           ) : (
@@ -353,7 +353,7 @@ export function OrderListClient({ initialOrders, plans = [] }: { initialOrders: 
               <div 
                 key={order.id} 
                 onClick={() => router.push(`/admin/orders/${order.id}`)}
-                className="p-4 hover:bg-orange-50/50 transition-colors cursor-pointer group text-sm relative"
+                className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer group text-sm relative"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="relative overflow-visible">
