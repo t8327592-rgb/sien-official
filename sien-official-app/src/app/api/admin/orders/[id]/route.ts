@@ -43,24 +43,32 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
 
+    let currentOrder = null;
+    if (isRepeater === undefined || status !== undefined) {
+      currentOrder = await prisma.order.findUnique({ where: { id } });
+    }
+
     if (isRepeater !== undefined) {
       dataToUpdate.isRepeater = isRepeater === true || isRepeater === 'true';
-    } else {
-      const currentOrder = await prisma.order.findUnique({ where: { id } });
-      if (currentOrder) {
-        const emailChanged = clientEmail !== undefined && clientEmail !== currentOrder.clientEmail;
-        const twitterChanged = twitterId !== undefined && twitterId !== currentOrder.twitterId;
-        const nameChanged = clientName !== undefined && clientName !== currentOrder.clientName;
+    } else if (currentOrder) {
+      const emailChanged = clientEmail !== undefined && clientEmail !== currentOrder.clientEmail;
+      const twitterChanged = twitterId !== undefined && twitterId !== currentOrder.twitterId;
+      const nameChanged = clientName !== undefined && clientName !== currentOrder.clientName;
 
-        // クライアント情報が変更された場合のみ、リピーター判定を再計算
-        if (emailChanged || twitterChanged || nameChanged) {
-          const newEmail = clientEmail !== undefined ? clientEmail : currentOrder.clientEmail;
-          const newTwitterId = twitterId !== undefined ? twitterId : currentOrder.twitterId;
-          const newName = clientName !== undefined ? clientName : currentOrder.clientName;
-          
-          const { checkIsRepeater } = await import("@/lib/repeater");
-          dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
-        }
+      // クライアント情報が変更された場合のみ、リピーター判定を再計算
+      if (emailChanged || twitterChanged || nameChanged) {
+        const newEmail = clientEmail !== undefined ? clientEmail : currentOrder.clientEmail;
+        const newTwitterId = twitterId !== undefined ? twitterId : currentOrder.twitterId;
+        const newName = clientName !== undefined ? clientName : currentOrder.clientName;
+        
+        const { checkIsRepeater } = await import("@/lib/repeater");
+        dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
+      }
+    }
+
+    if (status === "COMPLETED" && currentOrder?.status !== "COMPLETED") {
+      if (!currentOrder?.deliveredAt) {
+        dataToUpdate.deliveredAt = new Date();
       }
     }
 
@@ -68,12 +76,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       where: { id },
       data: dataToUpdate,
     });
-
-    if (updatedOrder.isRepeater) {
-      // 更新によってリピーターになった、あるいは元々リピーターの場合、同一クライアントの過去の依頼もすべてリピーターにする
-      const { updateAllClientOrdersToRepeater } = await import("@/lib/repeater");
-      await updateAllClientOrdersToRepeater(updatedOrder.clientEmail, updatedOrder.twitterId);
-    }
 
     return NextResponse.json({ success: true, order: updatedOrder });
   } catch (error) {

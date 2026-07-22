@@ -70,50 +70,83 @@ export default async function AdminDashboard() {
   // データベースへのクエリを並列実行
   const [
     thisMonthOrders, // 今月作成された案件
-    thisYearCompletedOrders, // 今年納品された案件（売上用）
+    thisYearCompletedOrdersCreated, // 今年納品された案件（受注ベース）
+    thisYearCompletedOrdersDelivered, // 今年納品された案件（納品ベース）
     recentOrders, // 最新の案件（履歴用）
     recentContacts, // 最新のお問い合わせ
     recentReviews, // 最新のレビュー
-    monthlyCompletedOrders // 過去6ヶ月の完了案件（グラフ用）
+    monthlyCompletedOrdersCreated, // 過去6ヶ月の完了案件（受注ベース）
+    monthlyCompletedOrdersDelivered // 過去6ヶ月の完了案件（納品ベース）
   ] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
-    prisma.order.findMany({ where: { status: "COMPLETED", updatedAt: { gte: thisYearStart } } }),
+    prisma.order.findMany({ where: { status: "COMPLETED", createdAt: { gte: thisYearStart } } }),
+    prisma.order.findMany({ where: { status: "COMPLETED", deliveredAt: { gte: thisYearStart } } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }), // 進行中・完了問わず最新履歴
     prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.order.findMany({ 
       where: { 
         status: "COMPLETED",
-        updatedAt: { gte: sixMonthsAgo } 
+        createdAt: { gte: sixMonthsAgo } 
       },
-      select: { price: true, updatedAt: true }
+      select: { price: true, createdAt: true }
+    }),
+    prisma.order.findMany({ 
+      where: { 
+        status: "COMPLETED",
+        deliveredAt: { gte: sixMonthsAgo } 
+      },
+      select: { price: true, deliveredAt: true }
     })
   ]);
 
-  // 売上の計算
-  const thisMonthRevenue = thisYearCompletedOrders
-    .filter(o => o.updatedAt >= thisMonthStart)
+  // --- 受注ベースの計算 ---
+  const createdThisMonthRevenue = thisYearCompletedOrdersCreated
+    .filter(o => o.createdAt >= thisMonthStart)
     .reduce((sum, order) => sum + (order.price || 0), 0);
     
-  const thisYearRevenue = thisYearCompletedOrders.reduce((sum, order) => sum + (order.price || 0), 0);
-  const completedCount = thisYearCompletedOrders.length;
+  const createdThisYearRevenue = thisYearCompletedOrdersCreated.reduce((sum, order) => sum + (order.price || 0), 0);
+  const createdCompletedCount = thisYearCompletedOrdersCreated.length;
 
-  // 過去6ヶ月の売上データ生成
-  const monthlyData = [];
+  const createdMonthlyData = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const monthName = `${d.getMonth() + 1}月`;
     const start = new Date(d.getFullYear(), d.getMonth(), 1);
     const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
     
-    const revenue = monthlyCompletedOrders
-      .filter(o => o.updatedAt >= start && o.updatedAt <= end)
+    const revenue = monthlyCompletedOrdersCreated
+      .filter(o => o.createdAt >= start && o.createdAt <= end)
       .reduce((sum, o) => sum + (o.price || 0), 0);
       
-    monthlyData.push({ month: monthName, revenue });
+    createdMonthlyData.push({ month: monthName, revenue });
   }
+  const createdMaxMonthlyRevenue = Math.max(...createdMonthlyData.map(d => d.revenue), 1);
 
-  const maxMonthlyRevenue = Math.max(...monthlyData.map(d => d.revenue), 1);
+  // --- 納品ベースの計算 ---
+  const deliveredThisMonthRevenue = thisYearCompletedOrdersDelivered
+    .filter(o => o.deliveredAt && o.deliveredAt >= thisMonthStart)
+    .reduce((sum, order) => sum + (order.price || 0), 0);
+    
+  const deliveredThisYearRevenue = thisYearCompletedOrdersDelivered.reduce((sum, order) => sum + (order.price || 0), 0);
+  const deliveredCompletedCount = thisYearCompletedOrdersDelivered.length;
+
+  const deliveredMonthlyData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthName = `${d.getMonth() + 1}月`;
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+    
+    const revenue = monthlyCompletedOrdersDelivered
+      .filter(o => o.deliveredAt && o.deliveredAt >= start && o.deliveredAt <= end)
+      .reduce((sum, o) => sum + (o.price || 0), 0);
+      
+    deliveredMonthlyData.push({ month: monthName, revenue });
+  }
+  const deliveredMaxMonthlyRevenue = Math.max(...deliveredMonthlyData.map(d => d.revenue), 1);
+
+
 
   // アクティビティの生成
   type ActivityItem = {
@@ -134,12 +167,12 @@ export default async function AdminDashboard() {
       date: o.createdAt,
       link: `/admin/orders/${o.id}`
     })),
-    ...thisYearCompletedOrders.filter(o => o.updatedAt >= new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)).map(o => ({
+    ...thisYearCompletedOrdersDelivered.filter(o => o.deliveredAt && o.deliveredAt >= new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)).map(o => ({
       id: `comp-${o.id}`,
       type: 'COMPLETED' as const,
       title: '納品完了',
       description: `${o.clientName}様の案件「${o.songTitle || o.serviceType}」を納品。`,
-      date: o.updatedAt,
+      date: o.deliveredAt as Date,
       link: `/admin/orders/${o.id}`
     })),
     ...recentContacts.map(c => ({
@@ -250,12 +283,21 @@ export default async function AdminDashboard() {
 
         {/* ② 売上サマリー (金額マスキング機能付きクライアントコンポーネント) */}
         <RevenueSummaryClient
-          thisMonthRevenue={thisMonthRevenue}
-          thisYearRevenue={thisYearRevenue}
           thisMonthOrdersCount={thisMonthOrders.length}
-          completedCount={completedCount}
-          monthlyData={monthlyData}
-          maxMonthlyRevenue={maxMonthlyRevenue}
+          createdData={{
+            thisMonthRevenue: createdThisMonthRevenue,
+            thisYearRevenue: createdThisYearRevenue,
+            completedCount: createdCompletedCount,
+            monthlyData: createdMonthlyData,
+            maxMonthlyRevenue: createdMaxMonthlyRevenue
+          }}
+          deliveredData={{
+            thisMonthRevenue: deliveredThisMonthRevenue,
+            thisYearRevenue: deliveredThisYearRevenue,
+            completedCount: deliveredCompletedCount,
+            monthlyData: deliveredMonthlyData,
+            maxMonthlyRevenue: deliveredMaxMonthlyRevenue
+          }}
         />
       </div>
 
