@@ -9,6 +9,7 @@ type Order = {
   id: string;
   createdAt: Date;
   updatedAt: Date;
+  deliveredAt: Date | null;
   price: number | null;
   basePrice: number | null;
   optionPrice: number | null;
@@ -39,6 +40,7 @@ export function FinanceDashboardClient({
   
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [isAmountsVisible, setIsAmountsVisible] = useState(false);
+  const [mode, setMode] = useState<"created" | "delivered">("created");
   const [targetSales, setTargetSales] = useState<number>(initialTargetSales);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState(initialTargetSales.toString());
@@ -50,15 +52,22 @@ export function FinanceDashboardClient({
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     years.add(new Date().getFullYear());
-    initialOrders.forEach(o => years.add(new Date(o.updatedAt).getFullYear()));
+    initialOrders.forEach(o => {
+      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      if (targetDate) years.add(new Date(targetDate).getFullYear());
+    });
     initialExpenses.forEach(e => years.add(new Date(e.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
-  }, [initialOrders, initialExpenses]);
+  }, [initialOrders, initialExpenses, mode]);
 
   // 指定された年度のデータに絞り込み
   const yearOrders = useMemo(() => 
-    initialOrders.filter(o => new Date(o.updatedAt).getFullYear() === selectedYear),
-  [initialOrders, selectedYear]);
+    initialOrders.filter(o => {
+      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      if (!targetDate) return false;
+      return new Date(targetDate).getFullYear() === selectedYear;
+    }),
+  [initialOrders, selectedYear, mode]);
 
   const yearExpenses = useMemo(() => 
     initialExpenses.filter(e => new Date(e.date).getFullYear() === selectedYear),
@@ -70,7 +79,10 @@ export function FinanceDashboardClient({
   const isCurrentYear = selectedYear === currentYear;
   
   const thisMonthSales = isCurrentYear 
-    ? yearOrders.filter(o => new Date(o.updatedAt).getMonth() === currentMonth).reduce((sum, o) => sum + (o.price || 0), 0)
+    ? yearOrders.filter(o => {
+        const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+        return targetDate && new Date(targetDate).getMonth() === currentMonth;
+      }).reduce((sum, o) => sum + (o.price || 0), 0)
     : 0;
 
   // 年間サマリー
@@ -93,8 +105,11 @@ export function FinanceDashboardClient({
     }));
 
     yearOrders.forEach(o => {
-      const month = new Date(o.updatedAt).getMonth();
-      data[month].売上 += (o.price || 0);
+      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      if (targetDate) {
+        const month = new Date(targetDate).getMonth();
+        data[month].売上 += (o.price || 0);
+      }
     });
 
     yearExpenses.forEach(e => {
@@ -193,9 +208,12 @@ export function FinanceDashboardClient({
     
     // 売上
     yearOrders.forEach(o => {
-      const d = new Date(o.updatedAt);
-      const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-      csvContent += `${dateStr},売上,案件報酬,"Order ID: ${o.id}",${o.price || 0}\n`;
+      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      if (targetDate) {
+        const d = new Date(targetDate);
+        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        csvContent += `${dateStr},売上,案件報酬,"Order ID: ${o.id}",${o.price || 0}\n`;
+      }
     });
 
     // 経費
@@ -222,11 +240,41 @@ export function FinanceDashboardClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-slate-800">金額・確定申告管理</h1>
+          
+          <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <button
+              onClick={() => setMode("created")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${mode === "created" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              受注ベース
+            </button>
+            <button
+              onClick={() => setMode("delivered")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${mode === "delivered" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              納品ベース
+            </button>
+          </div>
+
           <button 
             onClick={() => setIsAmountsVisible(!isAmountsVisible)}
             className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 text-xs font-bold bg-white shadow-sm border border-slate-200 px-3 py-1.5 rounded-lg"
           >
             {isAmountsVisible ? <><EyeOff className="w-4 h-4"/> 隠す</> : <><Eye className="w-4 h-4"/> 金額を表示</>}
+          </button>
+        </div>
+        <div className="flex sm:hidden bg-slate-100 p-0.5 rounded-lg border border-slate-200 w-full mb-2">
+          <button
+            onClick={() => setMode("created")}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${mode === "created" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            受注ベース
+          </button>
+          <button
+            onClick={() => setMode("delivered")}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${mode === "delivered" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            納品ベース
           </button>
         </div>
         <div className="flex items-center gap-3">

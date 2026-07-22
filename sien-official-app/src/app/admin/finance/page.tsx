@@ -12,6 +12,7 @@ export default async function AdminFinancePage() {
       id: true,
       createdAt: true,
       updatedAt: true,
+      deliveredAt: true,
       price: true,
       basePrice: true,
       optionPrice: true,
