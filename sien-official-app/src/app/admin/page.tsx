@@ -70,23 +70,23 @@ export default async function AdminDashboard() {
   // データベースへのクエリを並列実行
   const [
     thisMonthOrders, // 今月作成された案件
-    thisYearCompletedOrdersCreated, // 今年納品された案件（受注ベース）
+    thisYearOrdersCreated, // 今年の受注案件（受注ベース）
     thisYearCompletedOrdersDelivered, // 今年納品された案件（納品ベース）
     recentOrders, // 最新の案件（履歴用）
     recentContacts, // 最新のお問い合わせ
     recentReviews, // 最新のレビュー
-    monthlyCompletedOrdersCreated, // 過去6ヶ月の完了案件（受注ベース）
+    monthlyOrdersCreated, // 過去6ヶ月の受注案件（受注ベース）
     monthlyCompletedOrdersDelivered // 過去6ヶ月の完了案件（納品ベース）
   ] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
-    prisma.order.findMany({ where: { status: "COMPLETED", createdAt: { gte: thisYearStart } } }),
+    prisma.order.findMany({ where: { status: { notIn: ["CANCELLED", "CANCELED"] }, createdAt: { gte: thisYearStart } } }),
     prisma.order.findMany({ where: { status: "COMPLETED", deliveredAt: { gte: thisYearStart } } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }), // 進行中・完了問わず最新履歴
     prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.order.findMany({ 
       where: { 
-        status: "COMPLETED",
+        status: { notIn: ["CANCELLED", "CANCELED"] },
         createdAt: { gte: sixMonthsAgo } 
       },
       select: { price: true, createdAt: true }
@@ -101,12 +101,12 @@ export default async function AdminDashboard() {
   ]);
 
   // --- 受注ベースの計算 ---
-  const createdThisMonthRevenue = thisYearCompletedOrdersCreated
+  const createdThisMonthRevenue = thisYearOrdersCreated
     .filter(o => o.createdAt >= thisMonthStart)
     .reduce((sum, order) => sum + (order.price || 0), 0);
     
-  const createdThisYearRevenue = thisYearCompletedOrdersCreated.reduce((sum, order) => sum + (order.price || 0), 0);
-  const createdCompletedCount = thisYearCompletedOrdersCreated.length;
+  const createdThisYearRevenue = thisYearOrdersCreated.reduce((sum, order) => sum + (order.price || 0), 0);
+  const createdCompletedCount = thisYearOrdersCreated.length;
 
   const createdMonthlyData = [];
   for (let i = 5; i >= 0; i--) {
@@ -115,7 +115,7 @@ export default async function AdminDashboard() {
     const start = new Date(d.getFullYear(), d.getMonth(), 1);
     const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
     
-    const revenue = monthlyCompletedOrdersCreated
+    const revenue = monthlyOrdersCreated
       .filter(o => o.createdAt >= start && o.createdAt <= end)
       .reduce((sum, o) => sum + (o.price || 0), 0);
       
