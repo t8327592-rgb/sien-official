@@ -50,5 +50,5 @@ export default async function OrderPage() {
     priceText: o.priceText
   }));
 
-  return <OrderFormClient initialPlans={plans} initialOptions={options} />;
+  return <OrderFormClient initialPlans={plans} initialOptions={options} siteSetting={siteSetting} />;
 }
