@@ -51,8 +51,8 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
             onChange={(e) => setOrderStatus(e.target.value)}
             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
           >
-            <option value="AVAILABLE">受付可能（通常どおり）</option>
-            <option value="BUSY">混雑（納期が長くなる可能性あり）</option>
+            <option value="AVAILABLE">受付中</option>
+            <option value="BUSY">混雑中（納期要相談）</option>
             <option value="UNAVAILABLE">受付不可（新規受付停止中）</option>
           </select>
         </div>

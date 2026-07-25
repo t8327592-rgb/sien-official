@@ -285,15 +285,15 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           {siteSetting && (
             <div className={`mb-8 inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-white shadow-sm border font-bold text-xs sm:text-sm tracking-wide transition-all mx-auto ${
               siteSetting.orderStatus === "AVAILABLE" 
-                ? "border-orange-200 text-orange-600" 
+                ? "border-emerald-200 text-emerald-600" 
                 : siteSetting.orderStatus === "BUSY"
                 ? "border-amber-200 text-amber-600"
-                : "border-slate-200 text-slate-500"
+                : "border-red-200 text-red-600"
             }`}>
               {siteSetting.orderStatus === "AVAILABLE" ? (
                 <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-orange-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-emerald-500"></span>
                 </span>
               ) : siteSetting.orderStatus === "BUSY" ? (
                 <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
@@ -302,10 +302,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                 </span>
               ) : (
                 <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-slate-400"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-red-500"></span>
                 </span>
               )}
-              {siteSetting.orderStatus === "UNAVAILABLE" ? "お知らせ：" : "受付状況："} {siteSetting.announcement || (siteSetting.orderStatus === "AVAILABLE" ? "現在スケジュール調整可能" : siteSetting.orderStatus === "BUSY" ? "現在混雑中（納期は要相談）" : "現在満枠のため受付を停止しております")}
+              {siteSetting.orderStatus === "UNAVAILABLE" ? "お知らせ：" : "受付状況："} {siteSetting.announcement || (siteSetting.orderStatus === "AVAILABLE" ? "受付中" : siteSetting.orderStatus === "BUSY" ? "混雑中（納期要相談）" : "現在満枠のため受付を停止しております")}
             </div>
           )}
 
