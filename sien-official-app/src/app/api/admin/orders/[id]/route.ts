@@ -43,14 +43,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
 
-    let currentOrder = null;
-    if (isRepeater === undefined || status !== undefined) {
-      currentOrder = await prisma.order.findUnique({ where: { id } });
+    let currentOrder = await prisma.order.findUnique({ where: { id } });
+    if (!currentOrder) {
+      return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
     }
 
     if (isRepeater !== undefined) {
       dataToUpdate.isRepeater = isRepeater === true || isRepeater === 'true';
-    } else if (currentOrder) {
+    } else {
       const emailChanged = clientEmail !== undefined && clientEmail !== currentOrder.clientEmail;
       const twitterChanged = twitterId !== undefined && twitterId !== currentOrder.twitterId;
       const nameChanged = clientName !== undefined && clientName !== currentOrder.clientName;
@@ -63,6 +63,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         
         const { checkIsRepeater } = await import("@/lib/repeater");
         dataToUpdate.isRepeater = await checkIsRepeater(newEmail, newTwitterId, newName, id, currentOrder.createdAt);
+      }
+    }
+
+    // 自動計算: basePrice または optionPrice が更新された場合、合計金額 (price) も自動で再計算する
+    if (price === undefined && (basePrice !== undefined || optionPrice !== undefined)) {
+      const newBase = basePrice !== undefined ? basePrice : currentOrder.basePrice;
+      const newOption = optionPrice !== undefined ? optionPrice : currentOrder.optionPrice;
+      if (newBase !== null || newOption !== null) {
+        dataToUpdate.price = (newBase || 0) + (newOption || 0);
       }
     }
 

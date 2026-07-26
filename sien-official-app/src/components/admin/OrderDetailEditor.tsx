@@ -79,7 +79,12 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
         body: JSON.stringify({ [field]: valueToSave })
       });
       if (res.ok) {
-        setOrder((prev: any) => ({ ...prev, [field]: valueToSave }));
+        const data = await res.json();
+        if (data.success && data.order) {
+          setOrder(data.order);
+        } else {
+          setOrder((prev: any) => ({ ...prev, [field]: valueToSave }));
+        }
         toast.success("更新しました");
         
         // カレンダー同期処理
@@ -123,7 +128,12 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
         body: JSON.stringify(bulkEditData)
       });
       if (res.ok) {
-        setOrder((prev: any) => ({ ...prev, ...bulkEditData }));
+        const data = await res.json();
+        if (data.success && data.order) {
+          setOrder(data.order);
+        } else {
+          setOrder((prev: any) => ({ ...prev, ...bulkEditData }));
+        }
         toast.success("更新しました");
         setIsEditMode(false);
       } else {
