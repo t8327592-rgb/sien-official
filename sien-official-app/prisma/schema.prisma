@@ -27,6 +27,7 @@ model Order {
   clientName        String
   clientEmail       String
   twitterId         String?  // Twitter ID
+  discordId         String?  // Discord ID
   contactMethod     String?  // 希望する連絡手段
   isRepeater        Boolean  @default(false) // リピーターかどうか
   serviceType       String   // "mix" or "original"

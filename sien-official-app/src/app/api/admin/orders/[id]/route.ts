@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { 
       status, price, basePrice, optionPrice, paymentMethod, deadline, 
       serviceType, planId, songTitle, vocalKey, genre, lyricsStatus, vocalGuideStatus, referenceFidelity, options, message,
-      clientName, clientEmail, twitterId, isRepeater, isArchived
+      clientName, clientEmail, twitterId, discordId, isRepeater, isArchived
     } = body;
 
     const dataToUpdate: any = {};
@@ -37,6 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (clientName !== undefined) dataToUpdate.clientName = clientName;
     if (clientEmail !== undefined) dataToUpdate.clientEmail = clientEmail;
     if (twitterId !== undefined) dataToUpdate.twitterId = twitterId;
+    if (discordId !== undefined) dataToUpdate.discordId = discordId;
     if (isArchived !== undefined) dataToUpdate.isArchived = isArchived;
 
     if (Object.keys(dataToUpdate).length === 0 && isRepeater === undefined) {

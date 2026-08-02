@@ -34,6 +34,7 @@ export async function POST(request: Request) {
         clientName,
         clientEmail,
         twitterId,
+        discordId,
         contactMethod,
         isRepeater,
         serviceType,
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
           title: `📨 新規ご依頼: ${serviceName}`,
           color: 3447003, // Blue color
           fields: [
-            { name: "👤 お客様情報", value: `**名前**: ${clientName} (${repeaterText})\n**Email**: ${clientEmail}\n**Twitter**: ${twitterId || "なし"}\n**連絡手段**: ${contactMethod}` },
+            { name: "👤 お客様情報", value: `**名前**: ${clientName} (${repeaterText})\n**Email**: ${clientEmail}\n**Twitter**: ${twitterId || "なし"}\n**Discord ID**: ${discordId || "なし"}\n**連絡手段**: ${contactMethod}` },
             { name: "🎵 依頼内容", value: `**用途**: ${activityPurpose || "未指定"}\n**プランID**: ${planId}\n**曲名**: ${songTitle || "なし"}\n**希望納期**: ${deadline || "指定なし"}\n**オプション**: ${options || "なし"}` },
           ],
           timestamp: new Date().toISOString()

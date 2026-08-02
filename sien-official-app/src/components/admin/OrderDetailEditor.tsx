@@ -306,6 +306,17 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
               {renderTwitterLink(order.twitterId)}
             </div>
             <div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1 flex items-center justify-between">
+                Discord ID
+                {order.discordId && (
+                  <button onClick={() => handleCopyText(order.discordId)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                )}
+              </p>
+              {renderEditable('discordId', <span className="font-bold text-slate-800">{order.discordId || <span className="text-slate-400 font-normal">未設定</span>}</span>)}
+            </div>
+            <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">顧客ステータス</p>
               {order.isRepeater ? (
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">リピーター</span>
