@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { 
-      clientName, clientEmail, twitterId, contactMethod,
+      clientName, clientEmail, twitterId, discordId, contactMethod,
       serviceType, planId, songTitle, options, vocalKey,
       referenceUrl, referenceFidelity, materialsUrl, paymentMethod, deadline, message,
       activityPurpose, genre, lyricsStatus, vocalGuideStatus,
