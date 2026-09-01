@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Trash2, Building2, User, Mail, Calendar, FileText, CheckCircle, Clock, DollarSign, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Building2, User, Mail, Calendar, FileText, CheckCircle, Clock, DollarSign, FileSpreadsheet, Copy } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 type BusinessContact = any;
 
@@ -34,11 +35,16 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // yyyy-MM-dd format for date inputs
   const formatDateForInput = (dateStr: string | null) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+  };
+
+  const handleCopyText = (text: string | null) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success("コピーしました");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -65,14 +71,14 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        alert("保存しました。");
+        toast.success("保存しました");
         router.refresh();
       } else {
-        alert("保存に失敗しました。");
+        toast.error("保存に失敗しました");
       }
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。");
+      toast.error("エラーが発生しました");
     } finally {
       setIsSaving(false);
     }
@@ -89,16 +95,16 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
         method: "DELETE",
       });
       if (res.ok) {
-        alert("削除しました。");
+        toast.success("削除しました");
         router.push("/admin/business");
         router.refresh();
       } else {
-        alert("削除に失敗しました。");
+        toast.error("削除に失敗しました");
         setIsDeleting(false);
       }
     } catch (error) {
       console.error(error);
-      alert("エラーが発生しました。");
+      toast.error("エラーが発生しました");
       setIsDeleting(false);
     }
   };
@@ -156,7 +162,12 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">貴社名</label>
+                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                  貴社名
+                  <button onClick={() => handleCopyText(formData.companyName)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </label>
                 <input
                   type="text"
                   name="companyName"
@@ -167,7 +178,12 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">担当者名</label>
+                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                  担当者名
+                  <button onClick={() => handleCopyText(formData.contactName)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </label>
                 <input
                   type="text"
                   name="contactName"
@@ -178,7 +194,12 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">メールアドレス</label>
+                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                  メールアドレス
+                  <button onClick={() => handleCopyText(formData.email)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </label>
                 <input
                   type="email"
                   name="email"

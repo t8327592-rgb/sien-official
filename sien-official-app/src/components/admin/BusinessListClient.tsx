@@ -3,8 +3,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ArrowUpDown, ChevronDown } from "lucide-react";
+import { toast } from "react-hot-toast";
 
-type BusinessContact = any; // 簡易化のためのany型
+type BusinessContact = any;
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "未対応",
@@ -41,6 +42,11 @@ export default function BusinessListClient({ initialContacts }: { initialContact
   const [searchQuery, setSearchQuery] = useState<string>("");
   
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  
+  // インライン編集用の状態
+  const [editingField, setEditingField] = useState<{contactId: string, field: string} | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,11 +72,59 @@ export default function BusinessListClient({ initialContacts }: { initialContact
       if (res.ok) {
         const updated = await res.json();
         setContacts(prev => prev.map(c => c.id === contactId ? updated : c));
+        toast.success("ステータスを更新しました");
+      } else {
+        toast.error("ステータス更新に失敗しました");
       }
     } catch (error) {
       console.error("Failed to update status:", error);
+      toast.error("エラーが発生しました");
     } finally {
       setEditingStatusId(null);
+    }
+  };
+
+  const startEditing = (contactId: string, field: string, initialValue: string | number | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingField({ contactId, field });
+    setEditValue(initialValue !== null && initialValue !== undefined ? String(initialValue) : "");
+  };
+
+  const saveEdit = async () => {
+    if (!editingField) return;
+    const { contactId, field } = editingField;
+    
+    let valueToSave: any = editValue;
+    if (field === "estimatedPrice" || field === "finalPrice") {
+      if (editValue.trim() === "") {
+        valueToSave = null;
+      } else {
+        valueToSave = parseInt(editValue.replace(/[^0-9]/g, ""), 10);
+        if (isNaN(valueToSave)) valueToSave = null;
+      }
+    } else {
+      if (editValue.trim() === "") {
+        valueToSave = null;
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/admin/business/${contactId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: valueToSave })
+      });
+      if (res.ok) {
+        setContacts((prev: any) => prev.map((c: any) => c.id === contactId ? { ...c, [field]: valueToSave } : c));
+        toast.success("保存しました");
+      } else {
+        toast.error("保存に失敗しました");
+      }
+    } catch (error) {
+      console.error(`Failed to update ${field}:`, error);
+      toast.error("エラーが発生しました");
+    } finally {
+      setEditingField(null);
     }
   };
 
@@ -230,10 +284,72 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                     <span className="text-slate-500 font-bold">ご予算感</span>
                     <span className="text-slate-700">{contact.budget || "未定"}</span>
                   </div>
+                  
+                  {/* 希望納期のインライン編集 */}
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">希望納期</span>
-                    <span className="text-slate-700">{contact.deadline || "未定"}</span>
+                    <div onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                      {editingField?.contactId === contact.id && editingField?.field === 'deadline' ? (
+                        <input 
+                          type="text"
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-32"
+                        />
+                      ) : (
+                        <span className="text-slate-700 underline decoration-slate-300 decoration-dashed underline-offset-4">{contact.deadline || <span className="text-slate-400 font-normal">未定</span>}</span>
+                      )}
+                    </div>
                   </div>
+
+                  {/* 見積金額のインライン編集 */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">見積金額</span>
+                    <div onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                      {editingField?.contactId === contact.id && editingField?.field === 'estimatedPrice' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
+                        />
+                      ) : (
+                        <span className="text-slate-900 font-bold text-sm underline decoration-slate-300 decoration-dashed underline-offset-4">
+                          {contact.estimatedPrice ? `¥${contact.estimatedPrice.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* 確定金額のインライン編集 */}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold">確定金額</span>
+                    <div onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                      {editingField?.contactId === contact.id && editingField?.field === 'finalPrice' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
+                        />
+                      ) : (
+                        <span className="text-emerald-700 font-bold text-sm underline decoration-slate-300 decoration-dashed underline-offset-4">
+                          {contact.finalPrice ? `¥${contact.finalPrice.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">最終対応日</span>
                     <span className="text-slate-700">{formatDate(contact.lastContactedAt)}</span>
@@ -252,9 +368,9 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                 <th className="py-3 px-4 pl-5">ステータス</th>
                 <th className="py-3 px-4">受付日</th>
                 <th className="py-3 px-4">貴社名 / 担当者</th>
-                <th className="py-3 px-4">ご用件</th>
-                <th className="py-3 px-4 text-right">予算</th>
                 <th className="py-3 px-4">希望納期</th>
+                <th className="py-3 px-4 text-right">見積金額</th>
+                <th className="py-3 px-4 text-right">確定金額</th>
                 <th className="py-3 px-4">最終対応日</th>
               </tr>
             </thead>
@@ -315,19 +431,65 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                       <div className="font-bold text-slate-900">{contact.companyName}</div>
                       <div className="text-[10px] text-slate-500 mt-0.5">{contact.contactName} 様</div>
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
-                      {contact.inquiryType}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {contact.budget ? (
-                        <span className="font-medium">{contact.budget}</span>
+                    
+                    {/* 希望納期のインライン編集 */}
+                    <td className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)}>
+                      {editingField?.contactId === contact.id && editingField?.field === 'deadline' ? (
+                        <input 
+                          type="text"
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-32 text-slate-900"
+                        />
                       ) : (
-                        <span className="text-slate-400 font-normal text-xs">未定</span>
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -ml-1 border border-transparent hover:border-slate-200 border-dashed">
+                          {contact.deadline || <span className="text-slate-400">未定</span>}
+                        </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-slate-700 text-xs">
-                      {contact.deadline || <span className="text-slate-400">未定</span>}
+
+                    {/* 見積金額のインライン編集 */}
+                    <td className="py-3 px-4 pr-5 font-bold text-slate-900 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)}>
+                      {editingField?.contactId === contact.id && editingField?.field === 'estimatedPrice' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right"
+                        />
+                      ) : (
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">
+                          {contact.estimatedPrice ? `¥${contact.estimatedPrice.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未設定</span>}
+                        </span>
+                      )}
                     </td>
+
+                    {/* 確定金額のインライン編集 */}
+                    <td className="py-3 px-4 pr-5 font-bold text-emerald-700 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)}>
+                      {editingField?.contactId === contact.id && editingField?.field === 'finalPrice' ? (
+                        <input 
+                          autoFocus 
+                          value={editValue} 
+                          onChange={e => setEditValue(e.target.value)} 
+                          onBlur={saveEdit} 
+                          onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right text-slate-900"
+                        />
+                      ) : (
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">
+                          {contact.finalPrice ? `¥${contact.finalPrice.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未設定</span>}
+                        </span>
+                      )}
+                    </td>
+
                     <td className="py-3 px-4 text-slate-500 text-xs">
                       {formatDate(contact.lastContactedAt)}
                     </td>
