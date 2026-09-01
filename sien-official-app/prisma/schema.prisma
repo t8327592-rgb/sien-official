@@ -129,17 +129,29 @@ model Portfolio {
 
 // 法人・企業様お問い合わせ用モデル
 model BusinessContact {
-  id              String   @id @default(cuid())
-  companyName     String   // 貴社名
-  contactName     String   // ご担当者名
-  email           String   // メールアドレス
-  inquiryType     String   // ご用件
-  budget          String?  // ご予算感
-  deadline        String?  // 希望納期
-  message         String   // お問い合わせ内容
-  status          String   @default("PENDING") // PENDING(未対応), REPLIED(返信済), CLOSED(完了)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  companyName        String   // 貴社名
+  contactName        String   // ご担当者名
+  email              String   // メールアドレス
+  inquiryType        String   // ご用件
+  budget             String?  // ご予算感
+  deadline           String?  // 希望納期
+  message            String   // お問い合わせ内容
+  
+  // 案件管理用追加フィールド
+  status             String   @default("PENDING") // PENDING(未対応), ESTIMATING(見積中), WAITING_PAYMENT(入金待ち), WORKING(作業中), COMPLETED(納品済), CANCELLED(キャンセル)
+  lastContactedAt    DateTime? // 最終対応日
+  estimatedPrice     Int?     // 見積金額
+  finalPrice         Int?     // 確定金額
+  billedAt           DateTime? // 請求日
+  paymentDeadline    DateTime? // 支払期限
+  paymentStatus      String?  // 入金状況
+  invoiceStatus      String?  // 請求書発行状況
+  isInvoiceCompliant Boolean  @default(false) // インボイス対応状況
+  history            String?  // 対応履歴 (JSON)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 // システム・サイト設定用モデル
