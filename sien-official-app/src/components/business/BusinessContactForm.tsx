@@ -4,9 +4,57 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, CheckCircle2, Loader2, Building2 } from "lucide-react";
 
+const PolicyModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-brand-bg shrink-0">
+          <h3 className="text-xl font-bold text-slate-900">ご依頼に関する留意事項</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">✕</button>
+        </div>
+        <div className="p-8 overflow-y-auto text-brand-text space-y-8 text-sm leading-relaxed">
+          <section>
+            <h4 className="font-bold text-slate-900 border-l-4 border-orange-500 pl-3 mb-3 text-base">第1条（ご依頼の成立・お支払い）</h4>
+            <ul className="list-disc list-inside space-y-2 text-slate-600 pl-1">
+              <li>お見積り金額に合意いただき、ご入金が確認できた時点で正式なご依頼（作業開始）となります。</li>
+              <li>お支払い方法は銀行振込または各種決済サービス（要相談）となります。振込手数料はお客様負担となります。</li>
+            </ul>
+          </section>
+          <section>
+            <h4 className="font-bold text-slate-900 border-l-4 border-orange-500 pl-3 mb-3 text-base">第2条（修正対応について）</h4>
+            <ul className="list-disc list-inside space-y-2 text-slate-600 pl-1">
+              <li>各プランに定められた回数まで「無料修正」を承ります。</li>
+              <li>無料修正回数を超過した修正、または「最初のご要望から大きく逸脱する大幅な修正」については、別途追加料金が発生する場合がございます。</li>
+            </ul>
+          </section>
+          <section>
+            <h4 className="font-bold text-slate-900 border-l-4 border-orange-500 pl-3 mb-3 text-base">第3条（キャンセル・返金）</h4>
+            <ul className="list-disc list-inside space-y-2 text-slate-600 pl-1">
+              <li>作業開始前であれば無償でキャンセル可能です。</li>
+              <li>作業開始後のお客様都合によるキャンセルの場合、原則として返金はいたしかねますのでご了承ください。</li>
+            </ul>
+          </section>
+          <section>
+            <h4 className="font-bold text-slate-900 border-l-4 border-orange-500 pl-3 mb-3 text-base">第4条（クレジット表記・実績公開）</h4>
+            <ul className="list-disc list-inside space-y-2 text-slate-600 pl-1">
+              <li>YouTube等のプラットフォームへ投稿する際に、概要欄に「Mix: Sien」とX(Twitter)へのリンクの記載をお願いいたします。</li>
+              <li>ご依頼いただいた作品は、当サイトの実績として紹介させていただく場合がございます。（公開不可の場合は事前にお申し付けください）</li>
+            </ul>
+          </section>
+        </div>
+        <div className="p-6 border-t border-slate-100 bg-brand-bg flex justify-end shrink-0">
+          <Button type="button" onClick={onClose} className="px-8 font-bold bg-orange-50 border border-orange-100 hover:bg-orange-50 text-orange-600 rounded-full">閉じる</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string) => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -213,7 +261,17 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string)
           </div>
         </div>
 
-        <div className="pt-8 flex justify-center">
+        <div className="pt-8 flex flex-col items-center border-t border-slate-100">
+          <label className="flex items-center justify-center gap-3 cursor-pointer mb-6 text-slate-700 hover:text-slate-900 transition-colors group">
+            <input required type="checkbox" className="w-5 h-5 text-orange-500 rounded border-slate-300 focus:ring-orange-500 focus:ring-offset-white bg-white" />
+            <span className="font-bold text-sm md:text-base">
+              <button type="button" onClick={() => setIsPolicyModalOpen(true)} className="text-orange-600 hover:text-orange-700 underline underline-offset-4 decoration-orange-500/50 transition-colors mx-1">
+                ご依頼に関する留意事項
+              </button>
+              に同意する <span className="text-orange-500 text-[10px] bg-orange-50 px-2 py-0.5 rounded-sm ml-1">必須</span>
+            </span>
+          </label>
+
           <Button 
             type="submit" 
             disabled={isSubmitting}
@@ -234,6 +292,7 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string)
         </div>
       </form>
     </div>
+    <PolicyModal isOpen={isPolicyModalOpen} onClose={() => setIsPolicyModalOpen(false)} />
     </>
   );
 }
