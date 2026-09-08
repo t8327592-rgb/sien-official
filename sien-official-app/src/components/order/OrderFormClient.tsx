@@ -314,6 +314,14 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
             ミックス・マスタリング、オリジナル楽曲制作のご依頼はこちらからお願いします。<br/>
             ※まだ依頼するか決まっていなくても、ご相談・お見積りのみでご利用いただけます。
           </p>
+
+          <div className="mt-8 inline-block bg-white px-6 md:px-8 py-5 rounded-2xl border border-slate-200 shadow-sm text-sm text-center">
+            <p className="text-slate-700 font-medium mb-3">法人のお客様、企業・団体様からの案件・業務提携等のご相談はこちら</p>
+            <a href="/business#contact-form" className="inline-flex items-center justify-center gap-2 text-orange-600 font-bold hover:text-orange-700 hover:underline bg-orange-50 hover:bg-orange-100 px-6 py-2.5 rounded-full transition-colors">
+              法人向け お問い合わせ・ご相談フォームへ
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+            </a>
+          </div>
         </div>
 
         {/* ご依頼前の確認事項 */}

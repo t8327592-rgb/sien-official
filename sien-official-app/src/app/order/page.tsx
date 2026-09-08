@@ -25,9 +25,17 @@ export default async function OrderPage() {
           <p className="text-slate-600 mb-6 leading-relaxed">
             {siteSetting.announcement || "誠に恐れ入りますが、現在満枠のため新規のご依頼受付を一時停止しております。受付再開まで今しばらくお待ちくださいませ。"}
           </p>
-          <a href="/" className="inline-block bg-slate-800 text-white font-bold py-3 px-8 rounded-full hover:bg-slate-700 transition-colors">
+          <a href="/" className="inline-block bg-slate-800 text-white font-bold py-3 px-8 rounded-full hover:bg-slate-700 transition-colors mb-8">
             トップページへ戻る
           </a>
+
+          <div className="border-t border-slate-100 pt-6 mt-2">
+            <p className="text-slate-600 text-sm font-medium mb-3">法人のお客様、企業・団体様からの案件等のご相談はこちら</p>
+            <a href="/business#contact-form" className="inline-flex items-center justify-center gap-2 text-orange-600 font-bold text-sm hover:text-orange-700 hover:underline">
+              法人向け お問い合わせ・ご相談フォームへ
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+            </a>
+          </div>
         </div>
       </div>
     );
