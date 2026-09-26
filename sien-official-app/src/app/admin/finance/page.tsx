@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { FinanceDashboardClient } from "@/components/admin/finance/FinanceDashboardClient";
@@ -33,6 +34,7 @@ export default async function AdminFinancePage() {
   // 経費追加アクション
   async function addExpense(formData: FormData) {
     "use server";
+    await requireAdmin();
     const title = formData.get("title") as string;
     const amountStr = formData.get("amount") as string;
     const category = formData.get("category") as string;

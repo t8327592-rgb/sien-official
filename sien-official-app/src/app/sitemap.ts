@@ -12,6 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/business",
     "/profile",
     "/works",
+    "/blog",
+    "/news",
     "/faq",
     "/order",
     "/policy/privacy",
@@ -29,8 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ブログ記事や実績を取得して動的にサイトマップに追加
   const posts = await getAllPublishedPosts();
 
-  const postUrls = posts.map((post) => ({
-    url: `${baseUrl}/blog/${post.id}`,
+  const postUrls = posts.filter(post => post.type === "BLOG" || post.type === "NEWS").map((post) => ({
+    url: `${baseUrl}/${post.type === "NEWS" ? "news" : "blog"}/${post.id}`,
     lastModified: post.updatedAt,
     changeFrequency: "weekly" as const,
     priority: 0.7,

@@ -1,6 +1,6 @@
 import { getPlans, getOptions } from "@/lib/data/cms";
 import OrderFormClient from "@/components/order/OrderFormClient";
-import { getSiteSetting } from "@/app/actions/settings";
+import { getSiteSetting } from "@/lib/data/site-setting";
 
 export const dynamic = "force-dynamic";
 

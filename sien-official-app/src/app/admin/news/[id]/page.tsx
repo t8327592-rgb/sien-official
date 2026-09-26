@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
@@ -19,6 +20,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   // 更新アクション
   async function updatePost(formData: FormData) {
     "use server";
+    await requireAdmin();
     
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
@@ -47,6 +49,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   // 削除アクション
   async function deletePost() {
     "use server";
+    await requireAdmin();
     await prisma.post.delete({
       where: { id },
     });

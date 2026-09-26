@@ -1,7 +1,9 @@
+import { isAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
+  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
     const { title, content, type = "WORKS", published = true } = body;

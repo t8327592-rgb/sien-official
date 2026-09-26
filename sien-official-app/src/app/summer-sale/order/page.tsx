@@ -1,18 +1,7 @@
-import { getOptions } from "@/lib/data/cms";
-import SummerSaleOrderFormClient from "@/components/order/SummerSaleOrderFormClient";
+import Link from "next/link";
 
-export const metadata = {
-  title: "サマーセール専用 ご依頼フォーム | Sien-Official",
-  description: "期間限定サマーセールの専用ご依頼フォームです。",
-};
+export const metadata = { title: "サマーセール受付終了 | Sien-Official" };
 
-export default async function SummerSaleOrderPage() {
-  // オプション情報をDBから取得
-  const options = await getOptions();
-
-  return (
-    <main>
-      <SummerSaleOrderFormClient initialOptions={options} />
-    </main>
-  );
+export default function SummerSaleOrderPage() {
+  return <section className="mx-auto max-w-2xl px-4 py-24 text-center"><h1 className="text-2xl font-bold">サマーセールの受付は終了しました</h1><p className="mt-4">現在のプラン・受付状況は通常のご依頼フォームをご確認ください。</p><Link className="mt-6 inline-block underline" href="/order">ご依頼フォームへ</Link></section>;
 }

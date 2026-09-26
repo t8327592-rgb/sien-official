@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -7,6 +8,7 @@ import { ImageUploader } from "@/components/admin/ImageUploader";
 export default function NewPostPage() {
   async function createPost(formData: FormData) {
     "use server";
+    await requireAdmin();
     
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;

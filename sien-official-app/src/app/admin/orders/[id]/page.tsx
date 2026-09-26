@@ -23,7 +23,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   let planDetails = null;
   if (order.planId) {
     planDetails = await prisma.plan.findFirst({
-      where: { id: order.planId }
+      where: { category: order.serviceType, OR: [{ id: order.planId }, { name: order.planId }] }
     });
   }
 

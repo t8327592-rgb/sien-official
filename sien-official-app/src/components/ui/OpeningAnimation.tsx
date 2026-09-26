@@ -1,79 +1,24 @@
 "use client";
 
-import { useEffect, useState, useLayoutEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export function OpeningAnimation() {
-  const [show, setShow] = useState(true);
-  const [isFadingOut, setIsFadingOut] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // useLayoutEffect if available, or just useEffect, to avoid the specific synchronous setState warning in strict mode
+  const [show, setShow] = useState(false);
   useEffect(() => {
-    // delay mounting state slightly to avoid synchronous setState warning
-    const mountTimer = setTimeout(() => setIsMounted(true), 0);
-    
-    // クライアントサイドでのみ実行
-    const hasVisited = sessionStorage.getItem("hasVisited");
-    if (hasVisited) {
-      setShow(false);
-      return () => clearTimeout(mountTimer);
-    }
-
-    sessionStorage.setItem("hasVisited", "true");
-
-    // 1.5秒後にフェードアウト開始
-    const fadeOutTimer = setTimeout(() => {
-      setIsFadingOut(true);
-    }, 1500);
-
-    // 2.5秒後にDOMから完全削除
-    const removeTimer = setTimeout(() => {
-      setShow(false);
-    }, 2500);
-
-    return () => {
-      clearTimeout(mountTimer);
-      clearTimeout(fadeOutTimer);
-      clearTimeout(removeTimer);
-    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    try {
+      if (sessionStorage.getItem("hasVisited")) return;
+      sessionStorage.setItem("hasVisited", "true");
+    } catch { return; }
+    const start = setTimeout(() => setShow(true), 0);
+    const finish = setTimeout(() => setShow(false), 1200);
+    return () => { clearTimeout(start); clearTimeout(finish); };
   }, []);
-
   if (!show) return null;
-
-  // SSR時（マウント前）はアニメーションなしの真っ白な画面で覆う（チラつき防止）
-  if (!isMounted) {
-    return <div className="fixed inset-0 z-[100] bg-white"></div>;
-  }
-
   return (
-    <div 
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-1000 ease-in-out ${
-        isFadingOut ? "opacity-0 pointer-events-none scale-105" : "opacity-100"
-      }`}
-    >
-      <div className="flex flex-col items-center">
-        {/* ロゴやテキストのアニメーション */}
-        <div className="relative overflow-hidden mb-4">
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both ease-out">
-            <Image src="/logo.png" alt="Sien-Official" width={200} height={64} className="h-16 w-auto object-contain drop-shadow-xl" priority />
-          </div>
-        </div>
-        
-        {/* 下線の装飾アニメーション */}
-        <div className="h-[2px] bg-orange-500 rounded-full animate-out fade-out duration-1000 delay-500" style={{
-          animation: "expandLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-        }}>
-        </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes expandLine {
-          0% { width: 0%; opacity: 0; }
-          50% { width: 100px; opacity: 1; }
-          100% { width: 0%; opacity: 0; }
-        }
-      `}</style>
+    <div aria-hidden="true" className="pointer-events-none fixed bottom-4 left-4 z-40 rounded-xl bg-white/90 p-3 shadow-sm motion-safe:animate-in motion-safe:fade-in">
+      <Image src="/logo.png" alt="" width={120} height={38} className="h-auto w-24" />
     </div>
   );
 }

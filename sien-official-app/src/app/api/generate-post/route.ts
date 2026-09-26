@@ -1,11 +1,19 @@
+import { readJson, apiErrorResponse, textField } from "@/lib/api-input";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { isAdmin } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
+  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const body = await req.json();
+    await consumeRateLimit("admin-ai", 30, 3600);
+    const body = await readJson(req);
+    for (const key of Object.keys(body)) {
+      if (typeof body[key] === "string") textField(body, key, false, 5000);
+    }
     const { 
       clientName, serviceType, message, 
-      songTitle, options, vocalKey, referenceUrl, referenceFidelity
+      songTitle, vocalKey, referenceUrl, referenceFidelity
     } = body;
 
     const serviceName = serviceType === "MIX" ? "Mix & Mastering" : "Original Song";
@@ -47,7 +55,7 @@ ${clientName}様 - ${songTitle || "オリジナル楽曲"}
 それでは、出力テンプレートに沿ってテキストのみを生成してください。`;
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", generationConfig: { maxOutputTokens: 1500 } });
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -55,6 +63,8 @@ ${clientName}様 - ${songTitle || "オリジナル楽曲"}
 
     return Response.json({ postContent: text.replace(/=== 出力テンプレート ===|========================/g, '').trim() });
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("Post Generation Error:", error);
     return Response.json({ error: 'Failed to generate post content' }, { status: 500 });
   }

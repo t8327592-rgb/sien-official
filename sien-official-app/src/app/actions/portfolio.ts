@@ -1,9 +1,11 @@
 "use server";
+import { requireAdmin } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function updatePortfolio(id: string, data: any) {
+  await requireAdmin();
   try {
     await prisma.portfolio.update({
       where: { id },
@@ -32,6 +34,7 @@ export async function updatePortfolio(id: string, data: any) {
 }
 
 export async function createPortfolio(data: any) {
+  await requireAdmin();
   try {
     const maxOrder = await prisma.portfolio.findFirst({
       orderBy: { orderIndex: 'desc' }
@@ -64,6 +67,7 @@ export async function createPortfolio(data: any) {
 }
 
 export async function deletePortfolio(id: string) {
+  await requireAdmin();
   try {
     await prisma.portfolio.delete({ where: { id } });
     revalidatePath("/admin/portfolio");
@@ -79,6 +83,7 @@ export async function deletePortfolio(id: string) {
 }
 
 export async function updatePortfolioOrders(orders: { id: string, orderIndex: number }[]) {
+  await requireAdmin();
   try {
     for (const item of orders) {
       await prisma.portfolio.update({
@@ -100,6 +105,7 @@ export async function updatePortfolioOrders(orders: { id: string, orderIndex: nu
 
 // 一括削除
 export async function bulkDeletePortfolio(ids: string[]) {
+  await requireAdmin();
   try {
     await prisma.portfolio.deleteMany({
       where: { id: { in: ids } },
@@ -118,6 +124,7 @@ export async function bulkDeletePortfolio(ids: string[]) {
 
 // 一括公開設定
 export async function bulkUpdatePublishStatus(ids: string[], isPublished: boolean) {
+  await requireAdmin();
   try {
     await prisma.portfolio.updateMany({
       where: { id: { in: ids } },

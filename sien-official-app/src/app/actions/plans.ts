@@ -1,4 +1,5 @@
 "use server";
+import { requireAdmin } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -6,6 +7,7 @@ import { revalidatePath } from "next/cache";
 // --- Plans ---
 
 export async function updatePlan(id: string, data: any) {
+  await requireAdmin();
   try {
     await prisma.plan.update({
       where: { id },
@@ -31,6 +33,7 @@ export async function updatePlan(id: string, data: any) {
 }
 
 export async function createPlan(data: any) {
+  await requireAdmin();
   try {
     const maxOrder = await prisma.plan.findFirst({
       orderBy: { orderIndex: 'desc' }
@@ -61,6 +64,7 @@ export async function createPlan(data: any) {
 }
 
 export async function deletePlan(id: string) {
+  await requireAdmin();
   try {
     await prisma.plan.delete({ where: { id } });
     revalidatePath("/admin/plans");
@@ -73,6 +77,7 @@ export async function deletePlan(id: string) {
 }
 
 export async function updatePlanOrders(orders: { id: string, orderIndex: number }[]) {
+  await requireAdmin();
   try {
     for (const item of orders) {
       await prisma.plan.update({
@@ -93,6 +98,7 @@ export async function updatePlanOrders(orders: { id: string, orderIndex: number 
 // --- Options ---
 
 export async function updateOption(id: string, data: any) {
+  await requireAdmin();
   try {
     await prisma.option.update({
       where: { id },
@@ -115,6 +121,7 @@ export async function updateOption(id: string, data: any) {
 }
 
 export async function createOption(data: any) {
+  await requireAdmin();
   try {
     const maxOrder = await prisma.option.findFirst({
       orderBy: { orderIndex: 'desc' }
@@ -142,6 +149,7 @@ export async function createOption(data: any) {
 }
 
 export async function deleteOption(id: string) {
+  await requireAdmin();
   try {
     await prisma.option.delete({ where: { id } });
     revalidatePath("/admin/plans");
@@ -154,6 +162,7 @@ export async function deleteOption(id: string) {
 }
 
 export async function updateOptionOrders(orders: { id: string, orderIndex: number }[]) {
+  await requireAdmin();
   try {
     for (const item of orders) {
       await prisma.option.update({

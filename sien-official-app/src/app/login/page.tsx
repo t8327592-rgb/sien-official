@@ -25,7 +25,12 @@ export default function LoginPage() {
       toast.success("ログインしました");
       router.push("/admin");
     } else {
-      toast.error("ログインに失敗しました。ユーザー名またはパスワードが間違っています。");
+      const message = res?.error === "LOGIN_RATE_LIMITED"
+        ? "ログインの試行回数が上限に達しました。15分ほど待ってから再度お試しください。"
+        : res?.error === "LOGIN_UNAVAILABLE"
+          ? "現在ログインできません。時間をおいて再度お試しください。"
+          : "ログインに失敗しました。ユーザー名またはパスワードが間違っています。";
+      toast.error(message);
     }
   };
 

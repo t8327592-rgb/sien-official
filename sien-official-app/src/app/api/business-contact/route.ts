@@ -1,18 +1,20 @@
+import { readJson, textField, emailField, apiErrorResponse } from "@/lib/api-input";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { 
-      companyName,
-      contactName,
-      email,
-      inquiryType,
-      budget,
-      deadline,
-      message
-    } = body;
+    const body = await readJson(request);
+    const companyName = textField(body, "companyName", true, 120);
+    const contactName = textField(body, "contactName", true, 120);
+    const email = emailField(body, "email");
+    const inquiryType = textField(body, "inquiryType", true, 120);
+    const budget = textField(body, "budget", false, 120);
+    const deadline = textField(body, "deadline", false, 120);
+    const message = textField(body, "message", true, 5000);
+    await consumeRateLimit("business-global", 30, 3600);
+    await consumeRateLimit("business-email", 2, 3600, email);
 
     // DBへの保存
     const newContact = await prisma.businessContact.create({
@@ -67,25 +69,13 @@ export async function POST(request: Request) {
         await sendMail({
           to: email,
           subject: `【Sien-Official】法人・企業様 お問い合わせ受付完了のご案内`,
-          text: `${companyName}
-${contactName} 様
+          text: `Sien-Officialへのお問い合わせを受け付けました。
+担当者より通常1〜2営業日以内にご連絡いたします。
 
-この度はSien-Officialへお問い合わせいただき、誠にありがとうございます。
-以下の内容で送信を承りました。
+このメールに心当たりがない場合は破棄してください。
 
-担当者より通常1〜2営業日以内にご連絡いたしますので、今しばらくお待ちくださいませ。
-
-■お問い合わせ内容
-ご用件：${inquiryType}
-ご予算感：${budget || "未定"}
-希望納期：${deadline || "未定"}
-詳細：
-${message}
-
---------------------------------------------------
-Sien-Official
 ${baseUrl}
---------------------------------------------------`,
+`,
         });
 
         // 管理者向け通知メール
@@ -104,8 +94,10 @@ ${baseUrl}/admin/business`,
       console.error("Failed to send Email notification:", emailError);
     }
 
-    return NextResponse.json({ success: true, contact: newContact }, { status: 201 });
+    return NextResponse.json({ success: true, contactId: newContact.id }, { status: 201 });
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("Business contact creation failed:", error);
     return NextResponse.json({ success: false, error: "Failed to create business contact" }, { status: 500 });
   }

@@ -1,52 +1,42 @@
+import { prisma } from "@/lib/prisma";
+import { readJson, apiErrorResponse, textField } from "@/lib/api-input";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { isAdmin } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
+  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const body = await req.json();
+    await consumeRateLimit("admin-ai", 30, 3600);
+    const body = await readJson(req);
+    for (const key of Object.keys(body)) {
+      if (typeof body[key] === "string") textField(body, key, false, 5000);
+    }
     const { 
-      clientName, isRepeater, serviceType, planId, message, 
+      clientName, isRepeater, serviceType, message,
       songTitle, options, vocalKey, referenceUrl, referenceFidelity, 
       materialsUrl, paymentMethod, deadline 
     } = body;
 
     const serviceName = serviceType === "MIX" ? "ミックス・マスタリング" : "オリジナル楽曲制作";
     
-    // プラン情報の解決
-    let planName = "未設定";
-    let planContext = "";
-    
-    if (serviceType === "MIX") {
-      switch (planId) {
-        case "mix_standard":
-          planName = "スタンダードプラン";
-          planContext = "料金: 10,000円 / 納期目安: 7日 / リテイク: 5回";
-          break;
-        case "mix_one_chorus":
-          planName = "ワンコーラスプラン";
-          planContext = "料金: 8,000円 / 納期目安: 7日 / リテイク: 5回";
-          break;
-        case "mix_short":
-          planName = "ショート動画用プラン";
-          planContext = "料金: 5,000円 / 納期目安: 5日 / リテイク: 5回";
-          break;
-        case "mix_fast":
-          planName = "短納期プラン";
-          planContext = "料金: 14,000円 / 納期目安: 3日 / リテイク: 5回";
-          break;
-        case "mix_express":
-          planName = "最短納期プラン";
-          planContext = "料金: 18,000円 / 納期目安: 1日 / リテイク: 5回";
-          break;
-        case "mix_collab":
-          planName = "コラボ・合唱プラン";
-          planContext = "料金: 16,000円 (2名分) / 納期目安: 14日 / リテイク: 5回";
-          break;
-        default:
-          planName = planId || "未設定";
-      }
-    } else {
-      planName = planId || "未設定";
-    }
+    // Orders historically contain either an ID or a Japanese name snapshot.
+    const reference = textField(body, "planId", false, 150);
+    const legacyNames: Record<string, string> = {
+      mix_standard: "スタンダードプラン", mix_one_chorus: "ワンコーラスプラン",
+      mix_short: "ショート動画用プラン", mix_fast: "短納期プラン",
+      mix_express: "最短納期プラン", mix_collab: "コラボ・合唱プラン",
+    };
+    const plan = reference ? await prisma.plan.findFirst({ where: {
+      category: textField(body, "serviceType", true, 20),
+      OR: [{ id: reference }, { name: reference }, { name: legacyNames[reference] ?? reference }],
+    } }) : null;
+    const planName = plan?.name ?? reference ?? "未設定";
+    const planContext = plan
+      ? "現在の基本料金: " + (plan.price === null ? "要相談" : plan.price.toLocaleString("ja-JP") + "円")
+        + " / 納期目安: " + (plan.period || "要相談") + " / 修正回数: " + (plan.revisions || "要相談")
+        + "。オプションを含む確定見積もりは管理者が確認します。"
+      : "プラン情報を確認できません。料金・納期を推測せず、管理者による確認が必要としてください。";
 
     // 挨拶の分岐
     const greeting = isRepeater 
@@ -102,7 +92,7 @@ Web: [サイトURL]
     // 公式SDKの初期化
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     // 'gemini-flash-latest' モデルを取得
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", generationConfig: { maxOutputTokens: 1500 } });
 
     // コンテンツを生成
     const result = await model.generateContent(prompt);
@@ -111,6 +101,8 @@ Web: [サイトURL]
 
     return Response.json({ reply: text });
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("AI Generation Error:", error);
     return Response.json({ error: 'Failed to generate reply' }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 "use server";
+import { requireAdmin } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -14,6 +15,7 @@ export async function updateSiteSettings(data: {
   ctaDescription?: string | null;
   footerText?: string | null;
 }) {
+  await requireAdmin();
   const result = await prisma.siteSetting.upsert({
     where: { id: "default" },
     update: data,
@@ -34,6 +36,7 @@ export async function updateProfile(data: {
   imageUrl?: string | null;
   achievements?: string | null;
 }) {
+  await requireAdmin();
   const result = await prisma.profile.upsert({
     where: { id: "default" },
     update: data,
@@ -53,6 +56,7 @@ export async function createFAQ(data: {
   isPublished?: boolean;
   orderIndex?: number;
 }) {
+  await requireAdmin();
   const result = await prisma.fAQ.create({ data });
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -65,6 +69,7 @@ export async function updateFAQ(id: string, data: {
   isPublished?: boolean;
   orderIndex?: number;
 }) {
+  await requireAdmin();
   const result = await prisma.fAQ.update({
     where: { id },
     data,
@@ -74,6 +79,7 @@ export async function updateFAQ(id: string, data: {
 }
 
 export async function deleteFAQ(id: string) {
+  await requireAdmin();
   await prisma.fAQ.delete({ where: { id } });
   revalidatePath("/", "layout");
   return { success: true };
@@ -91,6 +97,7 @@ export async function createService(data: {
   isPublished?: boolean;
   orderIndex?: number;
 }) {
+  await requireAdmin();
   const result = await prisma.service.create({ data });
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -105,6 +112,7 @@ export async function updateService(id: string, data: {
   isPublished?: boolean;
   orderIndex?: number;
 }) {
+  await requireAdmin();
   const result = await prisma.service.update({
     where: { id },
     data,
@@ -114,6 +122,7 @@ export async function updateService(id: string, data: {
 }
 
 export async function deleteService(id: string) {
+  await requireAdmin();
   await prisma.service.delete({ where: { id } });
   revalidatePath("/", "layout");
   return { success: true };
@@ -132,6 +141,7 @@ export async function createCampaign(data: {
   isActive?: boolean;
   description?: string | null;
 }) {
+  await requireAdmin();
   const result = await prisma.campaign.create({ data });
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -147,6 +157,7 @@ export async function updateCampaign(id: string, data: {
   isActive?: boolean;
   description?: string | null;
 }) {
+  await requireAdmin();
   const result = await prisma.campaign.update({
     where: { id },
     data,
@@ -156,6 +167,7 @@ export async function updateCampaign(id: string, data: {
 }
 
 export async function deleteCampaign(id: string) {
+  await requireAdmin();
   await prisma.campaign.delete({ where: { id } });
   revalidatePath("/", "layout");
   return { success: true };

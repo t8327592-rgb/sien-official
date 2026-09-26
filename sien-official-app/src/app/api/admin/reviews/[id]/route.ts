@@ -1,13 +1,10 @@
+import { isAdmin } from "@/lib/auth";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
     const body = await request.json();
@@ -33,11 +30,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const session = await getServerSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
 

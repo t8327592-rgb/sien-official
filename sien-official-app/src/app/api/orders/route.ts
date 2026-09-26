@@ -1,25 +1,39 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import nodemailer from "nodemailer";
+import { readJson, textField, emailField, ApiError, apiErrorResponse } from "@/lib/api-input";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { calculateOrderPrice } from "@/lib/order-pricing";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { 
-      clientName, clientEmail, twitterId, discordId, contactMethod,
-      serviceType, planId, songTitle, options, vocalKey,
-      referenceUrl, referenceFidelity, materialsUrl, paymentMethod, deadline, message,
-      activityPurpose, genre, lyricsStatus, vocalGuideStatus,
-      price, basePrice, optionPrice
-    } = body;
-
-    // 基本的なバリデーション（必須項目の空チェック）
-    if (!clientName || !clientEmail || !serviceType) {
-      return NextResponse.json(
-        { success: false, error: "必須項目（お名前、メールアドレス、サービス名）が入力されていません。" },
-        { status: 400 }
-      );
+    const body = await readJson(request);
+    const clientName = textField(body, "clientName", true, 120);
+    const clientEmail = emailField(body, "clientEmail");
+    const serviceType = textField(body, "serviceType", true, 20);
+    if (!["MIX", "ORIGINAL"].includes(serviceType)) throw new ApiError(400, "サービスを選択してください。");
+    const selectedPlanId = textField(body, "planId", true, 150);
+    const ids = body.optionIds;
+    if (!Array.isArray(ids) || ids.length > 30 || ids.some(id => typeof id !== "string" || id.length > 150) || new Set(ids).size !== ids.length) {
+      throw new ApiError(400, "オプションを選び直してください。");
     }
+    await consumeRateLimit("orders", 60, 3600);
+    await consumeRateLimit("orders-email", 3, 3600, clientEmail);
+    const setting = await prisma.siteSetting.findUnique({ where: { id: "default" } });
+    if (setting?.orderStatus === "UNAVAILABLE") throw new ApiError(409, "現在、新規受付を停止しております。");
+    const plan = await prisma.plan.findFirst({ where: { id: selectedPlanId, isActive: true, category: serviceType } });
+    if (!plan) throw new ApiError(400, "プランが変更されています。ページを再読み込みしてください。");
+    const selectedOptions = await prisma.option.findMany({ where: { id: { in: ids as string[] }, isActive: true, category: { in: [serviceType, "COMMON"] } } });
+    if (selectedOptions.length !== ids.length) throw new ApiError(400, "オプションが変更されています。ページを再読み込みしてください。");
+    const estimate = calculateOrderPrice(plan, selectedOptions);
+    const { basePrice, optionPrice } = estimate;
+    const price = estimate.hasConsultation ? null : estimate.total;
+    const planId = plan.name;
+    const options = selectedOptions.map(o => o.name + " (" + o.priceText + ")").join(", ");
+    const fields = Object.fromEntries([
+      "twitterId", "discordId", "contactMethod", "songTitle", "vocalKey", "referenceUrl", "referenceFidelity", "materialsUrl", "paymentMethod", "deadline", "activityPurpose", "genre", "lyricsStatus", "vocalGuideStatus"
+    ].map(key => [key, textField(body, key)]));
+    const { twitterId, discordId, contactMethod, songTitle, vocalKey, referenceUrl, referenceFidelity, materialsUrl, paymentMethod, deadline, activityPurpose, genre, lyricsStatus, vocalGuideStatus } = fields;
+    const message = textField(body, "message", false, 5000);
 
     const { checkIsRepeater, updateAllClientOrdersToRepeater } = await import("@/lib/repeater");
     const isRepeater = await checkIsRepeater(clientEmail, twitterId, clientName, undefined, new Date());
@@ -125,8 +139,10 @@ export async function POST(request: Request) {
       console.error("Failed to send Email notification:", emailError);
     }
 
-    return NextResponse.json({ success: true, order: newOrder }, { status: 201 });
+    return NextResponse.json({ success: true, orderId: newOrder.id }, { status: 201 });
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("Order creation failed:", error);
     return NextResponse.json({ success: false, error: "Failed to create order" }, { status: 500 });
   }

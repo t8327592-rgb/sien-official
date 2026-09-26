@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { calculateOrderPrice } from "@/lib/order-pricing";
 import { CheckCircle2 } from "lucide-react";
 
 interface Plan {
@@ -58,6 +59,8 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const filteredPlans = initialPlans.filter(p => p.category === formData.serviceType);
   const selectedPlanObj = initialPlans.find(p => p.id === formData.planId);
   const isLyricsIncluded = selectedPlanObj?.name.includes("フルパッケージ");
@@ -80,62 +83,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
     setSelectedOptions([]);
   }, [formData.serviceType]);
 
-  const calculateTotal = () => {
-    let basePrice = 0;
-    let optionPrice = 0;
-    let total = 0;
-    let hasConsultation = false;
-
-    if (selectedPlanObj) {
-      if (selectedPlanObj.price === null) {
-        hasConsultation = true;
-      } else {
-        basePrice += selectedPlanObj.price;
-        total += selectedPlanObj.price;
-      }
-    }
-
-    // エンコード以外のオプションを先に計算
-    selectedOptions.filter(optId => {
-      const opt = initialOptions.find(o => o.id === optId);
-      return opt && !opt.name.includes("エンコード");
-    }).forEach(optId => {
-      const opt = initialOptions.find(o => o.id === optId);
-      if (opt) {
-        if (opt.priceText.includes("要相談")) {
-          hasConsultation = true;
-        } else {
-          const priceMatch = opt.priceText.match(/[0-9,]+/);
-          if (priceMatch) {
-            const priceStr = priceMatch[0].replace(/,/g, "");
-            const val = parseInt(priceStr, 10);
-            optionPrice += val;
-            total += val;
-          }
-          if (opt.priceText.includes("〜") || opt.priceText.includes("~")) {
-            hasConsultation = true;
-          }
-        }
-      }
-    });
-
-    // 最後にエンコードの計算（10,000円未満なら1,000円加算）
-    const hasEncode = selectedOptions.some(optId => {
-      const opt = initialOptions.find(o => o.id === optId);
-      return opt && opt.name.includes("エンコード");
-    });
-
-    if (hasEncode) {
-      if (total < 10000) {
-        optionPrice += 1000;
-        total += 1000;
-      }
-    }
-
-    return { basePrice, optionPrice, total, hasConsultation };
-  };
-
-  const estimate = calculateTotal();
+  const estimate = calculateOrderPrice(selectedPlanObj ?? { price: null }, initialOptions.filter(o => selectedOptions.includes(o.id)));
   
   // 見積りのプラン名＋オプション名の結合
   const planName = selectedPlanObj?.name || "";
@@ -145,11 +93,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
-
-    const optionsText = selectedOptions.map(id => {
-      const opt = initialOptions?.find(o => o.id === id);
-      return opt ? `${opt.name} (${opt.priceText})` : "";
-    }).filter(Boolean).join(", ");
+    setErrorMessage("");
 
     // 作詞状態をバックエンドに送る際に調整する
     let finalLyricsStatus = formData.lyricsStatus;
@@ -158,16 +102,11 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
       if (isLyricsProvided) finalLyricsStatus = "歌詞あり（持ち込み）";
     }
 
-    const selectedPlanObj = initialPlans?.find(p => p.id === formData.planId);
-
     const submissionData = {
       ...formData,
-      planId: selectedPlanObj?.name || formData.planId, // 保存するplanIdをプランの日本語名にする
-      options: optionsText,
-      lyricsStatus: finalLyricsStatus,
-      price: estimate.total,
-      basePrice: estimate.basePrice,
-      optionPrice: estimate.optionPrice
+      planId: formData.planId,
+      optionIds: selectedOptions,
+      lyricsStatus: finalLyricsStatus
     };
 
     try {
@@ -179,6 +118,8 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
       if (res.ok) {
         setStatus("success");
       } else {
+        const result = await res.json();
+        setErrorMessage(result.error || "送信に失敗しました。");
         setStatus("error");
       }
     } catch (err) {
@@ -293,7 +234,8 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           </ul>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12 pb-32">
+        {errorMessage && <p role="alert" className="mb-4 text-red-600">{errorMessage}</p>}
+      <form onSubmit={handleSubmit} className="space-y-12 pb-32">
           
           {/* 01 ご希望のサービス */}
           <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">

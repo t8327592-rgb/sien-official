@@ -40,7 +40,8 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string)
       });
 
       if (!response.ok) {
-        throw new Error("送信に失敗しました");
+        const result = await response.json();
+        throw new Error(result.error || "送信に失敗しました");
       }
 
       if (onSuccess) {
@@ -48,7 +49,7 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string)
       }
     } catch (err) {
       console.error(err);
-      setError("エラーが発生しました。時間をおいて再度お試しいただくか、直接メールにてご連絡ください。");
+      setError(err instanceof Error ? err.message : "送信に失敗しました。時間をおいて再度お試しください。");
     } finally {
       setIsSubmitting(false);
     }

@@ -45,17 +45,16 @@ export function ChatBot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          history: messages.slice(1), // 最初の挨拶を除外して履歴を渡す
+          history: messages.slice(1).slice(-12).map(msg => ({ ...msg, text: msg.text.slice(0, 2000) })), // 最初の挨拶を除外して履歴を渡す
         }),
       });
 
-      if (!res.ok) throw new Error("API Error");
-
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "時間をおいて再度お試しください。");
       setMessages((prev) => [...prev, { role: "ai", text: data.reply }]);
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [...prev, { role: "ai", text: "申し訳ありません。エラーが発生しました。時間をおいて再度お試しください。" }]);
+      setMessages((prev) => [...prev, { role: "ai", text: error instanceof Error ? error.message : "時間をおいて再度お試しください。" }]);
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +115,7 @@ export function ChatBot() {
 
           {/* 入力エリア */}
           <div className="p-3 bg-white border-t border-slate-100 flex gap-2 items-end">
-            <textarea
+            <textarea maxLength={2000}
               className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none max-h-32"
               rows={1}
               placeholder="質問を入力..."

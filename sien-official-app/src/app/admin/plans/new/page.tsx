@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 export default function NewPlanPage() {
   async function createPlan(formData: FormData) {
     "use server";
+    await requireAdmin();
     
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;

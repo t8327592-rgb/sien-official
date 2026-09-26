@@ -212,7 +212,7 @@ export const getAllPublishedPosts = unstable_cache(
   async () => {
     return await prisma.post.findMany({
       where: { published: true },
-      select: { id: true, updatedAt: true },
+      select: { id: true, type: true, updatedAt: true },
     });
   },
   ['all-published-posts'],

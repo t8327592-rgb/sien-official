@@ -1,3 +1,4 @@
+import { rehypeArticleSanitize } from "@/lib/article-sanitize";
 import { getPostById } from "@/lib/data/cms";
 import Link from "next/link";
 import { Calendar, Tag, ChevronLeft } from "lucide-react";
@@ -12,7 +13,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   const resolvedParams = await params;
   const post = await getPostById(resolvedParams.id);
 
-  if (!post) {
+  if (!post || !post.published || post.type !== "NEWS") {
     notFound();
   }
 
@@ -45,7 +46,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           <div className="prose prose-slate prose-orange max-w-none prose-p:leading-relaxed prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-headings:font-bold prose-h2:border-b prose-h2:border-slate-100 prose-h2:pb-2">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={[rehypeRaw, rehypeArticleSanitize]}
             >
               {post.content}
             </ReactMarkdown>

@@ -1,3 +1,4 @@
+import { rehypeArticleSanitize } from "@/lib/article-sanitize";
 import { getPostById, getRelatedPosts, getBlogCategories } from "@/lib/data/cms";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -20,12 +21,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const post = await getPostById(id);
   
-  if (!post) {
+  if (!post || post.type !== "BLOG") {
     return { title: "記事が見つかりません | Sien-Official" };
   }
   
   return {
     title: `${post.title} | Sien's Blog`,
+    alternates: { canonical: `/blog/${post.id}` },
     description: post.content.replace(/[#*`_\[\]]/g, '').slice(0, 120) + "...",
   };
 }
@@ -38,7 +40,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     getBlogCategories()
   ]);
 
-  if (!post || (!post.published && post.type !== "BLOG")) {
+  if (!post || !post.published || post.type !== "BLOG") {
     notFound();
   }
 
@@ -130,7 +132,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
                       <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500 mb-8">
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]} 
-                          rehypePlugins={[rehypeRaw, rehypeSlug]}
+                          rehypePlugins={[rehypeRaw, rehypeSlug, rehypeArticleSanitize]}
                           components={MDXComponents}
                         >
                           {summaryContent}
@@ -143,7 +145,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
                     <div className="blog-prose prose-slate prose-a:text-blue-600 hover:prose-a:text-blue-500">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]} 
-                        rehypePlugins={[rehypeRaw, rehypeSlug]}
+                        rehypePlugins={[rehypeRaw, rehypeSlug, rehypeArticleSanitize]}
                         components={MDXComponents}
                       >
                         {mainContent}

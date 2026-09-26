@@ -3,6 +3,14 @@ generator client {
   engineType = "library"
 }
 
+// Shared fixed-window counters for public forms and AI endpoints.
+// rate-limit.ts initializes this table on first use when it is absent.
+model ApiRateLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime @db.Timestamptz(6)
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("POSTGRES_PRISMA_URL") // uses connection pooling

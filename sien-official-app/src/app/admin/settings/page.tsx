@@ -1,6 +1,6 @@
 import { Calendar, Shield, Database, Info, Moon, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSiteSetting } from "@/app/actions/settings";
+import { getSiteSetting } from "@/lib/data/site-setting";
 import { SettingsClient } from "./SettingsClient";
 
 export const dynamic = "force-dynamic";
