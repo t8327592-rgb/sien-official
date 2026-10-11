@@ -168,14 +168,22 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   if (status === "success") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-bg px-4 py-20">
-        <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-slate-100 text-center max-w-lg w-full">
+        <div className="bg-white p-6 sm:p-12 rounded-3xl shadow-sm border border-slate-100 text-center max-w-lg w-full">
           <div className="w-20 h-20 bg-orange-500/10 text-orange-700 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
-          <h1 ref={successHeading} tabIndex={-1} className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 text-balance">ご依頼ありがとうございます。</h1>
-          <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base text-left bg-slate-50 p-6 rounded-2xl border border-slate-100">
+          <h1 ref={successHeading} tabIndex={-1} className="text-xl sm:text-3xl font-bold leading-relaxed text-slate-900 mb-6">
+            <span className="block">ご依頼</span>
+            <span className="block whitespace-nowrap">ありがとうございます。</span>
+          </h1>
+          <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-100">
             <p className="mb-4 font-bold text-slate-800 text-center">送信が完了いたしました。</p>
-            <p className="text-center">内容を確認のうえ、入力いただいたご連絡先へ通常24時間以内にご返信いたします。</p>
+            <p className="text-center text-balance">
+              <span className="inline-block">内容を確認のうえ、</span>
+              <span className="inline-block">入力いただいたご連絡先へ</span>
+              <span className="inline-block">通常24時間以内に</span>
+              <span className="inline-block">ご返信いたします。</span>
+            </p>
           </div>
           <Button asChild className="w-full sm:w-auto rounded-full px-10 h-14 bg-white border-2 border-orange-500 text-orange-700 font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-600 shadow-sm hover:shadow-md transition-all active:scale-95">
             <Link href="/">トップページに戻る</Link>
