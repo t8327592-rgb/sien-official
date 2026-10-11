@@ -32,7 +32,7 @@ type MainTab = "ALL" | "PENDING" | "ESTIMATING" | "WAITING_PAYMENT" | "WORKING" 
 
 const formatDate = (date: string | Date | null) => {
   if (!date) return "未対応";
-  return new Date(date).toLocaleDateString("ja-JP");
+  return new Date(date).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
 };
 
 export default function BusinessListClient({ initialContacts }: { initialContacts: BusinessContact[] }) {

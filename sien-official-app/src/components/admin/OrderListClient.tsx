@@ -397,7 +397,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     )}
                   </div>
                   <div className="text-slate-500 text-xs text-right shrink-0">
-                    {new Date(order.createdAt).toLocaleDateString("ja-JP")}
+                    {new Date(order.createdAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}
                   </div>
                 </div>
 
@@ -560,7 +560,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                       )}
                     </td>
                     <td className="py-3 px-4 text-slate-500 text-xs">
-                      {new Date(order.createdAt).toLocaleDateString("ja-JP")}
+                      {new Date(order.createdAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}
                     </td>
                     <td className="py-3 px-4">
                       <button disabled={isSaving} onClick={(e) => void toggleRepeater(order.id, order.isRepeater, e)} className="hover:opacity-80 transition-opacity">

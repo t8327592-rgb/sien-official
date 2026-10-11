@@ -174,7 +174,7 @@ export default async function AdminDashboard() {
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+    return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
   };
 
   return (

@@ -276,13 +276,13 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
               <div>
                 <p className="text-[11px] font-bold text-slate-400 mb-1">受付日時 (作成日時)</p>
                 <span className="text-xs font-medium text-slate-600">
-                  {order.createdAt ? new Date(order.createdAt).toLocaleString('ja-JP') : <span className="text-slate-400">不明</span>}
+                  {order.createdAt ? new Date(order.createdAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : <span className="text-slate-400">不明</span>}
                 </span>
               </div>
               <div>
                 <p className="text-[11px] font-bold text-slate-400 mb-1">最終更新日時</p>
                 <span className="text-xs font-medium text-slate-600">
-                  {order.updatedAt ? new Date(order.updatedAt).toLocaleString('ja-JP') : <span className="text-slate-400">不明</span>}
+                  {order.updatedAt ? new Date(order.updatedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : <span className="text-slate-400">不明</span>}
                 </span>
               </div>
             </div>

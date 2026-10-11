@@ -432,7 +432,7 @@ export function FinanceDashboardClient({
                         {editingExpenseId === exp.id ? (
                           <input type="date" value={new Date(expenseEditData.date || new Date()).toISOString().split('T')[0]} onChange={e => setExpenseEditData({...expenseEditData, date: new Date(e.target.value)})} className="border rounded px-2 py-1 outline-none text-xs" />
                         ) : (
-                          new Date(exp.date).toLocaleDateString()
+                          new Date(exp.date).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })
                         )}
                       </td>
                       <td className="px-5 py-3">

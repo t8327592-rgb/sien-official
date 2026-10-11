@@ -48,7 +48,7 @@ export default async function AdminBlogPage() {
                       <h3 className="font-bold text-lg text-slate-800">{post.title}</h3>
                     </div>
                     <p className="text-sm text-slate-500 flex items-center gap-3">
-                      <span>作成日: {new Date(post.createdAt).toLocaleDateString()}</span>
+                      <span>作成日: {new Date(post.createdAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}</span>
                       {post.category && <span>タグ: {post.category}</span>}
                     </p>
                   </div>

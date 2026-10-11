@@ -124,7 +124,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
           <div>
             <h1 className="text-xl font-bold text-slate-800">法人案件詳細</h1>
             <p className="text-sm text-slate-500">
-              受付日: {new Date(formData.createdAt).toLocaleString("ja-JP")}
+              受付日: {new Date(formData.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
             </p>
           </div>
         </div>
