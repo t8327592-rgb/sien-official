@@ -13,17 +13,27 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   await requireAdminPage();
   const filters = notificationFilters(await searchParams);
   if (filters.q) {
-    const receipt = await prisma.submissionReceipt.findUnique({ where: { receiptNumber: filters.q }, select: { entityId: true } });
-    filters.where.entityId = receipt?.entityId || filters.q;
+    const [orders, contacts] = await Promise.all([
+      prisma.order.findMany({ where: { clientName: { contains: filters.q, mode: "insensitive" } }, select: { id: true } }),
+      prisma.businessContact.findMany({ where: { OR: [{ companyName: { contains: filters.q, mode: "insensitive" } }, { contactName: { contains: filters.q, mode: "insensitive" } }] }, select: { id: true } }),
+    ]);
+    filters.where.entityId = { in: [...orders, ...contacts].map(record => record.id) };
   }
   const [total, failedCount] = await Promise.all([
     filters.error ? Promise.resolve(0) : prisma.notificationJob.count({ where: filters.where }),
-    prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] } } }),
+    prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] }, kind: { notIn: ["ORDER_RECEIPT_EMAIL", "BUSINESS_RECEIPT_EMAIL"] } } }),
   ]);
   const pageSize = 25, lastPage = Math.max(1, Math.ceil(total / pageSize)), page = Math.min(filters.page, lastPage);
   const jobs = filters.error ? [] : await prisma.notificationJob.findMany({ where: filters.where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize });
-  const receipts = jobs.length ? await prisma.submissionReceipt.findMany({ where: { entityId: { in: jobs.map(job => job.entityId) } }, select: { entityId: true, entityType: true, receiptNumber: true } }) : [];
-  const references = new Map(receipts.map(receipt => [`${receipt.entityType}:${receipt.entityId}`, receipt.receiptNumber]));
+  const ids = jobs.map(job => job.entityId);
+  const [orders, contacts] = jobs.length ? await Promise.all([
+    prisma.order.findMany({ where: { id: { in: ids } }, select: { id: true, clientName: true, songTitle: true } }),
+    prisma.businessContact.findMany({ where: { id: { in: ids } }, select: { id: true, companyName: true, contactName: true } }),
+  ]) : [[], []];
+  const references = new Map([
+    ...orders.map(order => [`ORDER:${order.id}`, `${order.clientName}${order.songTitle ? ` / ${order.songTitle}` : ""}`] as const),
+    ...contacts.map(contact => [`BUSINESS:${contact.id}`, `${contact.companyName} / ${contact.contactName}`] as const),
+  ]);
   return <section className="space-y-6">
     <h1 className="text-2xl font-bold">受付通知の配送状況</h1>
     <p className="text-sm text-slate-600">依頼の保存と通知予約は同時に行います。10回失敗すると自動再試行を止めます。「送信処理完了」は配送サービスへの引き渡しで、受信箱への到達保証ではありません。</p>
@@ -34,11 +44,11 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     </div>
     <Link href="/admin/notifications?status=failed" className="inline-block rounded-lg border border-red-200 bg-red-50 text-red-800 p-3 font-bold">失敗・再試行上限：{failedCount}件</Link>
     <form action="/admin/notifications" method="get" className="flex flex-wrap gap-3 items-end rounded-xl border bg-white p-4">
-      <label className="space-y-1 min-w-0"><span className="block text-sm">状態</span><select name="status" defaultValue={filters.status} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option><option value="failed">失敗・再試行上限</option><option value="pending">送信待ち・処理中</option><option value="DELIVERED">送信処理完了</option><option value="EXHAUSTED">再試行上限のみ</option></select></label>
+      <label className="space-y-1 min-w-0"><span className="block text-sm">状態</span><select name="status" defaultValue={filters.status} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option><option value="failed">失敗・再試行上限</option><option value="pending">送信待ち・処理中</option><option value="DELIVERED">送信処理完了</option><option value="EXHAUSTED">再試行上限のみ</option><option value="SKIPPED">送信停止（旧自動返信）</option></select></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">通知種別</span><select name="kind" defaultValue={filters.kind} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option>{Object.entries(NOTIFICATION_KINDS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">受付日・開始</span><input type="date" name="from" defaultValue={filters.from} className="border rounded-lg p-2 max-w-full" /></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">受付日・終了</span><input type="date" name="to" defaultValue={filters.to} className="border rounded-lg p-2 max-w-full" /></label>
-      <label className="space-y-1 w-full sm:w-auto min-w-0"><span className="block text-sm">受付番号／受付ID（完全一致）</span><input name="q" defaultValue={filters.q} maxLength={254} className="border rounded-lg p-2 w-full" /></label>
+      <label className="space-y-1 w-full sm:w-auto min-w-0"><span className="block text-sm">依頼者名・会社名</span><input name="q" defaultValue={filters.q} maxLength={254} className="border rounded-lg p-2 w-full" /></label>
       <button type="submit" className="bg-orange-600 text-white rounded-lg px-4 py-2">絞り込む</button><Link href="/admin/notifications" className="underline p-2">解除</Link>
     </form>
     {filters.error && <p role="alert" className="text-red-700">{filters.error}</p>}
@@ -46,7 +56,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     <div className="grid gap-4">
       {jobs.map(job => {
         const business = job.kind.startsWith("BUSINESS_");
-        const reference = references.get(`${business ? "BUSINESS" : "ORDER"}:${job.entityId}`) || job.entityId;
+        const reference = references.get(`${business ? "BUSINESS" : "ORDER"}:${job.entityId}`) || "依頼情報を確認";
         return <article key={job.id} className="bg-white border rounded-xl p-4 space-y-3 min-w-0 break-words">
           <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold"><Link href={`/admin/${business ? "business" : "orders"}/${encodeURIComponent(job.entityId)}`} className="text-orange-700 underline">{reference}</Link></h2><span className="text-sm font-bold">{NOTIFICATION_STATUSES[job.status] || job.status}</span></div>
           <p className="text-sm">{NOTIFICATION_KINDS[job.kind] || job.kind}・試行 {job.attempts}回</p>

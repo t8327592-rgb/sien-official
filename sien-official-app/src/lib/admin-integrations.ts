@@ -3,7 +3,7 @@ export function adminIntegrationStatuses(env: Environment) {
   const groups = [
     { name: "Google Calendar", description: "納期自動登録API", keys: ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_PRIVATE_KEY", "GOOGLE_CALENDAR_ID"] },
     { name: "Discord 通知", description: "新規依頼の通知先", keys: ["DISCORD_WEBHOOK_URL"] },
-    { name: "SMTP メール", description: "自動返信・管理者通知", keys: ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "SMTP_FROM", "ADMIN_NOTIFICATION_EMAIL"] },
+    { name: "SMTP メール", description: "管理者通知（お客様への自動返信なし）", keys: ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "SMTP_FROM", "ADMIN_NOTIFICATION_EMAIL"] },
   ];
   return groups.map(group => {
     const present = group.keys.some(key => Boolean(env[key]?.trim()));

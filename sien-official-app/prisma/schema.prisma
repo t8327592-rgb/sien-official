@@ -16,7 +16,7 @@ model SubmissionReceipt {
   id            String   @id @default(cuid())
   requestKey    String   @unique
   payloadHash   String
-  receiptNumber String   @unique
+  receiptNumber String?  @unique // Legacy values only; new submissions do not issue a number.
   entityType    String
   entityId      String
   quote         Json

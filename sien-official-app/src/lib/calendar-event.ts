@@ -1,14 +1,17 @@
 import { createHash } from "node:crypto";
 import { ApiError } from "@/lib/api-input";
 
-export function deadlineEvent(order: { id: string; serviceType: string }, deadline: string) {
+export function deadlineEvent(order: { id: string; serviceType: string; clientName: string; songTitle: string | null }, deadline: string) {
   const start = new Date(`${deadline}T00:00:00Z`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline) || !Number.isFinite(start.getTime()) || start.toISOString().slice(0, 10) !== deadline) throw new ApiError(400, "納期の日付を確認してください。");
   const end = new Date(start); end.setUTCDate(end.getUTCDate() + 1);
   const service = order.serviceType === "MIX" ? "ボーカルMIX" : order.serviceType === "GUIDE" ? "ボーカルガイド" : "オリジナル楽曲";
+  const name = order.clientName.trim();
+  const customer = name ? (name.endsWith("様") ? name : `${name}様`) : `受付 ${order.id}`;
+  const songTitle = order.songTitle?.trim();
   return {
     id: createHash("sha256").update(`sien-deadline:${order.id}`).digest("hex"),
-    summary: `[納品期限] 受付 ${order.id} - ${service}`,
+    summary: `[納品期限] ${customer} - ${service}${songTitle ? ` (${songTitle})` : ""}`,
     description: `受付情報は管理画面で確認してください。\n${process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com"}/admin/orders/${encodeURIComponent(order.id)}`,
     start: { date: deadline }, end: { date: end.toISOString().slice(0, 10) },
     colorId: order.serviceType === "MIX" ? "3" : "5",

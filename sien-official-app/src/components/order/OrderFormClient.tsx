@@ -55,8 +55,6 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submissionId, setSubmissionId] = useState("");
   const submissionKey = useRef("");
-  const [receiptNumber, setReceiptNumber] = useState("");
-  const [acceptedPrice, setAcceptedPrice] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     clientName: "",
     clientEmail: "",
@@ -149,9 +147,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
     };
 
     try {
-      const result = await submitForm("/api/orders", submissionData);
-      setReceiptNumber(result.receiptNumber);
-      setAcceptedPrice(result.estimatePrice);
+      await submitForm("/api/orders", submissionData);
       setStatus("success");
     } catch (cause) {
       setErrorMessage(cause instanceof Error ? cause.message : "通信エラーが発生しました。入力内容は保持されています。");
@@ -176,11 +172,9 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           <div className="w-20 h-20 bg-orange-500/10 text-orange-700 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
-          <h1 ref={successHeading} tabIndex={-1} className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">ご依頼ありがとうございます</h1>
+          <h1 ref={successHeading} tabIndex={-1} className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 text-balance">ご依頼ありがとうございます。</h1>
           <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base text-left bg-slate-50 p-6 rounded-2xl border border-slate-100">
             <p className="mb-4 font-bold text-slate-800 text-center">送信が完了いたしました。</p>
-            <p className="mb-4 text-center font-bold break-all">受付番号：{receiptNumber}</p>
-            <p className="mb-4 text-center">受付時のお見積もり：{acceptedPrice === null ? "内容確認後にご案内" : `${acceptedPrice.toLocaleString("ja-JP")}円（税込）`}</p>
             <p className="text-center">内容を確認のうえ、入力いただいたご連絡先へ通常24時間以内にご返信いたします。</p>
           </div>
           <Button asChild className="w-full sm:w-auto rounded-full px-10 h-14 bg-white border-2 border-orange-500 text-orange-700 font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-600 shadow-sm hover:shadow-md transition-all active:scale-95">

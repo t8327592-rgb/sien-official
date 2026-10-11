@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 export default function BusinessPageClient() {
   const router = useRouter();
   const [isSuccess, setIsSuccess] = useState(false);
-  const [receiptNumber, setReceiptNumber] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState("");
 
   useEffect(() => {
@@ -31,7 +30,6 @@ export default function BusinessPageClient() {
             内容を確認の上、担当者より通常1〜2営業日以内にご連絡いたします。
           </p>
           <div className="bg-slate-50 p-6 rounded-2xl text-left border border-slate-100 mb-8">
-            <p className="mb-4 font-bold">受付番号：{receiptNumber}</p>
             <p className="text-sm text-slate-500 mb-1">送信されたメールアドレス</p>
             <p className="font-medium text-slate-900">{submittedEmail}</p>
           </div>
@@ -183,8 +181,7 @@ export default function BusinessPageClient() {
       {/* 4. お問い合わせフォーム */}
       <section id="contact-form" className="py-12 md:py-24 bg-slate-50 relative">
         <div className="container mx-auto px-4">
-          <BusinessContactForm onSuccess={(email, receipt) => {
-            setReceiptNumber(receipt);
+          <BusinessContactForm onSuccess={(email) => {
             setSubmittedEmail(email);
             setIsSuccess(true);
           }} />

@@ -50,16 +50,22 @@ async function ownerMail(message) {
     throw new Error('SMTP_TEST_FAILED');
   }
 }
-// The production worker is unchanged. The test wrapper adds a clear test marker
-// and wait=true so a successful Discord response can be read back by message ID.
+// The test wrapper adds a clear marker; the worker requests wait=true so the
+// stored Discord message can be read back by message ID.
 globalThis.fetch = async (url, init) => {
-  assert.equal(String(url), process.env.DISCORD_WEBHOOK_URL);
+  const target = new URL(url);
+  const configured = new URL(process.env.DISCORD_WEBHOOK_URL);
+  assert.equal(target.origin + target.pathname, configured.origin + configured.pathname);
   if (discordUnavailable) { report.events.push({ channel: 'Discord', skipped: true }); throw new Error('DISCORD_PREFLIGHT_FAILED'); }
-  const body = JSON.parse(init.body);
-  const target = new URL(url); target.searchParams.set('wait', 'true');
+  const body = typeof init.body === 'string' ? JSON.parse(init.body) : JSON.parse(init.body.get('payload_json'));
+  assert.doesNotMatch(JSON.stringify(body), /受付番号/);
+  target.searchParams.set('wait', 'true');
   let response;
   try {
-    response = await nativeFetch(target, { ...init, body: JSON.stringify({ ...body, content: `【動作確認・対応不要】${runId}\n隔離環境のテスト受付です。制作・返信は不要です。管理リンクはテスト用のため開けません。\n${body.content}`, allowed_mentions: { parse: [] } }) });
+    const payload = { ...body, content: `【動作確認・対応不要】${runId}\n隔離環境のテスト受付です。制作・返信は不要です。管理リンクはテスト用のため開けません。\n${body.content}`, allowed_mentions: { parse: [] } };
+    const outgoing = typeof init.body === 'string' ? JSON.stringify(payload) : init.body;
+    if (outgoing instanceof FormData) outgoing.set('payload_json', JSON.stringify(payload));
+    response = await nativeFetch(target, { ...init, body: outgoing });
     if (!response.ok) { discordUnavailable = true; report.events.push({ channel: 'Discord', accepted: false, status: response.status }); return response; }
     const sent = await response.clone().json();
     assert.ok(sent.id && sent.channel_id);
@@ -81,9 +87,10 @@ try {
     const record = entity === 'BUSINESS'
       ? await qa.businessContact.create({ data: { companyName: 'QA動作確認・対応不要', contactName: 'QAテスト', email: owner, inquiryType: 'お見積りのご依頼', message: runId } })
       : await qa.order.create({ data: { clientName: 'QA動作確認・対応不要', clientEmail: owner, serviceType: 'MIX', planId: type === 'CONSULTATION' ? '無料相談' : 'QA通知テスト', price: null, message: runId } });
-    await qa.submissionReceipt.create({ data: { entityType: entity, entityId: record.id, receiptNumber: `${runId}-${type}`, requestKey: randomUUID(), payloadHash: runId, quote: { test: true }, termsVersion: 'QA-NON-CONTRACT-TEST', consentedAt: new Date() } });
+    await qa.submissionReceipt.create({ data: { entityType: entity, entityId: record.id, requestKey: randomUUID(), payloadHash: runId, quote: { test: true }, termsVersion: 'QA-NON-CONTRACT-TEST', consentedAt: new Date() } });
     await queueNotifications(qa, entity, record.id);
     const jobs = await qa.notificationJob.findMany({ where: { entityId: record.id } });
+    assert.equal(jobs.length, 2); assert.ok(jobs.every(job => !job.kind.endsWith('_RECEIPT_EMAIL')));
     for (const job of jobs) {
       await processPendingNotifications(1, 20000, job.id);
       const finished = await qa.notificationJob.findUniqueOrThrow({ where: { id: job.id } });

@@ -449,6 +449,8 @@ test('notification filters retain page parameters and reject invalid date ranges
   const filters=notificationFilters({status:'failed',kind:'ORDER_RECEIPT_EMAIL',from:'2026-10-01',to:'2026-10-11',q:'QA-001',page:'2'});
   assert.deepEqual(filters.where.status.in,['FAILED','EXHAUSTED']);assert.equal(filters.where.createdAt.gte.toISOString(),'2026-09-30T15:00:00.000Z');assert.equal(filters.where.createdAt.lt.toISOString(),'2026-10-11T15:00:00.000Z');
   assert.match(notificationPageUrl(filters,3),/q=QA-001&page=3/);
+  assert.deepEqual(notificationFilters({status:'failed'}).where.kind.notIn,['ORDER_RECEIPT_EMAIL','BUSINESS_RECEIPT_EMAIL']);
+  assert.equal(filters.where.kind,'ORDER_RECEIPT_EMAIL');
   assert.ok(notificationFilters({from:'2026-02-30'}).error);assert.ok(notificationFilters({from:'2026/1/1'}).error);assert.ok(notificationFilters({from:'2026-10-11',to:'2026-10-01'}).error);
   for(const status of ['PENDING','PROCESSING','DELIVERED'])assert.equal(canRetryNotification({status,lockedUntil:null}),false);
   assert.equal(canRetryNotification({status:'EXHAUSTED',lockedUntil:new Date(Date.now()+10000)}),false);
@@ -495,7 +497,7 @@ test('authenticated management writes require the configured site origin', async
   assert.equal(await authorize(new Request(base, { method: 'POST' })), false);
   assert.equal(await authorize(new Request(base)), true);
 });
-const validOrder = { termsAccepted: true, termsVersion: '2026-10-01', contactMethod: 'メール', paymentMethod: '銀行振込', songTitle: 'QA', vocalKey: '±0（原曲キー）', idempotencyKey: 'qa-order-key-12345678', clientName: 'Test', clientEmail: 'test@example.com', serviceType: 'MIX', planId: 'plan-1', optionIds: [] };
+const validOrder = { termsAccepted: true, termsVersion: '2026-10-11', contactMethod: 'メール', paymentMethod: '銀行振込', songTitle: 'QA', vocalKey: '±0（原曲キー）', idempotencyKey: 'qa-order-key-12345678', clientName: 'Test', clientEmail: 'test@example.com', serviceType: 'MIX', planId: 'plan-1', optionIds: [] };
 const plan = { id: 'plan-1', name: 'スタンダードプラン', category: 'MIX', price: 10000, period: '7日', revisions: '5回' };
 test('plan selection preserves the chosen service and handles obsolete IDs and zero prices', () => {
   const { resolveOrderSelection } = loader()('src/lib/order-selection.ts');
@@ -527,7 +529,7 @@ function orderHarness({ unavailable = false, options = [], missingPlan = false }
 
 test('anonymous requests cannot reach any administrative API or AI operation', async () => {
   function files(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? files(path.join(dir, e.name)) : [path.join(dir, e.name)]); }
-  const routes = [...files(path.join(root, 'src/app/api/admin')), ...['posts', 'generate-post', 'generate-reply'].map(n => path.join(root, 'src/app/api', n, 'route.ts'))];
+  const routes = [...files(path.join(root, 'src/app/api/admin')), path.join(root, 'src/app/api/posts/route.ts')];
   const load = loader({
     '@/lib/auth': { isAdmin: async () => false }, '@/lib/prisma': { prisma: {} },
     '@/lib/rate-limit': { consumeRateLimit: async () => { throw Error('Unexpected rate-limit call'); } },
@@ -565,8 +567,8 @@ test('order ignores forged prices and labels, preserving the authoritative price
   assert.equal(saved[0].options, '');
   const result = await response.json();
   assert.equal(result.orderId, 'order-1');
-  assert.match(result.receiptNumber, /^S-/);
-  assert.equal(result.estimate.price, 10000);
+  assert.equal(Object.hasOwn(result, 'receiptNumber'), false);
+  assert.equal(Object.hasOwn(result, 'estimate'), false);
 });
 
 test('closed reception rejects previously opened forms before saving', async () => {
@@ -668,31 +670,80 @@ test('corporate contact limits run before database saves and email sends', async
   const load = loader({ '@/lib/prisma': { prisma: { submissionReceipt: { findUnique: async () => null }, businessContact: { create() { calls++; } } } },
     '@/lib/rate-limit': { consumeRateLimit: async () => { throw new (load('src/lib/api-input.ts').ApiError)(429, 'limit'); } },
   });
-  const response = await load('src/app/api/business-contact/route.ts').POST(request({ idempotencyKey: 'qa-business-key-12345678', termsAccepted: true, termsVersion: '2026-10-01', companyName: 'Test', contactName: 'Test', email: 'test@example.com', inquiryType: '歌ってみたMIX・マスタリング', message: 'Test' }));
+  const response = await load('src/app/api/business-contact/route.ts').POST(request({ idempotencyKey: 'qa-business-key-12345678', termsAccepted: true, termsVersion: '2026-10-11', companyName: 'Test', contactName: 'Test', email: 'test@example.com', inquiryType: '歌ってみたMIX・マスタリング', message: 'Test' }));
   assert.equal(response.status, 429); assert.equal(calls, 0);
 });
 
-test('AI reply resolves a saved Japanese plan name using current DB terms', async () => {
-  let query, prompt;
-  const load = loader({
-    '@/lib/auth': { isAdmin: async () => true },
-    '@/lib/rate-limit': { consumeRateLimit: async () => {} },
-    '@/lib/prisma': { prisma: { plan: { findFirst: async q => { query = q; return { ...plan, price: 12345, period: '20日', revisions: '3回' }; } } } },
-    '@google/generative-ai': { GoogleGenerativeAI: class { getGenerativeModel() { return { generateContent: async text => { prompt = text; return { response: { text: () => 'reply' } }; } }; } } },
-  });
-  const response = await load('src/app/api/generate-reply/route.ts').POST(request({ clientName: 'Test', planId: plan.name, serviceType: 'MIX' }));
-  assert.equal(response.status, 200);
-  assert.ok(query.where.OR.some(q => q.name === plan.name));
-  assert.match(prompt, /12,345円/); assert.match(prompt, /20日/); assert.match(prompt, /3回/);
+test('unused admin AI generators and their routes are removed, keeping public chat available', () => {
+  for (const file of ['src/components/admin/AiReplyPanel.tsx', 'src/components/admin/AiPostGeneratorPanel.tsx', 'src/app/api/generate-reply/route.ts', 'src/app/api/generate-post/route.ts']) assert.equal(fs.existsSync(path.join(root, file)), false);
+  assert.equal(fs.existsSync(path.join(root, 'src/app/api/chat/route.ts')), true);
 });
 
 test('corporate acceptance atomically queues notifications instead of sending before saving', async () => {
   const jobs = [];
   const db = { $queryRaw: async () => [{ locked: 1 }], submissionReceipt: { findUnique: async () => null, create: async ({ data }) => ({ id: 'receipt-1', ...data }) }, businessContact: { create: async () => ({ id: 'contact-1' }) }, notificationJob: { createMany: async ({ data }) => { jobs.push(...data); } }, $transaction: async fn => fn(db) };
   const load = loader({ '@/lib/prisma': { prisma: db }, '@/lib/rate-limit': { consumeRateLimit: async () => {} } });
-  const response = await load('src/app/api/business-contact/route.ts').POST(request({ idempotencyKey: 'qa-business-key-12345678', termsAccepted: true, termsVersion: '2026-10-01', companyName: 'Test', contactName: 'Test', email: 'test@example.com', inquiryType: '歌ってみたMIX・マスタリング', message: 'Test' }));
+  const response = await load('src/app/api/business-contact/route.ts').POST(request({ idempotencyKey: 'qa-business-key-12345678', termsAccepted: true, termsVersion: '2026-10-11', companyName: 'Test', contactName: 'Test', email: 'test@example.com', inquiryType: '歌ってみたMIX・マスタリング', message: 'Test' }));
   assert.equal(response.status, 201);
-  assert.ok(jobs.some(j => j.kind === 'BUSINESS_RECEIPT_EMAIL' && j.entityId === 'contact-1'));
+  assert.ok(jobs.some(j => j.kind === 'BUSINESS_ADMIN_EMAIL' && j.entityId === 'contact-1'));
+  assert.ok(jobs.every(j => !j.kind.endsWith('_RECEIPT_EMAIL')));
+});
+
+test('Discord overview covers order inputs and uses the original server quote, including zero and consultation prices', () => {
+  const { discordNotification } = loader()('src/lib/notification-content.ts');
+  const order = { clientName:'通知QA',clientEmail:'qa@example.invalid',contactMethod:'Discord',twitterId:'@qa',discordId:'qa',serviceType:'ORIGINAL',planId:'変更後のプラン',songTitle:"no man's world",options:'変更後',vocalKey:'-3',referenceUrl:'https://example.invalid/reference',referenceFidelity:'2',materialsUrl:'https://example.invalid/material',paymentMethod:'銀行振込',deadline:'2026-12-31',message:'ご要望 @everyone',activityPurpose:'YouTube',genre:'ポップス',lyricsStatus:'未定',vocalGuideStatus:'不要',price:999,basePrice:999,optionPrice:999 };
+  const quote={plan:{name:'受付時のプラン'},price:12000,basePrice:10000,optionPrice:2000,options:[{name:'カットアップ',priceText:'1,000円',quantity:2}]};
+  const {payload,fullText}=discordNotification(order,quote,'https://example.invalid/admin/orders/qa');
+  const fields=Object.fromEntries(payload.embeds[0].fields.map(field=>[field.name,field.value]));
+  assert.equal(fields['依頼者名'],order.clientName);assert.equal(fields['メールアドレス'],order.clientEmail);assert.equal(fields['希望する連絡手段'],'Discord');
+  assert.equal(fields['プラン'],'受付時のプラン');assert.equal(fields['受付時点の概算金額'],'12,000円（税込）');assert.match(fields['オプション'],/×2単位/);
+  for(const value of [order.twitterId,order.discordId,order.songTitle,order.vocalKey,order.referenceUrl,order.materialsUrl,order.paymentMethod,order.deadline,order.message,order.activityPurpose,order.genre,order.lyricsStatus,order.vocalGuideStatus]) assert.ok(Object.values(fields).includes(value));
+  assert.deepEqual(payload.allowed_mentions,{parse:[]});assert.equal(fullText,null);assert.doesNotMatch(JSON.stringify(payload),/受付番号|receiptNumber/);
+  assert.equal(discordNotification(order,{...quote,price:0},'https://example.invalid/admin').payload.embeds[0].fields.find(f=>f.name==='受付時点の概算金額').value,'0円（税込）');
+  assert.match(discordNotification({...order,planId:'無料相談'},{intent:'CONSULTATION',price:null},'https://example.invalid/admin').payload.embeds[0].fields.find(f=>f.name==='受付時点の概算金額').value,/無料相談/);
+  assert.equal(discordNotification(order,{...quote,price:null},'https://example.invalid/admin').payload.embeds[0].fields.find(f=>f.name==='受付時点の概算金額').value,'内容確認後にご案内');
+});
+
+test('Discord long content stays within embed limits and includes an unabridged text attachment', () => {
+  const { discordNotification } = loader()('src/lib/notification-content.ts');
+  const record={companyName:'QA',contactName:'QA担当',email:'qa@example.invalid',inquiryType:'お見積り',budget:'10万円',deadline:'来月',message:'長文😀'.repeat(1000)};
+  const {payload,fullText}=discordNotification(record,null,'https://example.invalid/admin');
+  assert.ok(fullText.includes(record.message));assert.ok(payload.content.length<=2000);assert.ok(payload.embeds[0].fields.length<=25);
+  assert.ok(payload.embeds[0].title.length+payload.embeds[0].fields.reduce((sum,f)=>sum+f.name.length+f.value.length,0)<=6000);
+  assert.ok(payload.embeds[0].fields.every(f=>f.value.length<=1024&&!/[\uD800-\uDBFF]…$/.test(f.value)));
+  for(const value of [record.companyName,record.contactName,record.email,record.inquiryType,record.budget,record.deadline]) assert.ok(fullText.includes(value));
+});
+
+test('notifications queue only admin channels and old receipt jobs never send, even on retry', async () => {
+  const previous=process.env.DISCORD_WEBHOOK_URL;process.env.DISCORD_WEBHOOK_URL='https://discord.com/api/webhooks/qa/test';
+  try {
+    const queued=[],updates=[],mails=[];let pending=true;
+    const job={id:'old-job',kind:'ORDER_RECEIPT_EMAIL',entityId:'qa',status:'FAILED',attempts:1,updatedAt:new Date(),lockedUntil:null};
+    const db={notificationJob:{createMany:async({data})=>queued.push(...data),findFirst:async()=>pending?job:null,updateMany:async()=>({count:1}),update:async({data})=>{updates.push(data);pending=false;}}};
+    const {queueNotifications,processPendingNotifications}=loader({'@/lib/prisma':{prisma:db},'@/lib/mail':{sendMail:async data=>mails.push(data)}})('src/lib/notifications.ts');
+    await queueNotifications(db,'ORDER','qa');await queueNotifications(db,'BUSINESS','qb');
+    assert.deepEqual(queued.map(j=>j.kind),['ORDER_ADMIN_EMAIL','ORDER_DISCORD','BUSINESS_ADMIN_EMAIL','BUSINESS_DISCORD']);
+    assert.deepEqual(await processPendingNotifications(),{delivered:0,failed:0});assert.equal(mails.length,0);assert.equal(updates[0].status,'SKIPPED');assert.equal(updates[0].sentAt,null);
+    assert.equal(loader()('src/lib/admin-notifications.ts').canRetryNotification(job),false);
+  } finally {if(previous===undefined)delete process.env.DISCORD_WEBHOOK_URL;else process.env.DISCORD_WEBHOOK_URL=previous;}
+});
+
+test('Discord worker sends long-form multipart data with mentions disabled, and admin mail never targets the customer', async () => {
+  const keys=['DISCORD_WEBHOOK_URL','ADMIN_NOTIFICATION_EMAIL'];const previous=keys.map(key=>[key,process.env[key]]);
+  Object.assign(process.env,{DISCORD_WEBHOOK_URL:'https://discord.com/api/webhooks/qa/test',ADMIN_NOTIFICATION_EMAIL:'owner@example.invalid'});
+  try {
+    const record={companyName:'QA',contactName:'QA',email:'customer@example.invalid',inquiryType:'お見積り',message:'長文'.repeat(2500)};
+    const jobs=['BUSINESS_DISCORD','BUSINESS_ADMIN_EMAIL'].map((kind,i)=>({id:`job-${i}`,kind,entityId:'qa',status:'PENDING',attempts:0,updatedAt:new Date(),lockedUntil:null}));
+    const mailed=[],statuses=[];let index=0;
+    const db={businessContact:{findUnique:async()=>record},submissionReceipt:{findUnique:async()=>({quote:{}})},notificationJob:{findFirst:async()=>jobs[index]??null,updateMany:async()=>({count:1}),update:async({data})=>{statuses.push(data.status);index++;}}};
+    const {processPendingNotifications}=loader({'@/lib/prisma':{prisma:db},'@/lib/mail':{sendMail:async data=>mailed.push(data)},fetch:async(url,init)=>{
+      assert.equal(new URL(url).searchParams.get('wait'),'true');assert.ok(init.body instanceof FormData);assert.equal(init.headers,undefined);
+      const payload=JSON.parse(init.body.get('payload_json'));assert.deepEqual(payload.allowed_mentions,{parse:[]});
+      assert.ok((await init.body.get('files[0]').text()).includes(record.message));return new Response(null,{status:204});
+    }})('src/lib/notifications.ts');
+    assert.deepEqual(await processPendingNotifications(),{delivered:2,failed:0});assert.deepEqual(statuses,['DELIVERED','DELIVERED']);
+    assert.equal(mailed.length,1);assert.equal(mailed[0].to,'owner@example.invalid');assert.doesNotMatch(mailed[0].text,/受付番号/);
+  } finally {for(const[key,value]of previous){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
 
 test('sitemap separates news and blog URLs and excludes unsupported types', async () => {
@@ -868,34 +919,83 @@ test('every administrative page and layout checks authorization before reading d
 });
 
 test('consultations accept an undecided plan without creating a paid quotation', async () => {
-  const {handler,saved}=orderHarness();const r=await handler(request({...validOrder,intent:'CONSULTATION',planId:'',message:'どのプランがよいですか？'}));assert.equal(r.status,201);assert.equal(saved[0].price,null);assert.equal(saved[0].planId,'無料相談');assert.equal((await r.json()).estimate.intent,'CONSULTATION');
+  const {handler,saved}=orderHarness();const r=await handler(request({...validOrder,intent:'CONSULTATION',planId:'',message:'どのプランがよいですか？'}));assert.equal(r.status,201);assert.equal(saved[0].price,null);assert.equal(saved[0].planId,'無料相談');assert.equal((await r.json()).orderId,'order-1');
 });
 
 test('cut-up price uses rounded ten-second quantities and rejects forged quantities', () => {
  const load=loader();const {calculateOrderPrice}=load('src/lib/order-pricing.ts');const {validateOptionQuantities}=load('src/lib/order-validation.ts');const options=[{id:'cut',name:'カットアップ',priceText:'2,000円'}];assert.equal(calculateOrderPrice({price:10000},options,{cut:3}).total,16000);assert.throws(()=>validateOptionQuantities({cut:0},options),{status:400});assert.throws(()=>validateOptionQuantities({unknown:3},options),{status:400});
 });
 
-test('submission failures explain uncertainty and retry limits, never accept missing receipts', async () => {
+test('submission failures explain uncertainty and retry limits, requiring a saved entity instead of a receipt number', async () => {
   for(const fetchMock of [async()=>{throw Error('network');},async()=>new Response('<html>upstream failure</html>',{status:502}),async()=>Response.json({success:true})]){
     const {submitForm}=loader({fetch:fetchMock})('src/lib/form-submission.ts');await assert.rejects(()=>submitForm('/api/orders',{}),/入力内容は保持/);
   }
   const {submitForm}=loader({fetch:async()=>Response.json({error:'limit'},{status:429,headers:{'Retry-After':'60'}})})('src/lib/form-submission.ts');await assert.rejects(()=>submitForm('/api/orders',{}),{retryAfter:60,status:429});
+  const accepted=loader({fetch:async()=>Response.json({success:true,orderId:'saved-order'})})('src/lib/form-submission.ts');
+  assert.deepEqual(await accepted.submitForm('/api/orders',{}),{entityId:'saved-order'});
+  const business=loader({fetch:async()=>Response.json({success:true,contactId:'saved-contact'})})('src/lib/form-submission.ts');
+  assert.deepEqual(await business.submitForm('/api/business-contact',{}),{entityId:'saved-contact'});
 });
 
-test('calendar dates use an exclusive end and repeated synchronization updates one event', async () => {
+test('calendar titles include the customer and song, handling missing titles and existing honorifics', () => {
+ const { deadlineEvent } = loader()('src/lib/calendar-event.ts');
+ const order = { id: 'qa-order', serviceType: 'MIX', clientName: ' ゑゐ ', songTitle: " no man's world " };
+ assert.equal(deadlineEvent(order, '2026-12-31').summary, "[納品期限] ゑゐ様 - ボーカルMIX (no man's world)");
+ for (const songTitle of [null, '', '   ']) {
+  assert.equal(deadlineEvent({ ...order, clientName: 'ゑゐ様', songTitle }, '2026-12-31').summary, '[納品期限] ゑゐ様 - ボーカルMIX');
+ }
+ assert.equal(deadlineEvent({ ...order, serviceType: 'GUIDE' }, '2026-12-31').summary, "[納品期限] ゑゐ様 - ボーカルガイド (no man's world)");
+ assert.equal(deadlineEvent({ ...order, serviceType: 'ORIGINAL' }, '2026-12-31').summary, "[納品期限] ゑゐ様 - オリジナル楽曲 (no man's world)");
+ assert.equal(deadlineEvent({ ...order, clientName: ' ' }, '2026-12-31').summary, "[納品期限] 受付 qa-order - ボーカルMIX (no man's world)");
+});
+
+test('calendar dates use an exclusive end and synchronization renames the existing event without duplication', async () => {
  const { deadlineEvent, upsertDeadlineEvent } = loader()('src/lib/calendar-event.ts');
- const event = deadlineEvent({ id: 'qa-order', serviceType: 'MIX' }, '2026-12-31');
+ const order = { id: 'qa-order', serviceType: 'MIX', clientName: 'ゑゐ', songTitle: "no man's world" };
+ const event = deadlineEvent(order, '2026-12-31');
  assert.equal(event.end.date, '2027-01-01');
- assert.throws(() => deadlineEvent({ id: 'qa-order', serviceType: 'MIX' }, '2026-02-30'));
- assert.equal(event.id, deadlineEvent({ id: 'qa-order', serviceType: 'MIX' }, '2027-01-05').id);
+ assert.throws(() => deadlineEvent(order, '2026-02-30'));
+ assert.equal(event.id, deadlineEvent(order, '2027-01-05').id);
  const stored = new Map(); let inserted = 0;
  const calendar = { events: {
   async update({ eventId, requestBody }) { if (!stored.has(eventId)) throw { code: 404 }; stored.set(eventId, requestBody); },
   async insert({ requestBody }) { inserted++; stored.set(requestBody.id, requestBody); }
  } };
  await upsertDeadlineEvent(calendar, 'qa', event);
- await upsertDeadlineEvent(calendar, 'qa', deadlineEvent({ id: 'qa-order', serviceType: 'MIX' }, '2027-01-05'));
+ stored.set(event.id, { ...event, summary: '[納品期限] 受付 qa-order - ボーカルMIX' });
+ await upsertDeadlineEvent(calendar, 'qa', deadlineEvent(order, '2027-01-05'));
  assert.equal(inserted, 1); assert.equal(stored.size, 1); assert.equal(stored.get(event.id).start.date, '2027-01-05');
+ assert.equal(stored.get(event.id).summary, "[納品期限] ゑゐ様 - ボーカルMIX (no man's world)");
+});
+
+test('admin calendar sync uses saved customer and song data and rejects anonymous requests', async () => {
+ const previous = ['GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_CALENDAR_ID'].map(key => [key, process.env[key]]);
+ Object.assign(process.env, { GOOGLE_SERVICE_ACCOUNT_EMAIL: 'qa@example.invalid', GOOGLE_PRIVATE_KEY: 'qa-only', GOOGLE_CALENDAR_ID: 'qa-calendar' });
+ try {
+  let authorized = false, reads = 0;
+  const events = [];
+  const route = loader({
+   '@/lib/admin-api-auth': { isAdminRequest: async () => authorized },
+   '@/lib/prisma': { prisma: { order: { async findUnique({ where }) {
+    reads++; assert.equal(where.id, 'qa-order');
+    return { id: where.id, serviceType: 'MIX', clientName: 'ゑゐ', songTitle: "no man's world" };
+   } } } },
+   googleapis: { google: { auth: { JWT: class {} }, calendar: () => ({ events: {
+    async update({ calendarId, requestBody }) { assert.equal(calendarId, 'qa-calendar'); events.push(requestBody); },
+    async insert() { assert.fail('existing event should be updated'); },
+   } }) } },
+  })('src/app/api/admin/calendar/sync/route.ts');
+  const body = { orderId: 'qa-order', deadline: '2026-12-31', clientName: 'untrusted input', songTitle: 'untrusted input' };
+  assert.equal((await route.POST(request(body))).status, 401);
+  assert.equal(reads, 0); assert.equal(events.length, 0);
+  authorized = true;
+  const response = await route.POST(request(body));
+  assert.equal(response.status, 200); assert.equal((await response.json()).synced, true);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].summary, "[納品期限] ゑゐ様 - ボーカルMIX (no man's world)");
+ } finally {
+  for (const [key, value] of previous) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+ }
 });
 
 test('Proxy denies anonymous management APIs and redirects pages, allowing only the admin token', async () => {
@@ -916,11 +1016,16 @@ test('additive migrations are repeatable and leave unrelated existing data intac
  const { PGlite } = await import('@electric-sql/pglite'); const db = await PGlite.create();
  try {
   await db.exec(`CREATE TABLE "ExistingOrder" (id text primary key); INSERT INTO "ExistingOrder" VALUES ('qa-existing');`);
-  const directories = ['202610010001_notification_outbox','202610010002_submission_receipts','202610010003_rate_limit'];
+  const directories = ['202610010001_notification_outbox','202610010002_submission_receipts','202610010003_rate_limit','202610110001_retire_receipt_numbers'];
   const sql = directories.map(name => fs.readFileSync(path.join(root,'prisma/migrations',name,'migration.sql'),'utf8')).join('\n');
   await db.exec(sql); await db.exec(sql);
   assert.equal((await db.query('SELECT COUNT(*)::int AS count FROM "ExistingOrder"')).rows[0].count,1);
   const result = await db.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`);
   assert.ok(['NotificationJob','SubmissionReceipt','ApiRateLimit'].every(name => result.rows.some(row => row.table_name===name)));
+  await db.exec(`INSERT INTO "SubmissionReceipt" (id,"requestKey","payloadHash","receiptNumber","entityType","entityId",quote) VALUES ('old','old-key','hash','S-OLD','ORDER','old-order','{}');`);
+  await db.exec(sql);
+  assert.equal((await db.query(`SELECT "receiptNumber" FROM "SubmissionReceipt" WHERE id='old'`)).rows[0].receiptNumber,'S-OLD');
+  await db.exec(`INSERT INTO "SubmissionReceipt" (id,"requestKey","payloadHash","entityType","entityId",quote) VALUES ('new','new-key','hash','ORDER','new-order','{}');`);
+  assert.equal((await db.query(`SELECT "receiptNumber" FROM "SubmissionReceipt" WHERE id='new'`)).rows[0].receiptNumber,null);
  } finally { await db.close(); }
 });

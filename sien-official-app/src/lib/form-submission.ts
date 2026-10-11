@@ -19,10 +19,9 @@ export async function submitForm(url: string, body: object) {
       const retryAfter = Math.min(86400, Math.max(0, Number(response.headers.get("Retry-After")) || Number(record?.retryAfter) || 0));
       throw new FormSubmissionError(typeof record?.error === "string" ? record.error : UNCERTAIN_RESULT, retryAfter, response.status, record?.code === "IDEMPOTENCY_CONFLICT" ? record.code : "");
     }
-    if (record?.success !== true || typeof record.receiptNumber !== "string" || !/^S-[0-9]{8}-[A-F0-9]{16}$/.test(record.receiptNumber)) throw new FormSubmissionError(UNCERTAIN_RESULT);
-    const estimate = record.estimate && typeof record.estimate === "object" ? record.estimate as Record<string, unknown> : null;
-    const estimatePrice = typeof estimate?.price === "number" && Number.isSafeInteger(estimate.price) && estimate.price >= 0 ? estimate.price : null;
-    return { receiptNumber: record.receiptNumber, estimate: record.estimate, estimatePrice };
+    const entityId = url === "/api/business-contact" ? record?.contactId : record?.orderId;
+    if (record?.success !== true || typeof entityId !== "string" || !entityId.trim()) throw new FormSubmissionError(UNCERTAIN_RESULT);
+    return { entityId };
   } catch (error) {
     if (error instanceof FormSubmissionError) throw error;
     throw new FormSubmissionError(UNCERTAIN_RESULT);

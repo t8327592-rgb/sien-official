@@ -21,11 +21,8 @@ export default async function BusinessDetailPage({
     notFound();
   }
 
-  const receipt = await prisma.submissionReceipt.findUnique({ where: { entityType_entityId: { entityType: "BUSINESS", entityId: id } } });
-
   return (
     <div className="p-8 pb-20">
-      <p className="font-bold">受付番号：{receipt?.receiptNumber || "旧受付（番号未発行）"}</p>
       <BusinessDetailClient initialContact={contact} />
     </div>
   );

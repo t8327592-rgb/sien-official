@@ -12,7 +12,7 @@ import { Send, Loader2, Building2 } from "lucide-react";
 
 // PolicyModal was removed in favor of linking directly to /policy/guidelines
 
-export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string, receiptNumber: string) => void }) {
+export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string) => void }) {
  const validation = useFormAccessibility();
   const [retryUntil, setRetryUntil] = useState(0);
   const retrySeconds = useRetryCountdown(retryUntil);
@@ -22,7 +22,7 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string,
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submissionId, setSubmissionId] = useState("");
   const submissionKey = useRef("");
-  const [receiptNumber, setReceiptNumber] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +36,7 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string,
     message: ""
   });
 
-  const draft = useFormDraft("business", { formData, idempotencyKey: submissionId }, !!(formData.companyName || formData.email || formData.message), !receiptNumber);
+  const draft = useFormDraft("business", { formData, idempotencyKey: submissionId }, !!(formData.companyName || formData.email || formData.message), !submitted);
   function restoreDraft() { const saved = draft.restore(); if (saved) { setFormData(saved.formData); submissionKey.current = saved.idempotencyKey; setSubmissionId(saved.idempotencyKey); setTermsAccepted(false); } }
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -52,10 +52,10 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string,
     setError("");
 
     try {
-      const result = await submitForm("/api/business-contact", { ...formData, idempotencyKey: submissionKey.current, termsAccepted, termsVersion: TERMS_VERSION });
-      setReceiptNumber(result.receiptNumber);
+      await submitForm("/api/business-contact", { ...formData, idempotencyKey: submissionKey.current, termsAccepted, termsVersion: TERMS_VERSION });
+      setSubmitted(true);
       if (onSuccess) {
-        onSuccess(formData.email, result.receiptNumber);
+        onSuccess(formData.email);
       }
     } catch (err) {
       if (err instanceof FormSubmissionError) { setRetryUntil(err.retryUntil); setConflict(err.code === "IDEMPOTENCY_CONFLICT"); }
@@ -69,7 +69,7 @@ export function BusinessContactForm({ onSuccess }: { onSuccess?: (email: string,
 
   return (
     <>
-      {receiptNumber && <p role="status">受付番号：{receiptNumber}</p>}
+      {submitted && <p role="status">お問い合わせを受け付けました。</p>}
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold text-slate-900 mb-4">お問い合わせ・ご相談</h2>
         <p className="text-slate-500">

@@ -5,8 +5,6 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AiReplyPanel } from "@/components/admin/AiReplyPanel";
-import { AiPostGeneratorPanel } from "@/components/admin/AiPostGeneratorPanel";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdminPage();
@@ -29,8 +27,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     });
   }
 
-  const receipt = await prisma.submissionReceipt.findUnique({ where: { entityType_entityId: { entityType: "ORDER", entityId: id } } });
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div className="flex items-center gap-4 mb-8">
@@ -41,17 +37,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="space-y-6">
-        <p className="font-bold">受付番号：{receipt?.receiptNumber || "旧受付（番号未発行）"}</p>
         <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
       </div>
 
-      <div className="space-y-6 mt-12 pt-12 border-t border-slate-200">
-        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-          <span className="text-blue-500">🤖</span> AI アシスト
-        </h2>
-        <AiReplyPanel order={order} />
-        <AiPostGeneratorPanel order={order} />
-      </div>
     </div>
   );
 }

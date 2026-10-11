@@ -41,7 +41,7 @@ try {
       const id='qa-notice-'+String(index).padStart(3,'0');
       await prisma.order.upsert({where:{id},create:{id,clientName:'QA通知検証',clientEmail:'notify@example.invalid',serviceType:'MIX'},update:{}});
       await prisma.notificationJob.upsert({where:{id},create:{id,entityId:id,kind:'ORDER_ADMIN_EMAIL',status:'FAILED',attempts:2,lastError:'QA用配送失敗'},update:{status:'FAILED',attempts:2,lockedUntil:null}});
-      await prisma.submissionReceipt.upsert({where:{entityType_entityId:{entityType:'ORDER',entityId:id}},create:{entityType:'ORDER',entityId:id,receiptNumber:'QA-NOTICE-'+String(index).padStart(3,'0'),requestKey:id,payloadHash:'qa',quote:{}},update:{}});
+      await prisma.submissionReceipt.upsert({where:{entityType_entityId:{entityType:'ORDER',entityId:id}},create:{entityType:'ORDER',entityId:id,requestKey:id,payloadHash:'qa',quote:{}},update:{}});
     }
     const before=await(await fetch('http://127.0.0.1:55433/captures')).json();
     const retry=await call('/api/admin/notifications/qa-notice-001/retry',{method:'POST'});
@@ -50,8 +50,8 @@ try {
     const after=await(await fetch('http://127.0.0.1:55433/captures')).json();assert.equal(after.mail.length-before.mail.length,1);
     assert.equal((await call('/api/admin/notifications/qa-notice-001/retry',{method:'POST'})).status,409);
     const list=await(await call('/admin/notifications?status=failed')).text();assert.ok(list.includes('次の25件'));
-    const search=await(await call('/admin/notifications?status=failed&q=QA-NOTICE-000')).text();assert.ok(search.includes('QA-NOTICE-000'));
-    results.push('通知個別再送は指定1件のみをローカルSMTPへ配送・送信済み再送拒否・ページ送り・受付番号検索');
+    const search=await(await call('/admin/notifications?status=failed&q=QA通知検証')).text();assert.ok(search.includes('QA通知検証'));
+    results.push('通知個別再送は指定1件のみをローカルSMTPへ配送・送信済み再送拒否・ページ送り・依頼者名検索');
   }
   const report={testedAt:new Date().toISOString(),isolated:true,results};
   fs.mkdirSync(path.resolve(import.meta.dirname,'../../audit/checks/admin-followup-2026-10-11'),{recursive:true});

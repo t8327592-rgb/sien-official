@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { Prisma, SubmissionReceipt } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError, textField } from "@/lib/api-input";
@@ -33,13 +33,12 @@ export async function acceptSubmission(identity: ReturnType<typeof submissionIde
     const existing = verifyReceipt(await tx.submissionReceipt.findUnique({ where: { requestKey: identity.requestKey } }), identity.payloadHash);
     if (existing) return existing;
     const entity = await create(tx);
-    const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).replaceAll("-", "");
-    const receipt = await tx.submissionReceipt.create({ data: { ...identity, entityId: entity.id, receiptNumber: `S-${date}-${randomBytes(8).toString("hex").toUpperCase()}`, quote, ...consent } });
+    const receipt = await tx.submissionReceipt.create({ data: { ...identity, entityId: entity.id, quote, ...consent } });
     await queueNotifications(tx, identity.entityType, entity.id);
     return receipt;
   }, { maxWait: 10000, timeout: 15000 });
 }
 
 export function submissionResponse(receipt: SubmissionReceipt) {
-  return { success: true, [receipt.entityType === "ORDER" ? "orderId" : "contactId"]: receipt.entityId, receiptNumber: receipt.receiptNumber, estimate: receipt.quote };
+  return { success: true, [receipt.entityType === "ORDER" ? "orderId" : "contactId"]: receipt.entityId };
 }
