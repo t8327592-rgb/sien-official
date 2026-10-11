@@ -7,6 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 静的ページのルート一覧
   const routes = [
     "",
+    "/pricing",
     "/mix",
     "/original",
     "/business",
@@ -15,7 +16,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/blog",
     "/news",
     "/faq",
-    "/order",
     "/policy/privacy",
     "/policy/law",
     "/policy/guidelines",
@@ -23,7 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticUrls = routes.map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: route === "" ? 1.0 : 0.8,
   }));

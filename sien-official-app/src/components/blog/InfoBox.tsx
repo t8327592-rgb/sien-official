@@ -27,7 +27,7 @@ export function InfoBox({ type, children }: InfoBoxProps) {
     case "TIP":
       bgClass = "bg-orange-50";
       borderClass = "border-orange-200";
-      iconClass = "text-orange-500";
+      iconClass = "text-orange-700";
       titleClass = "text-orange-800";
       Icon = Lightbulb;
       defaultTitle = "ヒント";

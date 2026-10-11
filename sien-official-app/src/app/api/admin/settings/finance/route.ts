@@ -1,12 +1,12 @@
-import { isAdmin } from "@/lib/auth";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(request: Request) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const data = await request.json();
-    
+
     if (data.targetMonthlySales === undefined) {
       return NextResponse.json({ error: "Missing targetMonthlySales" }, { status: 400 });
     }

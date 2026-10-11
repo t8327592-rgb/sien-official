@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { PrismaClient } from '@prisma/client';
 import { updateAllClientOrdersToRepeater } from '../src/lib/repeater';
 
@@ -21,7 +22,7 @@ async function main() {
     if (order.clientEmail && processedEmails.has(order.clientEmail)) continue;
     if (order.twitterId && processedTwitters.has(order.twitterId)) continue;
 
-    const orConditions: any[] = [];
+    const orConditions: Prisma.OrderWhereInput[] = [];
     if (order.clientEmail && order.clientEmail.trim() !== "") {
       orConditions.push({ clientEmail: order.clientEmail });
     }

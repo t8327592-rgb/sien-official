@@ -1,18 +1,19 @@
+import { externalText } from "@/lib/external-text";
 import { readJson, apiErrorResponse, textField } from "@/lib/api-input";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import { isAdmin } from "@/lib/auth";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(req))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     await consumeRateLimit("admin-ai", 30, 3600);
     const body = await readJson(req);
     for (const key of Object.keys(body)) {
       if (typeof body[key] === "string") textField(body, key, false, 5000);
     }
-    const { 
-      clientName, serviceType, message, 
+    const {
+      clientName, serviceType, message,
       songTitle, vocalKey, referenceUrl, referenceFidelity
     } = body;
 
@@ -22,13 +23,13 @@ export async function POST(req: Request) {
 以下のクライアントから依頼された楽曲が完成したため、Twitter(X)などのSNSで告知するためのポスト本文を作成してください。
 
 【ご依頼情報】
-・お名前: ${clientName} 様
+・お名前: [お客様] 様
 ・希望サービス: ${serviceName}
-・曲名: ${songTitle || "オリジナル楽曲"}
-・歌唱キー: ${vocalKey || "未設定"}
-・参考曲URL: ${referenceUrl || "なし"}
-・リファレンス再現度: ${referenceFidelity || "未設定"}
-・ご要望・メッセージ: ${message || "特になし"}
+・曲名: ${externalText(songTitle, typeof clientName === "string" ? clientName : undefined) || "オリジナル楽曲"}
+・歌唱キー: ${externalText(vocalKey, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・参考曲URL: ${referenceUrl ? "参考資料あり（URLは外部送信しません）" : "なし"}
+・リファレンス再現度: ${externalText(referenceFidelity, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・ご要望・メッセージ: ${externalText(message, typeof clientName === "string" ? clientName : undefined) || "特になし"}
 
 【作成するSNSポストの条件】
 以下の構成（テンプレート）に従って作成してください。
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 お仕事情報🎼
 
 【${serviceName}】
-${clientName}様 - ${songTitle || "オリジナル楽曲"}
+[お客様]様 - ${externalText(songTitle, typeof clientName === "string" ? clientName : undefined) || "オリジナル楽曲"}
 担当しました✨
 
 [AIによる解説]
@@ -59,13 +60,13 @@ ${clientName}様 - ${songTitle || "オリジナル楽曲"}
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();
+    const text = response.text().replaceAll("[お客様]", typeof clientName === "string" ? clientName : "お客様");
 
     return Response.json({ postContent: text.replace(/=== 出力テンプレート ===|========================/g, '').trim() });
   } catch (error) {
     const response = apiErrorResponse(error);
     if (response) return response;
-    console.error("Post Generation Error:", error);
+    console.error("AI generation unavailable");
     return Response.json({ error: 'Failed to generate post content' }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import BusinessListClient from "@/components/admin/BusinessListClient";
 
@@ -5,6 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminBusinessContactsPage() {
+  await requireAdminPage();
   const contacts = await prisma.businessContact.findMany({
     orderBy: { createdAt: "desc" },
   });

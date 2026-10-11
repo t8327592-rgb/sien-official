@@ -1,10 +1,12 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { Metadata } from "next";
+import { getPlans } from "@/lib/data/cms";
+import { REVISION_TERMS, DELIVERY_TERMS, CANCELLATION_TERMS, revisionSummary } from "@/lib/contract-terms";
 
-export const metadata: Metadata = {
-  title: "ご依頼に関する留意事項 | Sien-Official",
-};
+export const metadata: Metadata = pageMetadata("/policy/guidelines", {title: "ご依頼に関する留意事項 | Sien-Official"});
 
-export default function GuidelinesPage() {
+export default async function GuidelinesPage() {
+  const plans = await getPlans();
   return (
     <div className="container mx-auto py-20 px-4 mt-20 max-w-4xl">
       <h1 className="text-4xl font-bold mb-4 text-center text-slate-800">ご依頼に関する留意事項</h1>
@@ -29,8 +31,8 @@ export default function GuidelinesPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">2. 納期について</h2>
             <ul className="list-disc pl-5 text-slate-600 space-y-2">
-              <li>納期はお見積もりの際に提示いたしますが、案件の混雑状況により変動する場合がございます。</li>
-              <li>納期とは「初回納品日（仮完成）」を指し、そこからの修正対応期間は含まれません。</li>
+              <li>{DELIVERY_TERMS}</li>
+              <li>修正指示のご提出や内容確認に要する期間は、料金表の初稿提出目安には含まれません。</li>
               <li>明確な公開日やスケジュールがある場合（例：記念日投稿・イベント公開）は必ず事前にお伝えください。</li>
               <li>オリジナル楽曲など制作工程が多い案件は、通常より納期を長くいただくことがございます。</li>
             </ul>
@@ -47,9 +49,13 @@ export default function GuidelinesPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">4. 修正対応について</h2>
             <ul className="list-disc pl-5 text-slate-600 space-y-2">
-              <li>初回納品後、5回まで無料で修正を承ります。それ以降の修正は内容により追加料金を頂戴いたします。</li>
+              <li>{REVISION_TERMS}</li>
+              <li>規定回数を超える修正は、作業前に追加のお見積もりをご案内します。</li>
               <li>ご依頼時と大きく異なる方針変更（例：キー変更、歌詞の差し替え、テンポの変更など）は「再制作扱い」となり、別途料金が発生する場合があります。</li>
             </ul>
+            <dl className="mt-4 space-y-2 text-sm text-slate-700">
+              {plans.map(plan => <div key={plan.id} className="flex flex-wrap justify-between gap-2 border-b border-slate-100 py-2"><dt>{plan.name}</dt><dd>{revisionSummary(plan)}{plan.name.includes("本セット") ? "（各作品）" : ""}</dd></div>)}
+            </dl>
           </section>
 
           <section>
@@ -105,8 +111,7 @@ export default function GuidelinesPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">11. キャンセル・返金ポリシー</h2>
             <ul className="list-disc pl-5 text-slate-600 space-y-2">
-              <li>ご入金後のキャンセル・返金は原則としてお受けしておりません。進捗状況等により、柔軟に対応できるケースもございますのでご相談ください。</li>
-              <li>しえん側の都合により作業継続が不可能となった場合、全額返金にて対応させていただきます。ただし、それ以上の責任・賠償等は負いかねます。</li>
+              <li>{CANCELLATION_TERMS}</li>
             </ul>
           </section>
 

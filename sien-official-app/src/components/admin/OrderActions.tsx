@@ -1,15 +1,16 @@
 "use client";
+import { AccessibleModal } from "@/components/ui/AccessibleModal";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 
-type OrderStatus = "PENDING" | "ESTIMATING" | "WAITING_PAYMENT" | "WORKING" | "COMPLETED" | "CANCELED";
+import { ORDER_STATUS_OPTIONS, normalizeOrderStatus } from "@/lib/order-status";
 
 export function OrderActions({ orderId, currentStatus }: { orderId: string, currentStatus: string }) {
   const router = useRouter();
-  const [status, setStatus] = useState<OrderStatus>(currentStatus as OrderStatus);
+  const [status, setStatus] = useState(normalizeOrderStatus(currentStatus));
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -30,7 +31,7 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
       });
 
       if (!res.ok) throw new Error("ステータスの更新に失敗しました");
-      
+
       showToast("ステータスを更新しました", "success");
       router.refresh();
     } catch (error) {
@@ -49,7 +50,7 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
       });
 
       if (!res.ok) throw new Error("削除に失敗しました");
-      
+
       // 成功したら一覧へ戻る
       router.push("/admin/orders");
       router.refresh();
@@ -75,7 +76,7 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
 
       {/* 削除確認モーダル */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <AccessibleModal label="依頼の削除確認" onClose={() => { if (!isDeleting) setShowDeleteConfirm(false); }}>
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95">
             <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
               <AlertCircle className="text-red-500 w-6 h-6" />
@@ -94,25 +95,20 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
               </Button>
             </div>
           </div>
-        </div>
+        </AccessibleModal>
       )}
 
-      <select
+      <select aria-label="依頼のステータス"
         value={status}
-        onChange={(e) => setStatus(e.target.value as OrderStatus)}
+        onChange={(e) => setStatus(e.target.value)}
         className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
         disabled={isUpdating}
       >
-        <option value="PENDING">未対応</option>
-        <option value="ESTIMATING">見積中</option>
-        <option value="WAITING_PAYMENT">入金待ち</option>
-        <option value="WORKING">作業中</option>
-        <option value="COMPLETED">納品済</option>
-        <option value="CANCELED">キャンセル</option>
+        {ORDER_STATUS_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
-      
-      <Button 
-        onClick={handleUpdateStatus} 
+
+      <Button
+        onClick={handleUpdateStatus}
         disabled={isUpdating || status === currentStatus}
         className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-orange-600/50"
       >
@@ -122,7 +118,7 @@ export function OrderActions({ orderId, currentStatus }: { orderId: string, curr
 
       <Button
         variant="outline"
-        onClick={() => setShowDeleteConfirm(true)}
+        aria-label="依頼を削除" onClick={() => setShowDeleteConfirm(true)}
         className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 ml-2"
         disabled={isUpdating || isDeleting}
       >

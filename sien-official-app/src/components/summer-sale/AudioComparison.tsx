@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Play, Pause, Volume2, Mic2, Activity, RefreshCcw, Waves, Disc3 } from "lucide-react";
 
 interface AudioComparisonProps {
@@ -90,30 +90,30 @@ export default function AudioComparison({ title, beforeSrc, afterSrc }: AudioCom
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-2">
             <span className="font-bold text-slate-500 uppercase tracking-widest text-sm">Before</span>
-            <span className="text-xs text-slate-400">MIX前（未加工）</span>
+            <span className="text-xs text-slate-600">MIX前（未加工）</span>
           </div>
           <div className={`p-4 rounded-2xl border-2 transition-all ${activePlayer === "before" && isPlaying ? "border-slate-300 bg-slate-50" : "border-slate-100 bg-white"}`}>
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => togglePlay("before")}
                 className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-300 transition-colors shrink-0"
               >
                 {activePlayer === "before" && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
               </button>
               <div className="flex-1">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="100" 
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
                   value={progress.before || 0}
                   onChange={(e) => handleSeek(e, "before")}
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500"
                 />
               </div>
             </div>
-            <audio 
-              ref={beforeAudioRef} 
-              src={beforeSrc} 
+            <audio
+              ref={beforeAudioRef}
+              src={beforeSrc}
               onTimeUpdate={() => handleTimeUpdate("before")}
               onLoadedMetadata={() => handleLoadedMetadata("before")}
               onEnded={() => setIsPlaying(false)}
@@ -129,26 +129,26 @@ export default function AudioComparison({ title, beforeSrc, afterSrc }: AudioCom
           </div>
           <div className={`p-4 rounded-2xl border-2 transition-all shadow-sm ${activePlayer === "after" && isPlaying ? "border-cyan-400 bg-cyan-50/50" : "border-cyan-200 bg-white"}`}>
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => togglePlay("after")}
-                className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white flex items-center justify-center hover:brightness-110 shadow-md shadow-cyan-500/30 transition-all shrink-0"
+                className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white flex items-center justify-center hover:brightness-95 shadow-md shadow-cyan-500/30 transition-all shrink-0"
               >
                 {activePlayer === "after" && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
               </button>
               <div className="flex-1">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="100" 
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
                   value={progress.after || 0}
                   onChange={(e) => handleSeek(e, "after")}
                   className="w-full h-2 bg-cyan-100 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                 />
               </div>
             </div>
-            <audio 
-              ref={afterAudioRef} 
-              src={afterSrc} 
+            <audio
+              ref={afterAudioRef}
+              src={afterSrc}
               onTimeUpdate={() => handleTimeUpdate("after")}
               onLoadedMetadata={() => handleLoadedMetadata("after")}
               onEnded={() => setIsPlaying(false)}

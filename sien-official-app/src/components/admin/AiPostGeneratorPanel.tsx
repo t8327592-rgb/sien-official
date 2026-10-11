@@ -31,7 +31,7 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
       });
 
       if (!res.ok) throw new Error("APIエラー");
-      
+
       const data = await res.json();
       setPostContent(data.postContent);
     } catch (error) {
@@ -47,7 +47,7 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
     try {
       await navigator.clipboard.writeText(postContent);
       setMessage("✅ クリップボードにコピーしました！そのままX(Twitter)に貼り付けできます。");
-      
+
       // 3秒後にメッセージを消す
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
@@ -67,9 +67,10 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
         <p className="text-sm text-slate-600">
           この依頼の情報を元に、SNSで実績として告知するための文章（良いポイントの解説付き）を自動生成します。
         </p>
-        
-        <Button 
-          onClick={handleGenerate} 
+
+        <p className="text-xs text-slate-700 mb-3">生成時、名前・連絡先・素材URLを伏せた依頼情報をGoogleへ送信します。自由記述に第三者の個人情報がないか確認してください。</p>
+      <Button
+          onClick={handleGenerate}
           disabled={isGenerating}
           className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-6 rounded-xl transition-all shadow-md"
         >
@@ -84,17 +85,17 @@ export function AiPostGeneratorPanel({ order }: { order: OrderData }) {
         {postContent && (
           <div className="pt-4 space-y-4 animate-in fade-in duration-500">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">生成されたポスト内容 (自由に編集できます)</label>
-              <textarea
+              <label htmlFor="aipostgeneratorpanel-field-1" className="text-sm font-bold text-slate-700">生成されたポスト内容 (自由に編集できます)</label>
+              <textarea id="aipostgeneratorpanel-field-1"
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
                 className="w-full h-56 p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none resize-y text-sm leading-relaxed"
                 placeholder="生成されたテキストがここに表示されます"
               />
             </div>
-            
-            <Button 
-              onClick={handleCopy} 
+
+            <Button
+              onClick={handleCopy}
               disabled={!postContent.trim()}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
             >

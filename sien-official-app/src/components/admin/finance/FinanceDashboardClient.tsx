@@ -2,11 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { accountingParts, revenueDate } from "@/lib/admin-finance";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { Download, Trash2, Edit2, Check, X, Target, Eye, EyeOff } from "lucide-react";
 
 type Order = {
   id: string;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
   deliveredAt: Date | null;
@@ -23,9 +25,6 @@ type Expense = {
   date: Date;
 };
 
-type SiteSetting = {
-  targetMonthlySales: number;
-};
 
 export function FinanceDashboardClient({
   initialOrders,
@@ -37,51 +36,51 @@ export function FinanceDashboardClient({
   initialTargetSales: number;
 }) {
   const router = useRouter();
-  
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
+  const [selectedYear, setSelectedYear] = useState<number>(accountingParts().year);
   const [isAmountsVisible, setIsAmountsVisible] = useState(false);
   const [mode, setMode] = useState<"created" | "delivered">("created");
   const [targetSales, setTargetSales] = useState<number>(initialTargetSales);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState(initialTargetSales.toString());
-  
+
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [expenseEditData, setExpenseEditData] = useState<Partial<Expense>>({});
 
   // 利用可能な年度のリスト（過去のデータから抽出）
   const availableYears = useMemo(() => {
     const years = new Set<number>();
-    years.add(new Date().getFullYear());
+    years.add(accountingParts().year);
     initialOrders.forEach(o => {
-      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
-      if (targetDate) years.add(new Date(targetDate).getFullYear());
+      const targetDate = revenueDate(o, mode);
+      if (targetDate) years.add(accountingParts(targetDate).year);
     });
-    initialExpenses.forEach(e => years.add(new Date(e.date).getFullYear()));
+    initialExpenses.forEach(e => years.add(accountingParts(e.date).year));
     return Array.from(years).sort((a, b) => b - a);
   }, [initialOrders, initialExpenses, mode]);
 
   // 指定された年度のデータに絞り込み
-  const yearOrders = useMemo(() => 
+  const yearOrders = useMemo(() =>
     initialOrders.filter(o => {
-      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      const targetDate = revenueDate(o, mode);
       if (!targetDate) return false;
-      return new Date(targetDate).getFullYear() === selectedYear;
+      return accountingParts(targetDate).year === selectedYear;
     }),
   [initialOrders, selectedYear, mode]);
 
-  const yearExpenses = useMemo(() => 
-    initialExpenses.filter(e => new Date(e.date).getFullYear() === selectedYear),
+  const yearExpenses = useMemo(() =>
+    initialExpenses.filter(e => accountingParts(e.date).year === selectedYear),
   [initialExpenses, selectedYear]);
 
   // 今月のデータ計算
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const currentMonth = accountingParts().month;
+  const currentYear = accountingParts().year;
   const isCurrentYear = selectedYear === currentYear;
-  
-  const thisMonthSales = isCurrentYear 
+
+  const thisMonthSales = isCurrentYear
     ? yearOrders.filter(o => {
-        const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
-        return targetDate && new Date(targetDate).getMonth() === currentMonth;
+        const targetDate = revenueDate(o, mode);
+        return targetDate && accountingParts(targetDate).month === currentMonth;
       }).reduce((sum, o) => sum + (o.price || 0), 0)
     : 0;
 
@@ -89,12 +88,12 @@ export function FinanceDashboardClient({
   const thisYearSales = yearOrders.reduce((sum, o) => sum + (o.price || 0), 0);
   const thisYearExpenses = yearExpenses.reduce((sum, e) => sum + e.amount, 0);
   const thisYearProfit = thisYearSales - thisYearExpenses;
-  
+
   // 目標達成率
   const achievementRate = targetSales > 0 ? Math.round((thisMonthSales / targetSales) * 100) : 0;
 
   // --- グラフ用データ ---
-  
+
   // 月別売上＆経費推移（棒グラフ）
   const monthlyData = useMemo(() => {
     const data = Array.from({ length: 12 }, (_, i) => ({
@@ -105,15 +104,15 @@ export function FinanceDashboardClient({
     }));
 
     yearOrders.forEach(o => {
-      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      const targetDate = revenueDate(o, mode);
       if (targetDate) {
-        const month = new Date(targetDate).getMonth();
+        const month = accountingParts(targetDate).month;
         data[month].売上 += (o.price || 0);
       }
     });
 
     yearExpenses.forEach(e => {
-      const month = new Date(e.date).getMonth();
+      const month = accountingParts(e.date).month;
       data[month].経費 += e.amount;
     });
 
@@ -122,7 +121,7 @@ export function FinanceDashboardClient({
     });
 
     return data;
-  }, [yearOrders, yearExpenses]);
+  }, [yearOrders, yearExpenses, mode]);
 
   // 経費カテゴリ内訳（円グラフ）
   const expenseCategoryData = useMemo(() => {
@@ -155,7 +154,7 @@ export function FinanceDashboardClient({
         setIsEditingTarget(false);
         router.refresh();
       }
-    } catch (e) {
+    } catch {
       alert("目標額の更新に失敗しました");
     }
   };
@@ -167,7 +166,7 @@ export function FinanceDashboardClient({
       if (res.ok) {
         router.refresh();
       }
-    } catch (e) {
+    } catch {
       alert("削除に失敗しました");
     }
   };
@@ -193,7 +192,7 @@ export function FinanceDashboardClient({
         setEditingExpenseId(null);
         router.refresh();
       }
-    } catch (e) {
+    } catch {
       alert("更新に失敗しました");
     }
   };
@@ -202,24 +201,24 @@ export function FinanceDashboardClient({
   const downloadCSV = () => {
     // BOM
     const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
-    
+
     // Header
     let csvContent = "日付,区分,カテゴリ,項目・クライアント名,金額\n";
-    
+
     // 売上
     yearOrders.forEach(o => {
-      const targetDate = mode === "created" ? o.createdAt : o.deliveredAt;
+      const targetDate = revenueDate(o, mode);
       if (targetDate) {
-        const d = new Date(targetDate);
-        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        const d = accountingParts(targetDate);
+        const dateStr = `${d.year}/${String(d.month+1).padStart(2,'0')}/${String(d.day).padStart(2,'0')}`;
         csvContent += `${dateStr},売上,案件報酬,"Order ID: ${o.id}",${o.price || 0}\n`;
       }
     });
 
     // 経費
     yearExpenses.forEach(e => {
-      const d = new Date(e.date);
-      const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+      const d = accountingParts(e.date);
+      const dateStr = `${d.year}/${String(d.month+1).padStart(2,'0')}/${String(d.day).padStart(2,'0')}`;
       // カンマをエスケープ
       const safeTitle = `"${e.title.replace(/"/g, '""')}"`;
       csvContent += `${dateStr},経費,${e.category},${safeTitle},${e.amount}\n`;
@@ -240,7 +239,7 @@ export function FinanceDashboardClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-slate-800">金額・確定申告管理</h1>
-          
+
           <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button
               onClick={() => setMode("created")}
@@ -256,7 +255,7 @@ export function FinanceDashboardClient({
             </button>
           </div>
 
-          <button 
+          <button
             onClick={() => setIsAmountsVisible(!isAmountsVisible)}
             className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 text-xs font-bold bg-white shadow-sm border border-slate-200 px-3 py-1.5 rounded-lg"
           >
@@ -278,8 +277,8 @@ export function FinanceDashboardClient({
           </button>
         </div>
         <div className="flex items-center gap-3">
-          <select 
-            value={selectedYear} 
+          <select
+            value={selectedYear}
             onChange={e => setSelectedYear(parseInt(e.target.value, 10))}
             className="border-slate-200 border rounded-lg py-2 pl-4 pr-10 font-bold text-slate-700 bg-white shadow-sm outline-none focus:ring-2 focus:ring-orange-500"
           >
@@ -287,7 +286,7 @@ export function FinanceDashboardClient({
               <option key={year} value={year}>{year}年度</option>
             ))}
           </select>
-          <button 
+          <button
             onClick={downloadCSV}
             className="flex items-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
           >
@@ -310,8 +309,8 @@ export function FinanceDashboardClient({
           </div>
           {/* プログレスバー */}
           <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2 z-10 overflow-hidden">
-            <div 
-              className={`h-2.5 rounded-full transition-all duration-1000 ${achievementRate >= 100 ? 'bg-orange-500' : 'bg-slate-400'}`} 
+            <div
+              className={`h-2.5 rounded-full transition-all duration-1000 ${achievementRate >= 100 ? 'bg-orange-500' : 'bg-slate-400'}`}
               style={{ width: `${Math.min(achievementRate, 100)}%` }}
             ></div>
           </div>
@@ -321,9 +320,9 @@ export function FinanceDashboardClient({
             </span>
             {isEditingTarget ? (
               <div className="flex items-center gap-1">
-                <input 
-                  type="number" 
-                  value={targetInput} 
+                <input
+                  type="number"
+                  value={targetInput}
                   onChange={e => setTargetInput(e.target.value)}
                   className="w-20 text-xs border rounded px-1.5 py-1 outline-none"
                 />
@@ -337,7 +336,7 @@ export function FinanceDashboardClient({
             )}
           </div>
         </div>
-        
+
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-center">
           <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の総売上</h3>
           <p className="text-3xl font-black text-slate-900">{isAmountsVisible ? `¥${thisYearSales.toLocaleString()}` : '¥ ***,***'}</p>
@@ -363,9 +362,9 @@ export function FinanceDashboardClient({
               <BarChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `¥${value.toLocaleString()}`} />
-                <RechartsTooltip 
-                  formatter={(value: any) => [isAmountsVisible ? `¥${value.toLocaleString()}` : '¥ ***,***', undefined]}
+                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `¥${Number(value ?? 0).toLocaleString()}`} />
+                <RechartsTooltip
+                  formatter={(value) => [isAmountsVisible ? `¥${Number(value ?? 0).toLocaleString()}` : '¥ ***,***', undefined]}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
@@ -375,7 +374,7 @@ export function FinanceDashboardClient({
             </ResponsiveContainer>
           </div>
         </div>
-        
+
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 mb-2">経費カテゴリ内訳</h3>
           {expenseCategoryData.length === 0 ? (
@@ -397,7 +396,7 @@ export function FinanceDashboardClient({
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(value: any) => [isAmountsVisible ? `¥${value.toLocaleString()}` : '¥ ***,***', undefined]} />
+                  <RechartsTooltip formatter={(value) => [isAmountsVisible ? `¥${Number(value ?? 0).toLocaleString()}` : '¥ ***,***', undefined]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>

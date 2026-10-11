@@ -65,13 +65,14 @@ export function AiReplyPanel({ order }: { order: OrderData }) {
         </div>
         <h2 className="text-lg font-bold text-orange-900">AI 返信アシスト (Gemini)</h2>
       </div>
-      
+
       <p className="text-sm text-slate-600 mb-6">
         お客様からのご要望を解析し、最適な返信メールの下書きや見積もりを自動生成します。
       </p>
-      
-      <Button 
-        onClick={handleGenerate} 
+
+      <p className="text-xs text-slate-700 mb-3">生成時、名前・連絡先・素材URLを伏せた依頼情報をGoogleへ送信します。自由記述に第三者の個人情報がないか確認してください。</p>
+      <Button
+        onClick={handleGenerate}
         disabled={isGenerating}
         className="w-full bg-orange-600 hover:bg-orange-700 shadow-md flex items-center justify-center gap-2 h-12 text-md"
       >
@@ -84,16 +85,16 @@ export function AiReplyPanel({ order }: { order: OrderData }) {
       )}
 
       <div className="mt-6">
-        <label className="block text-sm font-medium text-slate-700 mb-2">生成された返信文</label>
-        <textarea 
-          className="w-full h-64 p-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-orange-500 outline-none" 
+        <label htmlFor="aireplypanel-field-1" className="block text-sm font-medium text-slate-700 mb-2">生成された返信文</label>
+        <textarea id="aireplypanel-field-1"
+          className="w-full h-64 p-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-orange-500 outline-none"
           placeholder="ここにAIが作成した返信文が表示されます..."
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
         />
-        <Button 
-          variant="outline" 
-          className="w-full mt-2" 
+        <Button
+          variant="outline"
+          className="w-full mt-2"
           disabled={!replyText}
           onClick={handleCopy}
         >

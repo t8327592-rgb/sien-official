@@ -10,7 +10,7 @@ export const siteConfig: SiteConfig = {
     tiktok: "",
   },
   contact: {
-    email: "info@sien-official.com",
+    email: "px.sien@gmail.com",
     formUrl: "/order",
   },
   business: {

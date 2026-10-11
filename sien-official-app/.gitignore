@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-qa/
 /out/
 
 # production
@@ -41,3 +42,8 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+# Local databases contain operational data; keep them outside Git.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

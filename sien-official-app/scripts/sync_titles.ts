@@ -14,7 +14,7 @@ async function fetchYoutubeTitle(url: string): Promise<string | null> {
     const titleMatch = text.match(/<title>(.*?) - YouTube<\/title>/) || text.match(/<meta property="og:title" content="(.*?)">/);
     if (titleMatch && titleMatch[1]) {
       // HTMLエンティティのデコード処理 (簡易)
-      let title = titleMatch[1]
+      const title = titleMatch[1]
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')

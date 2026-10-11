@@ -1,81 +1,13 @@
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "プライバシーポリシー | Sien-Official",
-};
-
-export default function PrivacyPage() {
-  return (
-    <div className="container mx-auto py-20 px-4 mt-20 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-4 text-center text-slate-800">プライバシーポリシー</h1>
-      <p className="text-center text-slate-500 mb-12">Privacy Policy</p>
-
-      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-slate-100 prose prose-slate max-w-none">
-        <p className="lead text-slate-600 mb-10">
-          Sien（以下「当サイト」）は、お客様の個人情報の重要性を認識し、個人情報の適切な保護と管理を推進いたします。
-        </p>
-
-        <div className="space-y-8">
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">1. 収集する情報</h2>
-            <p className="text-slate-600 mb-2">当サイトでは、ご依頼フォームやお問い合わせフォームの利用時に、以下の情報を収集する場合があります。</p>
-            <ul className="list-disc pl-5 text-slate-600 space-y-1">
-              <li>お名前</li>
-              <li>メールアドレス</li>
-              <li>ご依頼内容の詳細</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">2. 利用目的</h2>
-            <p className="text-slate-600 mb-2">収集した個人情報は、以下の目的で利用いたします。</p>
-            <ul className="list-disc pl-5 text-slate-600 space-y-1">
-              <li>サービス（ミックス／マスタリング、楽曲制作等）のご依頼受付・回答</li>
-              <li>ご連絡および納品等の業務遂行</li>
-              <li>お問い合わせへの対応</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">3. 第三者への提供</h2>
-            <p className="text-slate-600">
-              原則として、お客様の同意なく第三者に個人情報を提供することはありません。ただし、法令に基づく開示が必要な場合はこの限りではありません。
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">4. 安全管理措置</h2>
-            <p className="text-slate-600">
-              個人情報の漏洩、紛失、不正アクセス等を防止するため、適切な安全管理措置を講じます。
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">5. クッキー等の利用</h2>
-            <p className="text-slate-600">
-              当サイトでは、サービス向上のためにクッキーやアクセス解析ツールを使用することがあります。これらは個人を特定できる情報とは切り離して管理されます。
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">6. 開示・訂正・削除の請求</h2>
-            <p className="text-slate-600">
-              ご本人からの開示、訂正、削除等のご要望があった場合には、合理的な範囲で対応いたします。
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">7. お問い合わせ</h2>
-            <p className="text-slate-600 mb-2">個人情報に関するお問い合わせは、以下のメールアドレスまでお願いいたします。</p>
-            <p className="text-slate-800 font-medium">px.sien@gmail.com</p>
-          </section>
-
-          <div className="mt-12 pt-8 border-t text-slate-500 text-sm text-right">
-            <p>制定日：2026年1月</p>
-            <p>最終改定日：2026年1月</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+import { pageMetadata } from "@/lib/page-metadata";
+import { getPublicSettings } from "@/lib/data/public-settings";
+export const metadata = pageMetadata("/policy/privacy", {title: "プライバシーポリシー | Sien-Official", description: "お問い合わせ情報・素材URLの利用、外部サービス、保存期間、開示・削除のお問い合わせについて。"});
+export default async function PrivacyPage() {
+ const settings = await getPublicSettings();
+ return <article className="mx-auto max-w-4xl px-4 py-20"><h1 className="mb-10 text-center text-3xl font-bold">プライバシーポリシー</h1><div className="space-y-8 rounded-2xl border bg-white p-6 sm:p-10 leading-relaxed">
+ <section><h2 className="mb-3 text-xl font-bold">1. 収集する情報と利用目的</h2><p>活動名・お名前、メールアドレス、X・DiscordのID、会社名・担当者名、ご依頼・相談内容、楽曲情報、参考資料・素材の共有URL、希望納期、支払方法、規約への同意日時・版、受付番号を取得します。受付、見積、連絡、制作・納品、重複送信や不正利用の防止、同意の確認に利用します。フォームでカード番号等の決済情報は取得しません。</p></section>
+ <section><h2 className="mb-3 text-xl font-bold">2. 保存期間と管理</h2><p>受注・お問い合わせ情報は業務完了後1年を基本に保存し、継続対応・紛争対応等で必要な場合を除き、期間を過ぎた情報を確認のうえ削除・匿名化します。会計上の記録など法令に基づく保存が必要な情報は必要な期間保管します。過去データの削除は対象を確認したうえで実施します。管理画面へのアクセスを認証・認可で制限します。</p><p className="mt-3">入力下書きは保存設定が許可されている場合に限り、このブラウザーのタブ内に最終入力から最大2時間保存します。送信成功時・削除操作時に消去し、規約同意は復元しません。共用端末では下書きを削除してください。</p></section>
+ <section><h2 className="mb-3 text-xl font-bold">3. 外部サービスの利用</h2><p>運営のため、クラウドDB・ホスティング・メール配信サービスへ処理を委託します。Discordの管理者通知とGoogleカレンダーの予定には、受付の参照番号・管理画面URL等の最小限の情報を使用し、氏名・メール・素材URLを載せません。</p><p className="mt-3">AIによる文章作成にGoogle Geminiを使用します。氏名、メール、SNS ID、共有URL等を省略して制作条件や相談の文章を処理しますが、自由記述に個人情報や秘密情報を入力しないでください。AIの回答は下書き・案内であり、担当者が確認します。YouTube動画の再生時はYouTubeへ接続します。外部サービスでの取扱いは各サービスの方針にも従います。</p></section>
+ <section><h2 className="mb-3 text-xl font-bold">4. Cookie・アクセス解析</h2><p>管理ログインの維持に認証Cookieを使用します。AIチャットでは、利用者ごとのリクエスト制限のため有効期間1日の署名付きCookieを使用します。Google Analyticsが設定されている場合、アクセス解析への同意後に公開ページの閲覧情報を取得します。フォーム入力・管理ページは解析対象とせず、URLのクエリ情報を解析に送りません。設定はページ下部から変更できます。</p></section>
+ <section><h2 className="mb-3 text-xl font-bold">5. 第三者提供・開示等</h2><p>業務委託による処理を除き、本人の同意なく個人情報を第三者に提供しません。法令に基づく場合は例外となります。ご本人確認のうえ、開示・訂正・削除等のご相談に対応します。</p></section>
+ <section><h2 className="mb-3 text-xl font-bold">6. お問い合わせ</h2><a className="text-orange-800 underline" href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a></section><p className="text-sm text-slate-600">制定日：2026年1月　最終改定日：2026年10月1日</p></div></article>;
 }

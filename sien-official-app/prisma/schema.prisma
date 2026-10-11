@@ -4,11 +4,44 @@ generator client {
 }
 
 // Shared fixed-window counters for public forms and AI endpoints.
-// rate-limit.ts initializes this table on first use when it is absent.
+// Created by the additive deployment migration, never by public requests.
 model ApiRateLimit {
   key       String   @id
   count     Int
   expiresAt DateTime @db.Timestamptz(6)
+  @@index([expiresAt])
+}
+
+model SubmissionReceipt {
+  id            String   @id @default(cuid())
+  requestKey    String   @unique
+  payloadHash   String
+  receiptNumber String   @unique
+  entityType    String
+  entityId      String
+  quote         Json
+  termsVersion  String?
+  consentedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  @@unique([entityType, entityId])
+}
+
+model NotificationJob {
+  id            String   @id @default(cuid())
+  kind          String
+  entityId      String
+  status        String   @default("PENDING")
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lockedUntil   DateTime?
+  lastError     String?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([kind, entityId])
+  @@index([status, nextAttemptAt])
 }
 
 datasource db {

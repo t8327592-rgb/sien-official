@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { Clock } from "lucide-react";
 
 interface CountdownTimerProps {
@@ -8,44 +8,14 @@ interface CountdownTimerProps {
 }
 
 export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isExpired: false
-  });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const target = new Date(targetDate).getTime();
-
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const distance = target - now;
-
-      if (distance < 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
-        return;
-      }
-
-      setTimeLeft({
-        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        isExpired: false
-      });
-    };
-
-    updateTimer(); // Initial call
-    const timer = setInterval(updateTimer, 1000);
-
+  const subscribe = useCallback((notify: () => void) => {
+    const timer = setInterval(notify, 1000);
     return () => clearInterval(timer);
-  }, [targetDate]);
-
-  if (!mounted) return null; // Hydration error prevention
+  }, []);
+  const snapshot = useCallback(() => Math.max(0, Math.ceil((new Date(targetDate).getTime() - Date.now()) / 1000)), [targetDate]);
+  const seconds = useSyncExternalStore(subscribe, snapshot, () => -1);
+  if (seconds < 0) return null;
+  const timeLeft = { days: Math.floor(seconds / 86400), hours: Math.floor(seconds % 86400 / 3600), minutes: Math.floor(seconds % 3600 / 60), seconds: seconds % 60, isExpired: seconds === 0 };
 
   if (timeLeft.isExpired) {
     return (

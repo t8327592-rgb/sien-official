@@ -1,36 +1,35 @@
+import { DELIVERY_TERMS } from "@/lib/contract-terms";
+import { formatOptionPrice } from "@/lib/public-format";
+import { DescriptionLinks } from "@/components/shared/DescriptionLinks";
+import { YouTubePreview } from "@/components/ui/YouTubePreview";
+import { pageMetadata } from "@/lib/page-metadata";
+import { getPublicFAQs } from "@/lib/data/public-faqs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getPlans, getOptions, getOriginalPortfolios, getFAQs } from "@/lib/data/cms";
+import { getPlans, getOptions, getOriginalPortfolios } from "@/lib/data/cms";
 import { PlanCard } from "@/components/ui/PlanCard";
-import { ArrowRight, CheckCircle2, Music, ListMusic, ListChecks, HelpCircle, PenTool, Mic2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Music, ListMusic, ListChecks, PenTool, Mic2 } from "lucide-react";
 import { FAQList } from "@/components/shared/FAQList";
 import { CallToAction } from "@/components/shared/CallToAction";
+import { PublicServices } from "@/components/shared/PublicServices";
+import { PublicCampaigns } from "@/components/shared/PublicCampaigns";
 
-export const metadata = {
-  title: "オリジナル楽曲制作 | Sien-Official",
-  description: "あなただけの完全オリジナル楽曲制作。作詞・作曲・編曲からボーカルディレクション、納品までトータルでサポートします。",
-  openGraph: {
-    title: "オリジナル楽曲制作 | Sien-Official",
-    description: "あなただけの完全オリジナル楽曲制作。作詞・作曲・編曲からボーカルディレクション、納品までトータルでサポートします。",
-    url: "https://www.sien-official.com/original",
-  }
-};
+export const metadata = pageMetadata("/original", {title: "オリジナル楽曲制作 | Sien-Official", description: "あなただけの完全オリジナル楽曲制作。作詞・作曲・編曲からボーカルディレクション、納品までトータルでサポートします。"});
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function OriginalPage() {
   const plans = await getPlans("ORIGINAL");
   const options = await getOptions("ORIGINAL");
   const portfolios = await getOriginalPortfolios(6);
-  const faqs = await getFAQs("ORIGINAL");
+  const faqs = await getPublicFAQs("ORIGINAL");
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      
+
       {/* 1. ファーストビュー */}
-      <section className="relative bg-white pt-24 pb-32 px-4 text-center overflow-hidden border-b border-slate-100 shadow-sm">
+      <section className="relative bg-white pt-10 md:pt-24 pb-12 md:pb-32 px-4 text-center overflow-hidden border-b border-slate-100 shadow-sm">
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-amber-50/80 to-white opacity-90" />
-        <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-5 blur-sm" />
         
         <div className="relative z-10 max-w-[1200px] px-4 mx-auto w-full">
           <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-sm font-bold shadow-sm">
@@ -40,60 +39,54 @@ export default async function OriginalPage() {
             </span>
             オリジナル楽曲制作
           </div>
-          
+
           <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-8 text-slate-900 tracking-tight leading-[1.4]">
             作曲・編曲・MIX・Masteringまで<br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
               一括対応。
             </span>
           </h1>
-          <p className="text-slate-600 text-lg md:text-xl leading-relaxed font-medium mb-10">
+          <p className="text-slate-600 text-base md:text-xl leading-relaxed font-medium mb-10">
             ボーカルMIXで培った「歌を引き立てる音作り」のノウハウを活かし、<br className="hidden md:block" />
             VTuber・歌い手・配信者の活動を支える「活動の顔になる1曲」を形にします。
           </p>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild className="rounded-full h-14 px-10 text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-lg shadow-amber-500/30 w-full sm:w-auto">
-              <Link href="/order" className="flex items-center justify-center">
+            <Button asChild className="rounded-full h-12 md:h-14 px-6 md:px-10 text-base md:text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-500 hover:to-orange-500 shadow-lg shadow-amber-500/30 w-full sm:w-auto">
+              <Link href="/order?intent=CONSULTATION&service=ORIGINAL" className="flex items-center justify-center">
                 無料で相談する <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
               </Link>
             </Button>
-            <Button asChild variant="outline" className="rounded-full h-14 px-10 text-lg font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 w-full sm:w-auto">
+            <Button asChild variant="outline" className="rounded-full h-12 md:h-14 px-6 md:px-10 text-base md:text-lg font-bold bg-white text-slate-700 border-slate-200 hover:bg-slate-50 w-full sm:w-auto">
               <a href="#works" className="flex items-center justify-center">
                 実績を見る
               </a>
             </Button>
           </div>
+          <a href="#plans" className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-slate-700 underline decoration-orange-300 underline-offset-4">料金・プランを確認する</a>
         </div>
       </section>
+      <PublicServices category="ORIGINAL" />
+      <PublicCampaigns />
 
       {/* 2. 実績 (Works) */}
-      <section id="works" className="py-24 bg-slate-50 border-b border-slate-100 text-slate-900">
+      <section id="works" className="py-12 md:py-24 bg-slate-50 border-b border-slate-100 text-slate-900">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900">制作実績</h2>
+          <div className="text-center mb-6 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 text-slate-900">制作実績</h2>
             <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full mb-6" />
             <p className="text-slate-500">これまでに手掛けたオリジナル楽曲の一部をご紹介します。</p>
           </div>
-          
+
           <div className="grid lg:grid-cols-3 gap-8">
             {portfolios.length > 0 ? (
               portfolios.map((portfolio) => (
                 <div key={portfolio.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                  <div className="aspect-video relative w-full">
-                    <iframe 
-                      className="absolute inset-0 w-full h-full"
-                      src={(portfolio.url || "").replace("watch?v=", "embed/")} 
-                      title={portfolio.title}
-                      frameBorder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen
-                    ></iframe>
-                  </div>
+                  <div className="aspect-video relative w-full"><YouTubePreview url={portfolio.url} title={portfolio.title} /></div>
                   <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">{portfolio.title}</h3>
                     <div className="mt-auto pt-4 flex flex-col items-start gap-2">
-                      <span className="inline-block bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">{portfolio.serviceCategory || "オリジナル楽曲制作"}</span>
+                      <span className="inline-block bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-full font-medium border border-amber-100">{portfolio.serviceCategory || "オリジナル楽曲制作"}</span>
                     </div>
                   </div>
                 </div>
@@ -106,18 +99,18 @@ export default async function OriginalPage() {
       </section>
 
       {/* 3. こんな方におすすめ */}
-      <section className="py-24 bg-white border-b border-slate-100">
+      <section className="py-12 md:py-24 bg-white border-b border-slate-100">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="bg-amber-50 rounded-[2.5rem] p-8 md:p-12 border border-amber-100 relative overflow-hidden">
+          <div className="bg-amber-50 rounded-[2.5rem] p-5 md:p-12 border border-amber-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/60 rounded-bl-[150px] -z-0"></div>
-            
+
             <div className="relative z-10">
               <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-8 text-center flex items-center justify-center gap-3">
-                <ListChecks className="w-8 h-8 text-amber-500" />
+                <ListChecks className="w-8 h-8 shrink-0 text-amber-500" />
                 こんな方におすすめです
               </h2>
-              
-              <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+
+              <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-slate-100">
                 <ul className="space-y-4">
                   {[
                     "周年記念のオリジナル曲を作りたい",
@@ -127,7 +120,7 @@ export default async function OriginalPage() {
                     "イメージはあるけど言語化できない"
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-4">
-                      <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       </div>
                       <span className="text-slate-700 font-medium md:text-lg">{item}</span>
@@ -141,11 +134,11 @@ export default async function OriginalPage() {
       </section>
 
       {/* 4. 制作できるもの */}
-      <section className="py-24 bg-slate-50 border-b border-slate-100">
+      <section className="py-12 md:py-24 bg-slate-50 border-b border-slate-100">
         <div className="container mx-auto px-4 max-w-5xl text-center">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">対応内容</h2>
-          <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full mb-12" />
-          
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">対応内容</h2>
+          <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full mb-6 md:mb-12" />
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {[
               { title: "作詞", icon: PenTool },
@@ -167,13 +160,13 @@ export default async function OriginalPage() {
       </section>
 
       {/* 5. 制作の流れ */}
-      <section className="py-24 bg-white border-b border-slate-100">
+      <section className="py-12 md:py-24 bg-white border-b border-slate-100">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">制作の流れ</h2>
+          <div className="text-center mb-6 md:mb-16">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">制作の流れ</h2>
             <p className="text-slate-500">ご依頼から完成までのステップをご案内します。</p>
           </div>
-          
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
             {[
               { step: "01", title: "ヒアリング", desc: "作りたい楽曲のイメージや参考曲、用途についてお伺いします。" },
@@ -186,13 +179,13 @@ export default async function OriginalPage() {
               { step: "08", title: "MIX・Mastering", desc: "収録いただいたボーカルデータと合わせて、全体のバランスを調整します。" },
               { step: "09", title: "納品", desc: "完成した音源データ（WAV/MP3/インスト等）を納品いたします。" },
             ].map((item, i) => (
-              <div key={i} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm relative flex flex-col items-center text-center hover:border-amber-200 transition-colors">
-                <div className="w-16 h-16 rounded-full bg-white border-4 border-amber-50 shadow-md flex items-center justify-center mb-4">
-                  <span className="text-xl font-black text-amber-600">{item.step}</span>
+              <div key={i} className="bg-slate-50 p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm relative grid grid-cols-[2.5rem_1fr] items-start gap-x-3 text-left sm:flex sm:flex-col sm:items-center sm:text-center hover:border-amber-200 transition-colors">
+                <div className="size-10 sm:size-16 row-span-2 shrink-0 rounded-full bg-white border-4 border-amber-50 shadow-md flex items-center justify-center sm:mb-4">
+                  <span className="text-xl font-black text-amber-800">{item.step}</span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 mb-3">{item.title}</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
-                
+
                 {/* 矢印アイコン（各行の終わりと最後の要素以外で右側に表示） */}
                 {i !== 8 && i !== 2 && i !== 5 && (
                   <div className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 z-10 text-slate-300">
@@ -201,7 +194,7 @@ export default async function OriginalPage() {
                 )}
                 {/* スマホ/タブレット用の下矢印 */}
                 {i !== 8 && (
-                  <div className="block lg:hidden absolute -bottom-4 left-1/2 -translate-x-1/2 z-10 text-slate-300 bg-white rounded-full p-1">
+                  <div className="hidden sm:block lg:hidden absolute -bottom-4 left-1/2 -translate-x-1/2 z-10 text-slate-300 bg-white rounded-full p-1">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
                   </div>
                 )}
@@ -212,13 +205,13 @@ export default async function OriginalPage() {
       </section>
 
       {/* 6. 料金プラン */}
-      <section className="py-24 bg-slate-50 border-b border-slate-100">
+      <section id="plans" className="scroll-mt-24 py-12 md:py-24 bg-slate-50 border-b border-slate-100">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">料金プラン</h2>
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">料金プラン</h2>
             <p className="text-slate-500">ご希望のサポート範囲に合わせてお選びください。</p>
           </div>
-          
+
           {plans.length === 0 ? (
             <p className="text-center text-slate-500">現在公開されているプランはありません。</p>
           ) : (
@@ -230,12 +223,12 @@ export default async function OriginalPage() {
                 } else if (plan.name.includes("作詞持ち込み")) {
                   recommendedUsers = ["歌詞は完成している方", "費用を抑えたい方"];
                 }
-                
+
                 return (
-                  <PlanCard 
-                    key={plan.id} 
-                    plan={plan} 
-                    isRecommended={plan.name.includes("フルパッケージ") || plan.name.includes("スタンダード")} 
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    isRecommended={plan.name.includes("フルパッケージ") || plan.name.includes("スタンダード")}
                     recommendedText="★ 一番人気"
                     themeColor="cyan"
                     recommendedUsers={recommendedUsers.length > 0 ? recommendedUsers : undefined}
@@ -244,17 +237,18 @@ export default async function OriginalPage() {
               })}
             </div>
           )}
+          <p className="mx-auto mt-6 max-w-4xl text-sm leading-relaxed text-slate-600">{DELIVERY_TERMS}</p>
         </div>
       </section>
 
       {/* 7. オプション */}
-      <section className="py-24 bg-white border-b border-slate-100">
+      <section className="py-12 md:py-24 bg-white border-b border-slate-100">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">オプション</h2>
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">オプション</h2>
             <p className="text-slate-500">基本プランに追加できるオプションサービスです。</p>
           </div>
-          
+
           {options.length === 0 ? (
             <p className="text-center text-slate-500">現在公開されているオプションはありません。</p>
           ) : (
@@ -265,11 +259,11 @@ export default async function OriginalPage() {
                     <div>
                       <h3 className="font-bold text-slate-800 text-lg">{opt.name}</h3>
                       {opt.description && (
-                        <p className="text-slate-500 text-sm mt-1 whitespace-pre-wrap leading-relaxed">{opt.description}</p>
+                        <p className="text-slate-500 text-sm mt-1 whitespace-pre-wrap leading-relaxed"><DescriptionLinks text={opt.description} /></p>
                       )}
                     </div>
-                    <div className="text-xl font-bold text-amber-600 whitespace-nowrap bg-amber-50 px-4 py-2 rounded-lg text-center shrink-0">
-                      {opt.priceText.includes("円") && !opt.priceText.startsWith("+") && opt.priceText !== "要相談" && opt.priceText !== "無料" ? `+ ${opt.priceText}` : opt.priceText}
+                    <div className="text-xl font-bold text-amber-800 whitespace-nowrap bg-amber-50 px-4 py-2 rounded-lg text-center shrink-0">
+                      {formatOptionPrice(opt.priceText)}
                     </div>
                   </div>
                 ))}
@@ -278,13 +272,13 @@ export default async function OriginalPage() {
           )}
         </div>
       </section>
-      <FAQList faqs={faqs} />
+      <section id="faq" aria-labelledby="original-faq-title" className="scroll-mt-24 border-b border-slate-200 bg-white px-4 py-10 md:py-20"><div className="mx-auto max-w-3xl"><h2 id="original-faq-title" className="mb-8 text-2xl md:text-3xl font-bold">よくあるご質問</h2><FAQList faqs={faqs} /></div></section>
 
-      <CallToAction 
-        title="オリジナル楽曲のご相談・お見積もりは無料です。" 
-        description="「こんな曲作れる？」「料金はどれくらいになる？」など、まずはお気軽にご相談ください。\n「まだ依頼するか決まっていない」という方も大歓迎です。" 
-        buttonText="無料で相談する" 
-        href="/order" 
+      <CallToAction
+        title="オリジナル楽曲のご相談・お見積もりは無料です。"
+        description="「こんな曲作れる？」「料金はどれくらいになる？」など、まずはお気軽にご相談ください。\n「まだ依頼するか決まっていない」という方も大歓迎です。"
+        buttonText="無料で相談する"
+        href="/order?intent=CONSULTATION&service=ORIGINAL"
       />
 
     </div>

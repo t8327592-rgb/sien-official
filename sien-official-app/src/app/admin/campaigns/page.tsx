@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 
 import { getCampaigns } from "@/lib/data/cms";
 import { CampaignList } from "./CampaignList";
@@ -5,6 +6,7 @@ import { CampaignList } from "./CampaignList";
 export const dynamic = "force-dynamic";
 
 export default async function AdminCampaignsPage() {
+  await requireAdminPage();
   const campaigns = await getCampaigns(false); // 全て取得
 
   return (

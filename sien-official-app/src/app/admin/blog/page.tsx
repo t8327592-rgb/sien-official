@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Image as ImageIcon } from "lucide-react";
@@ -5,6 +7,7 @@ import { Image as ImageIcon } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function AdminBlogPage() {
+  await requireAdminPage();
   const posts = await prisma.post.findMany({
     where: { type: "BLOG" },
     orderBy: { createdAt: "desc" },
@@ -30,7 +33,7 @@ export default async function AdminBlogPage() {
                   {/* サムネイル */}
                   <div className="w-20 h-14 bg-slate-100 rounded-lg overflow-hidden shrink-0 hidden md:block relative">
                     {post.imageUrl ? (
-                      <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                      <Image width={1600} height={900} unoptimized src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-300">
                         <ImageIcon className="w-5 h-5" />

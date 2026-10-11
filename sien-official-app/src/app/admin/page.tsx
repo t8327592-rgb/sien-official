@@ -1,72 +1,42 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
+import { accountingParts, accountingDate, REVENUE_ORDER_WHERE, DELIVERED_ORDER_WHERE } from "@/lib/admin-finance";
+import { ACTIVE_ORDER_STATUSES, todayInJapan, matchesOrderDue, compareOrderDeadlines } from "@/lib/admin-order-filters";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { RevenueSummaryClient } from "@/components/admin/RevenueSummaryClient";
-import { 
-  ArrowRight, FileText, CheckCircle2, AlertCircle, 
-  Briefcase, TrendingUp, Clock, Activity, MessageSquare, Star, 
-  Check, AlertTriangle
-} from "lucide-react";
+import { ArrowRight, FileText, CheckCircle2, AlertCircle, Briefcase, Clock, Activity, MessageSquare, Star, Check } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  await requireAdminPage();
   const now = new Date();
-  
-  // 今日の範囲
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(todayStart);
-  todayEnd.setDate(todayEnd.getDate() + 1);
+  const { year, month } = accountingParts(now);
 
   // 今月の範囲
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const thisMonthStart = accountingDate(year, month);
 
   // 今年の範囲
-  const thisYearStart = new Date(now.getFullYear(), 0, 1);
-  
+  const thisYearStart = accountingDate(year, 0);
+
   // 過去6ヶ月の範囲（グラフ用）
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const sixMonthsAgo = accountingDate(year, month - 5);
 
   // 未完了のアクティブな全案件を取得し、今日締切・超過・ステータス別に振り分ける
-  const activeOrders = await prisma.order.findMany({ 
-    where: { status: { in: ["PENDING", "ESTIMATING", "WORKING"] } },
+  const activeOrders = await prisma.order.findMany({
+    where: { isArchived: false, status: { in: ACTIVE_ORDER_STATUSES } },
     orderBy: { updatedAt: "desc" }
   });
 
+  activeOrders.sort(compareOrderDeadlines);
   const pendingCount = activeOrders.filter(o => o.status === "PENDING").length;
   const estimatingCount = activeOrders.filter(o => o.status === "ESTIMATING").length;
-  const workingOrders = activeOrders.filter(o => o.status === "WORKING");
-
-  let deadlineTodayCount = 0;
-  let deadlineOverdueCount = 0;
-
-  activeOrders.forEach(order => {
-    if (!order.deadline) return;
-    let parsedDate: Date | null = null;
-    
-    // "YYYY-MM-DD" or "YYYY/MM/DD" or "YYYY年MM月DD日"
-    const matchYMD = order.deadline.match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})日?/);
-    if (matchYMD) {
-      parsedDate = new Date(parseInt(matchYMD[1]), parseInt(matchYMD[2]) - 1, parseInt(matchYMD[3]));
-    } else {
-      // "MM/DD" or "MM月DD日"
-      const matchMD = order.deadline.match(/(\d{1,2})[-\/月](\d{1,2})日?/);
-      if (matchMD) {
-        parsedDate = new Date(now.getFullYear(), parseInt(matchMD[1]) - 1, parseInt(matchMD[2]));
-      }
-    }
-
-    if (parsedDate && !isNaN(parsedDate.getTime())) {
-      const pTime = parsedDate.getTime();
-      const tStart = todayStart.getTime();
-      if (pTime === tStart) {
-        deadlineTodayCount++;
-      } else if (pTime < tStart) {
-        deadlineOverdueCount++;
-      }
-    }
-  });
-
+  const waitingPaymentCount = activeOrders.filter(o => o.status === "WAITING_PAYMENT").length;
+  const workingOrders = activeOrders;
+  const today = todayInJapan(now);
+  const deadlineTodayCount = activeOrders.filter(order => matchesOrderDue(order, "today", today)).length;
+  const deadlineOverdueCount = activeOrders.filter(order => matchesOrderDue(order, "overdue", today)).length;
+  const failedNotificationsCount = await prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] } } });
   // データベースへのクエリを並列実行
   const [
     thisMonthOrders, // 今月作成された案件
@@ -79,22 +49,22 @@ export default async function AdminDashboard() {
     monthlyCompletedOrdersDelivered // 過去6ヶ月の完了案件（納品ベース）
   ] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
-    prisma.order.findMany({ where: { status: { notIn: ["CANCELLED", "CANCELED"] }, createdAt: { gte: thisYearStart } } }),
-    prisma.order.findMany({ where: { status: "COMPLETED", deliveredAt: { gte: thisYearStart } } }),
+    prisma.order.findMany({ where: { ...REVENUE_ORDER_WHERE, createdAt: { gte: thisYearStart } } }),
+    prisma.order.findMany({ where: { ...DELIVERED_ORDER_WHERE, deliveredAt: { gte: thisYearStart } } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }), // 進行中・完了問わず最新履歴
     prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
-    prisma.order.findMany({ 
-      where: { 
-        status: { notIn: ["CANCELLED", "CANCELED"] },
-        createdAt: { gte: sixMonthsAgo } 
+    prisma.order.findMany({
+      where: {
+        ...REVENUE_ORDER_WHERE,
+        createdAt: { gte: sixMonthsAgo }
       },
       select: { price: true, createdAt: true }
     }),
-    prisma.order.findMany({ 
-      where: { 
-        status: "COMPLETED",
-        deliveredAt: { gte: sixMonthsAgo } 
+    prisma.order.findMany({
+      where: {
+        ...DELIVERED_ORDER_WHERE,
+        deliveredAt: { gte: sixMonthsAgo }
       },
       select: { price: true, deliveredAt: true }
     })
@@ -104,21 +74,20 @@ export default async function AdminDashboard() {
   const createdThisMonthRevenue = thisYearOrdersCreated
     .filter(o => o.createdAt >= thisMonthStart)
     .reduce((sum, order) => sum + (order.price || 0), 0);
-    
+
   const createdThisYearRevenue = thisYearOrdersCreated.reduce((sum, order) => sum + (order.price || 0), 0);
-  const createdCompletedCount = thisYearOrdersCreated.length;
+  const createdOrderCount = thisYearOrdersCreated.length;
 
   const createdMonthlyData = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthName = `${d.getMonth() + 1}月`;
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-    
+    const start = accountingDate(year, month - i);
+    const end = accountingDate(year, month - i + 1);
+    const monthName = `${accountingParts(start).month + 1}月`;
+
     const revenue = monthlyOrdersCreated
-      .filter(o => o.createdAt >= start && o.createdAt <= end)
+      .filter(o => o.createdAt >= start && o.createdAt < end)
       .reduce((sum, o) => sum + (o.price || 0), 0);
-      
+
     createdMonthlyData.push({ month: monthName, revenue });
   }
   const createdMaxMonthlyRevenue = Math.max(...createdMonthlyData.map(d => d.revenue), 1);
@@ -127,21 +96,20 @@ export default async function AdminDashboard() {
   const deliveredThisMonthRevenue = thisYearCompletedOrdersDelivered
     .filter(o => o.deliveredAt && o.deliveredAt >= thisMonthStart)
     .reduce((sum, order) => sum + (order.price || 0), 0);
-    
+
   const deliveredThisYearRevenue = thisYearCompletedOrdersDelivered.reduce((sum, order) => sum + (order.price || 0), 0);
   const deliveredCompletedCount = thisYearCompletedOrdersDelivered.length;
 
   const deliveredMonthlyData = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthName = `${d.getMonth() + 1}月`;
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-    
+    const start = accountingDate(year, month - i);
+    const end = accountingDate(year, month - i + 1);
+    const monthName = `${accountingParts(start).month + 1}月`;
+
     const revenue = monthlyCompletedOrdersDelivered
-      .filter(o => o.deliveredAt && o.deliveredAt >= start && o.deliveredAt <= end)
+      .filter(o => o.deliveredAt && o.deliveredAt >= start && o.deliveredAt < end)
       .reduce((sum, o) => sum + (o.price || 0), 0);
-      
+
     deliveredMonthlyData.push({ month: monthName, revenue });
   }
   const deliveredMaxMonthlyRevenue = Math.max(...deliveredMonthlyData.map(d => d.revenue), 1);
@@ -198,6 +166,7 @@ export default async function AdminDashboard() {
     switch (status) {
       case "PENDING": return <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] sm:text-xs rounded border border-red-200 font-bold inline-flex items-center gap-1"><AlertCircle className="w-3 h-3" />未対応</span>;
       case "ESTIMATING": return <span className="px-2 py-0.5 bg-yellow-50 text-yellow-600 text-[10px] sm:text-xs rounded border border-yellow-200 font-bold inline-flex items-center gap-1"><Clock className="w-3 h-3" />見積中</span>;
+      case "WAITING_PAYMENT": return <span className="px-2 py-0.5 bg-sky-50 text-sky-700 text-xs rounded border border-sky-200 font-bold">入金待ち</span>;
       case "WORKING": return <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] sm:text-xs rounded border border-orange-200 font-bold inline-flex items-center gap-1"><Activity className="w-3 h-3" />作業中</span>;
       case "COMPLETED": return <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] sm:text-xs rounded border border-green-200 font-bold inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />納品済</span>;
       default: return <span className="px-2 py-0.5 bg-slate-50 text-slate-600 text-[10px] sm:text-xs rounded border border-slate-200 font-bold">{status}</span>;
@@ -214,12 +183,12 @@ export default async function AdminDashboard() {
         <h1 className="text-2xl font-black text-slate-900">ダッシュボード</h1>
         <p className="text-slate-500 text-sm mt-1 font-medium">次のアクションを決定し、作業を進行しましょう。</p>
       </div>
-      
+
       {/* ========================================================
           1. ファーストビュー：今日やること ＆ 売上サマリー
       ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* ① 今日やること (最重要 / 数字を最大化) */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 flex flex-col">
           <div className="flex justify-between items-center mb-6">
@@ -228,73 +197,35 @@ export default async function AdminDashboard() {
               今日対応すべきこと
             </h2>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
-            {/* 未対応 (赤) */}
-            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors">
-              <div className={`text-5xl font-black mb-2 transition-colors ${pendingCount > 0 ? 'text-red-600 group-hover:text-red-700' : 'text-slate-300'}`}>
-                {pendingCount}
-              </div>
-              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full ${pendingCount > 0 ? 'bg-red-500' : 'bg-slate-300'}`}></span>
-                新規未対応
-              </div>
-            </Link>
 
-            {/* 見積中 (黄) */}
-            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors border-l border-slate-100">
-              <div className={`text-5xl font-black mb-2 transition-colors ${estimatingCount > 0 ? 'text-yellow-500 group-hover:text-yellow-600' : 'text-slate-300'}`}>
-                {estimatingCount}
-              </div>
-              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full ${estimatingCount > 0 ? 'bg-yellow-400' : 'bg-slate-300'}`}></span>
-                見積・連絡待
-              </div>
-            </Link>
-
-            {/* 期限超過・今日締切 (赤 or グレー) */}
-            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-t sm:border-t-0 sm:border-l border-slate-100">
-              <div className={`text-5xl font-black mb-2 ${deadlineOverdueCount > 0 ? 'text-red-600' : deadlineTodayCount > 0 ? 'text-orange-600' : 'text-slate-300'}`}>
-                {deadlineOverdueCount > 0 ? deadlineOverdueCount : deadlineTodayCount}
-              </div>
-              <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                {deadlineOverdueCount > 0 ? (
-                  <><AlertTriangle className="w-3 h-3 text-red-500" /> 期限超過</>
-                ) : deadlineTodayCount > 0 ? (
-                  <><Clock className="w-3 h-3 text-orange-500" /> 今日締切</>
-                ) : (
-                  <><Check className="w-3 h-3 text-slate-300" /> 期限超過なし</>
-                )}
-              </div>
-            </div>
-
-            {/* 作業中 (オレンジ) */}
-            <Link href="/admin/orders" className="group flex flex-col items-center justify-center p-4 rounded-xl hover:bg-slate-50 transition-colors border-l border-t sm:border-t-0 border-slate-100">
-              <div className={`text-5xl font-black mb-2 transition-colors ${workingOrders.length > 0 ? 'text-orange-500 group-hover:text-orange-600' : 'text-slate-300'}`}>
-                {workingOrders.length}
-              </div>
-              <div className="text-xs font-bold text-slate-500 group-hover:text-slate-700 flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full ${workingOrders.length > 0 ? 'bg-orange-400' : 'bg-slate-300'}`}></span>
-                作業中案件
-              </div>
-            </Link>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1">
+            {[
+              { label: "新規未対応", count: pendingCount, href: "/admin/orders?status=PENDING&sort=deadline" },
+              { label: "見積・連絡待", count: estimatingCount, href: "/admin/orders?status=ESTIMATING&sort=deadline" },
+              { label: "入金待ち", count: waitingPaymentCount, href: "/admin/orders?status=WAITING_PAYMENT&sort=deadline" },
+              { label: "期限超過", count: deadlineOverdueCount, href: "/admin/orders?due=overdue&sort=deadline" },
+              { label: "今日締切", count: deadlineTodayCount, href: "/admin/orders?due=today&sort=deadline" },
+              { label: "通知失敗", count: failedNotificationsCount, href: "/admin/notifications?status=failed" },
+            ].map(item => <Link key={item.label} href={item.href} className="group flex flex-col items-center justify-center p-3 rounded-xl hover:bg-orange-50 focus-visible:outline-2 focus-visible:outline-orange-500 transition-colors">
+              <span className={`text-4xl font-black mb-2 ${item.count > 0 ? "text-orange-600" : "text-slate-400"}`}>{item.count}</span>
+              <span className="text-xs font-bold text-slate-600">{item.label}</span>
+            </Link>)}
           </div>
         </div>
-
         {/* ② 売上サマリー (金額マスキング機能付きクライアントコンポーネント) */}
         <RevenueSummaryClient
           thisMonthOrdersCount={thisMonthOrders.length}
           createdData={{
             thisMonthRevenue: createdThisMonthRevenue,
             thisYearRevenue: createdThisYearRevenue,
-            completedCount: createdCompletedCount,
+            orderCount: createdOrderCount,
             monthlyData: createdMonthlyData,
             maxMonthlyRevenue: createdMaxMonthlyRevenue
           }}
           deliveredData={{
             thisMonthRevenue: deliveredThisMonthRevenue,
             thisYearRevenue: deliveredThisYearRevenue,
-            completedCount: deliveredCompletedCount,
+            orderCount: deliveredCompletedCount,
             monthlyData: deliveredMonthlyData,
             maxMonthlyRevenue: deliveredMaxMonthlyRevenue
           }}
@@ -314,7 +245,7 @@ export default async function AdminDashboard() {
             すべて見る <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
-        
+
         <div className="overflow-x-auto">
           {workingOrders.length > 0 ? (
             <table className="w-full text-left min-w-[600px]">
@@ -361,7 +292,7 @@ export default async function AdminDashboard() {
           3. スクロール後：最近の依頼履歴 ＆ アクティビティ
       ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-        
+
         {/* 最近の依頼（履歴） */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div className="p-5 border-b border-slate-100 flex justify-between items-center">
@@ -409,10 +340,10 @@ export default async function AdminDashboard() {
           <div className="p-5">
             {activities.length > 0 ? (
               <div className="space-y-4">
-                {activities.map((item, index) => {
+                {activities.map((item) => {
                   let Icon = FileText;
                   let colorClass = "bg-slate-100 text-slate-500";
-                  
+
                   if (item.type === 'ORDER') { Icon = Briefcase; colorClass = "bg-red-100 text-red-600"; }
                   else if (item.type === 'COMPLETED') { Icon = Check; colorClass = "bg-green-100 text-green-600"; }
                   else if (item.type === 'CONTACT') { Icon = MessageSquare; colorClass = "bg-purple-100 text-purple-600"; }

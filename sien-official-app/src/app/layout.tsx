@@ -3,9 +3,12 @@ import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { FragmentNavigation } from "@/components/layout/FragmentNavigation";
 import { OpeningAnimation } from "@/components/ui/OpeningAnimation";
 import { Toaster } from "react-hot-toast";
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { AnalyticsConsent } from "@/components/layout/AnalyticsConsent";
+import { getBlogPosts } from "@/lib/data/cms";
+import { getPublicSettings } from "@/lib/data/public-settings";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-sans",
@@ -59,11 +62,13 @@ const jsonLd = {
   "priceRange": "¥"
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [settings, blogPosts] = await Promise.all([getPublicSettings(), getBlogPosts(undefined, 1).catch(() => null)]);
+  const showBlog = blogPosts === null || blogPosts.length > 0;
   return (
     <html lang="ja" className={`${notoSansJP.variable} h-full antialiased`}>
       <head>
@@ -74,12 +79,13 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col relative">
         <OpeningAnimation />
-        <Header />
+        <Header showBlog={showBlog} />
+        <FragmentNavigation />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <Footer settings={settings} showBlog={showBlog} />
+        <AnalyticsConsent gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
         <Toaster position="top-center" />
       </body>
-      <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
     </html>
   );
 }

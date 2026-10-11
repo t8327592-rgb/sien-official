@@ -12,9 +12,9 @@ export default function ReviewCard({ name, comment, rating = 5 }: ReviewCardProp
       <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-200 group-hover:bg-cyan-400 transition-colors"></div>
       <div className="flex items-center gap-1 mb-4">
         {[...Array(5)].map((_, i) => (
-          <Star 
-            key={i} 
-            className={`w-5 h-5 ${i < rating ? "fill-amber-400 text-amber-400" : "fill-slate-100 text-slate-200"}`} 
+          <Star
+            key={i}
+            className={`w-5 h-5 ${i < rating ? "fill-amber-400 text-amber-800" : "fill-slate-100 text-slate-200"}`}
           />
         ))}
       </div>

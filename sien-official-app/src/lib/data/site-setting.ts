@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 // Reading public reception information must never create a database record.
@@ -8,8 +9,10 @@ export async function getSiteSetting() {
     select: { acceptingOrders: true, orderStatus: true, announcement: true },
   });
   return setting ?? {
-    acceptingOrders: true,
-    orderStatus: "AVAILABLE",
-    announcement: "現在、納品まで約3〜4週間いただいております。",
+    acceptingOrders: false,
+    orderStatus: "UNAVAILABLE",
+    announcement: "受付状況を確認中です。無料相談からお問い合わせください。",
   };
 }
+
+export const getPublicReception = unstable_cache(getSiteSetting, ["public-reception"], { revalidate: 60, tags: ["site-settings"] });

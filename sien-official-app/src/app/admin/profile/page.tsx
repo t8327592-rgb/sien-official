@@ -1,9 +1,11 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { getProfile, getSiteSettings } from "@/lib/data/cms";
 import { ProfileForm } from "./ProfileForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminProfilePage() {
+  await requireAdminPage();
   const profile = await getProfile();
   const settings = await getSiteSettings();
 

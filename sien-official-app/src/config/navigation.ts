@@ -16,6 +16,8 @@ export const footerNavigation = {
     { label: "ブログ", href: "/blog" },
   ],
   support: [
+    { label: "料金・プラン", href: "/pricing" },
+    { label: "無料相談・お見積もり", href: "/order?intent=CONSULTATION" },
     { label: "ご依頼フォーム", href: "/order" },
     { label: "法人・企業様お問い合わせ", href: "/business" },
     { label: "よくある質問（FAQ）", href: "/faq" },

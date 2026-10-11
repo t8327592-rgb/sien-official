@@ -21,7 +21,7 @@ const buttonVariants = cva(
           "hover:bg-slate-100 text-slate-700",
         destructive:
           "bg-red-500 text-white hover:bg-red-600",
-        link: "text-orange-600 underline-offset-4 hover:underline",
+        link: "text-orange-700 underline-offset-4 hover:underline",
       },
       size: {
         default:
@@ -57,7 +57,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         data-slot="button"
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref as any}
+        ref={ref}
         {...props}
       />
     )

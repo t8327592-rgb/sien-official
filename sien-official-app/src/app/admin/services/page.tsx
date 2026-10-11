@@ -1,11 +1,13 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 
-import { getServices } from "@/lib/data/cms";
+import { prisma } from "@/lib/prisma";
 import { ServiceList } from "./ServiceList";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminServicePage() {
-  const services = await getServices();
+  await requireAdminPage();
+  const services = await prisma.service.findMany({ orderBy: { orderIndex: "asc" } });
 
   return (
     <div className="max-w-4xl mx-auto pb-24">

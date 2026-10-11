@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { categoryValues } from "@/lib/service-category";
+import { currentPlanCampaign } from "@/lib/campaign-pricing";
 
 // ---------------------------------------------------------
 // Site Settings (サイト共通情報)
@@ -51,13 +53,15 @@ export const getServices = unstable_cache(
 // ---------------------------------------------------------
 export const getPlans = unstable_cache(
   async (category?: string) => {
-    return await prisma.plan.findMany({
+    const plans = await prisma.plan.findMany({
       where: {
         isActive: true,
         ...(category ? { category } : {}),
       },
       orderBy: { orderIndex: 'asc' },
     });
+    const campaigns = await getCampaigns();
+    return plans.map(plan => ({ ...plan, price: currentPlanCampaign(plan.id, campaigns)?.campaignPrice ?? plan.price }));
   },
   ['plans'],
   { revalidate: 60, tags: ['plans'] }
@@ -86,7 +90,7 @@ export const getPortfolios = unstable_cache(
     return await prisma.portfolio.findMany({
       where: {
         isPublished: true,
-        ...(category ? { serviceCategory: category } : {}),
+        ...(category ? { serviceCategory: { in: categoryValues(category) } } : {}),
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),
@@ -102,8 +106,8 @@ export const getFeaturedPortfolios = unstable_cache(
       where: {
         isPublished: true,
         isFeatured: true,
-        ...(category ? { serviceCategory: category } : {}),
-        ...(excludeCategory ? { serviceCategory: { not: excludeCategory } } : {}),
+        ...(category ? { serviceCategory: { in: categoryValues(category) } } : {}),
+        ...(excludeCategory ? { NOT: { serviceCategory: { in: categoryValues(excludeCategory) } } } : {}),
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),
@@ -119,7 +123,7 @@ export const getMixPortfolios = unstable_cache(
       where: {
         isPublished: true,
         showOnMix: true,
-        serviceCategory: { in: ["ボーカルMIX", "MIX"] },
+        serviceCategory: { in: categoryValues("MIX") },
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),
@@ -135,7 +139,7 @@ export const getOriginalPortfolios = unstable_cache(
       where: {
         isPublished: true,
         showOnOriginal: true,
-        serviceCategory: { in: ["オリジナル楽曲制作", "ORIGINAL"] },
+        serviceCategory: { in: categoryValues("ORIGINAL") },
       },
       orderBy: { orderIndex: 'asc' },
       ...(limit ? { take: limit } : {}),
@@ -195,8 +199,8 @@ export const getNewsPosts = unstable_cache(
 export const getBlogPosts = unstable_cache(
   async (category?: string, limit?: number) => {
     return await prisma.post.findMany({
-      where: { 
-        type: "BLOG", 
+      where: {
+        type: "BLOG",
         published: true,
         ...(category ? { category } : {})
       },

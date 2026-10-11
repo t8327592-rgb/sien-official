@@ -4,21 +4,17 @@ import { ApiError } from "@/lib/api-input";
 
 // PostgreSQL is shared across instances. No process-local counters or trusted
 // client-supplied IP headers: a global budget also bounds distributed abuse.
-let ready: Promise<void> | undefined;
-function ensureTable() {
-  ready ??= prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(731902461)`;
-    await tx.$executeRaw`CREATE TABLE IF NOT EXISTS "ApiRateLimit" (
-      "key" TEXT PRIMARY KEY, "count" INTEGER NOT NULL, "expiresAt" TIMESTAMPTZ NOT NULL
-    )`;
-  }).catch((error) => { ready = undefined; throw error; });
-  return ready;
+// Table creation belongs to deployment, never to a public request.
+export async function cleanupExpiredRateLimits() {
+  return prisma.$executeRaw`DELETE FROM "ApiRateLimit" WHERE "key" IN (
+    SELECT "key" FROM "ApiRateLimit" WHERE "expiresAt" < NOW() - INTERVAL '1 day'
+    ORDER BY "expiresAt" LIMIT 1000
+  )`;
 }
 
 export async function consumeRateLimit(scope: string, limit: number, seconds: number, identity = "global") {
   const key = `${scope}:${createHash("sha256").update(identity).digest("hex")}`;
   try {
-    await ensureTable();
     const rows = await prisma.$queryRaw<{ count: number }[]>`
       INSERT INTO "ApiRateLimit" ("key", "count", "expiresAt")
       VALUES (${key}, 1, NOW() + ${seconds} * INTERVAL '1 second')
@@ -28,8 +24,7 @@ export async function consumeRateLimit(scope: string, limit: number, seconds: nu
           THEN NOW() + ${seconds} * INTERVAL '1 second' ELSE "ApiRateLimit"."expiresAt" END
       WHERE "ApiRateLimit"."expiresAt" <= NOW() OR "ApiRateLimit"."count" < ${limit}
       RETURNING "count"`;
-    if (!rows.length) throw new ApiError(429, "送信回数の上限に達しました。時間をおいて再度お試しください。");
-    await prisma.$executeRaw`DELETE FROM "ApiRateLimit" WHERE "expiresAt" < NOW() - INTERVAL '1 day'`;
+    if (!rows.length) throw new ApiError(429, "送信回数の上限に達しました。時間をおいて再度お試しください。", seconds);
   } catch (error) {
     if (error instanceof ApiError) throw error;
     console.error("Rate limit storage unavailable");

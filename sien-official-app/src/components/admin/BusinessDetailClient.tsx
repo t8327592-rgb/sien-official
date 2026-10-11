@@ -1,11 +1,12 @@
 "use client";
+import type { BusinessRecord } from "@/lib/admin-types";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Trash2, Building2, User, Mail, Calendar, FileText, CheckCircle, Clock, DollarSign, FileSpreadsheet, Copy } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Building2, FileText, Clock, DollarSign, Copy } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-type BusinessContact = any;
+type BusinessContact = BusinessRecord;
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "未対応" },
@@ -34,8 +35,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
   const [formData, setFormData] = useState<BusinessContact>(initialContact);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  const formatDateForInput = (dateStr: string | null) => {
+
+  const formatDateForInput = (dateStr: string | Date | null) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
@@ -49,16 +50,16 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev: any) => ({ ...prev, [name]: checked }));
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (name === "estimatedPrice" || name === "finalPrice") {
-      setFormData((prev: any) => ({ ...prev, [name]: value === "" ? null : parseInt(value, 10) }));
+      setFormData((prev) => ({ ...prev, [name]: value === "" ? null : parseInt(value, 10) }));
     } else if (name === "lastContactedAt" || name === "billedAt" || name === "paymentDeadline") {
-      setFormData((prev: any) => ({ ...prev, [name]: value === "" ? null : new Date(value).toISOString() }));
+      setFormData((prev) => ({ ...prev, [name]: value === "" ? null : new Date(value).toISOString() }));
     } else {
-      setFormData((prev: any) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -88,7 +89,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
     if (!window.confirm("このお問い合わせを削除しますか？\n削除すると元に戻すことはできません。")) {
       return;
     }
-    
+
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/admin/business/${formData.id}`, {
@@ -114,7 +115,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-xl shadow-sm border border-slate-200 sticky top-4 z-10">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => router.push("/admin/business")}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
           >
@@ -127,7 +128,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             onClick={handleDelete}
@@ -137,7 +138,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
             <Trash2 className="w-4 h-4" />
             削除する
           </button>
-          
+
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -150,7 +151,7 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        
+
         {/* 左カラム */}
         <div className="space-y-6">
           {/* お客様情報 */}
@@ -159,16 +160,16 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               <Building2 className="w-5 h-5 text-blue-500" />
               お客様情報
             </h3>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                <label htmlFor="businessdetailclient-field-1" className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
                   貴社名
                   <button onClick={() => handleCopyText(formData.companyName)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </label>
-                <input
+                <input id="businessdetailclient-field-1"
                   type="text"
                   name="companyName"
                   value={formData.companyName || ""}
@@ -176,15 +177,15 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
                   className="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                 />
               </div>
-              
+
               <div>
-                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                <label htmlFor="businessdetailclient-field-2" className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
                   担当者名
                   <button onClick={() => handleCopyText(formData.contactName)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </label>
-                <input
+                <input id="businessdetailclient-field-2"
                   type="text"
                   name="contactName"
                   value={formData.contactName || ""}
@@ -194,13 +195,13 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div>
-                <label className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
+                <label htmlFor="businessdetailclient-field-3" className="flex items-center justify-between text-sm font-bold text-slate-600 mb-1">
                   メールアドレス
                   <button onClick={() => handleCopyText(formData.email)} className="text-slate-400 hover:text-slate-600 p-0.5 rounded" title="コピー">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </label>
-                <input
+                <input id="businessdetailclient-field-3"
                   type="email"
                   name="email"
                   value={formData.email || ""}
@@ -217,11 +218,11 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               <FileText className="w-5 h-5 text-emerald-500" />
               案件情報
             </h3>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">現在のステータス</label>
-                <select
+                <label htmlFor="businessdetailclient-field-4" className="block text-sm font-bold text-slate-600 mb-1">現在のステータス</label>
+                <select id="businessdetailclient-field-4"
                   name="status"
                   value={formData.status || "PENDING"}
                   onChange={handleChange}
@@ -234,8 +235,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">最終対応日</label>
-                <input
+                <label htmlFor="businessdetailclient-field-5" className="block text-sm font-bold text-slate-600 mb-1">最終対応日</label>
+                <input id="businessdetailclient-field-5"
                   type="date"
                   name="lastContactedAt"
                   value={formatDateForInput(formData.lastContactedAt)}
@@ -245,8 +246,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">ご用件</label>
-                <input
+                <label htmlFor="businessdetailclient-field-6" className="block text-sm font-bold text-slate-600 mb-1">ご用件</label>
+                <input id="businessdetailclient-field-6"
                   type="text"
                   name="inquiryType"
                   value={formData.inquiryType || ""}
@@ -257,8 +258,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-1">予算感</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-7" className="block text-sm font-bold text-slate-600 mb-1">予算感</label>
+                  <input id="businessdetailclient-field-7"
                     type="text"
                     name="budget"
                     value={formData.budget || ""}
@@ -268,8 +269,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-1">希望納期</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-8" className="block text-sm font-bold text-slate-600 mb-1">希望納期</label>
+                  <input id="businessdetailclient-field-8"
                     type="text"
                     name="deadline"
                     value={formData.deadline || ""}
@@ -281,8 +282,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1">お問い合わせ内容</label>
-                <textarea
+                <label htmlFor="businessdetailclient-field-9" className="block text-sm font-bold text-slate-600 mb-1">お問い合わせ内容</label>
+                <textarea id="businessdetailclient-field-9"
                   name="message"
                   value={formData.message || ""}
                   onChange={handleChange}
@@ -302,12 +303,12 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               <DollarSign className="w-5 h-5 text-orange-500" />
               見積・請求情報
             </h3>
-            
+
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">見積金額 (円)</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-10" className="block font-bold text-slate-600 mb-1">見積金額 (円)</label>
+                  <input id="businessdetailclient-field-10"
                     type="number"
                     name="estimatedPrice"
                     value={formData.estimatedPrice || ""}
@@ -316,8 +317,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">確定金額 (円)</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-11" className="block font-bold text-slate-600 mb-1">確定金額 (円)</label>
+                  <input id="businessdetailclient-field-11"
                     type="number"
                     name="finalPrice"
                     value={formData.finalPrice || ""}
@@ -329,8 +330,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">請求日</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-12" className="block font-bold text-slate-600 mb-1">請求日</label>
+                  <input id="businessdetailclient-field-12"
                     type="date"
                     name="billedAt"
                     value={formatDateForInput(formData.billedAt)}
@@ -339,8 +340,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">支払期限</label>
-                  <input
+                  <label htmlFor="businessdetailclient-field-13" className="block font-bold text-slate-600 mb-1">支払期限</label>
+                  <input id="businessdetailclient-field-13"
                     type="date"
                     name="paymentDeadline"
                     value={formatDateForInput(formData.paymentDeadline)}
@@ -352,8 +353,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">入金状況</label>
-                  <select
+                  <label htmlFor="businessdetailclient-field-14" className="block font-bold text-slate-600 mb-1">入金状況</label>
+                  <select id="businessdetailclient-field-14"
                     name="paymentStatus"
                     value={formData.paymentStatus || ""}
                     onChange={handleChange}
@@ -365,8 +366,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">請求書発行</label>
-                  <select
+                  <label htmlFor="businessdetailclient-field-15" className="block font-bold text-slate-600 mb-1">請求書発行</label>
+                  <select id="businessdetailclient-field-15"
                     name="invoiceStatus"
                     value={formData.invoiceStatus || ""}
                     onChange={handleChange}
@@ -380,8 +381,8 @@ export default function BusinessDetailClient({ initialContact }: { initialContac
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors">
-                  <input
+                <label htmlFor="businessdetailclient-field-16" className="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors">
+                  <input id="businessdetailclient-field-16"
                     type="checkbox"
                     name="isInvoiceCompliant"
                     checked={formData.isInvoiceCompliant || false}

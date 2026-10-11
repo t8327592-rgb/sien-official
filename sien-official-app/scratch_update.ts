@@ -15,7 +15,7 @@ async function main() {
   for (const order of targetOrders) {
     if ((order.songTitle === 'ないない' && order.clientName === '音和のま') ||
         (order.songTitle === 'Magnet' && order.clientName === '雨風ヤム')) {
-      const updated = await prisma.order.update({
+      await prisma.order.update({
         where: { id: order.id },
         data: { planId: 'collab' }
       });
@@ -40,14 +40,14 @@ async function main() {
 
   for (const plan of plans) {
     if (planMappings[plan.id]) {
-      const updatedPlan = await prisma.plan.update({
+      await prisma.plan.update({
         where: { id: plan.id },
         data: { name: planMappings[plan.id] }
       });
       console.log(`Updated Plan ${plan.id} to name: ${planMappings[plan.id]}`);
     } else if (planMappings[plan.name]) {
        // もし name に std 等が入っている場合
-       const updatedPlan = await prisma.plan.update({
+       await prisma.plan.update({
         where: { id: plan.id },
         data: { name: planMappings[plan.name] }
       });

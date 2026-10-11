@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import ReviewListClient from "@/components/admin/ReviewListClient";
 
@@ -6,6 +7,7 @@ export const metadata = {
 };
 
 export default async function AdminReviewsPage() {
+  await requireAdminPage();
   const reviews = await prisma.review.findMany({
     orderBy: { orderIndex: "asc" },
   });

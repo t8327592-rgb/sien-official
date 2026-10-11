@@ -1,9 +1,10 @@
-import { isAdmin } from "@/lib/auth";
+import { invalidatePublicContent } from "@/lib/public-cache";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(request: Request) {
+  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
 
     const reviews = await prisma.review.findMany({
@@ -18,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
 
     const body = await request.json();
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
         orderIndex: orderIndex || 0,
       },
     });
+
+    invalidatePublicContent("reviews");
 
     return NextResponse.json(review);
   } catch (error) {

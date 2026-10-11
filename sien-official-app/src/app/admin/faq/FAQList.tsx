@@ -1,11 +1,12 @@
 "use client";
+import type { FAQ } from "@prisma/client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createFAQ, updateFAQ, deleteFAQ } from "@/app/actions/cms";
+import { createFAQ, deleteFAQ } from "@/app/actions/cms";
 import toast from "react-hot-toast";
 
-export function FAQList({ initialFaqs }: { initialFaqs: any[] }) {
+export function FAQList({ initialFaqs }: { initialFaqs: FAQ[] }) {
   const [faqs, setFaqs] = useState(initialFaqs);
   const [isAdding, setIsAdding] = useState(false);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "", category: "COMMON", orderIndex: 0 });
@@ -21,7 +22,7 @@ export function FAQList({ initialFaqs }: { initialFaqs: any[] }) {
       setIsAdding(false);
       setNewFaq({ question: "", answer: "", category: "COMMON", orderIndex: 0 });
       toast.success("追加しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };
@@ -32,7 +33,7 @@ export function FAQList({ initialFaqs }: { initialFaqs: any[] }) {
       await deleteFAQ(id);
       setFaqs(faqs.filter(f => f.id !== id));
       toast.success("削除しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };
@@ -62,7 +63,7 @@ export function FAQList({ initialFaqs }: { initialFaqs: any[] }) {
 
       {/* 一覧 */}
       <div className="space-y-4">
-        {faqs.map((faq, index) => (
+        {faqs.map((faq) => (
           <div key={faq.id} className="bg-white p-6 rounded-2xl border shadow-sm">
             <div className="flex justify-between">
               <div className="space-y-2 w-full pr-4">

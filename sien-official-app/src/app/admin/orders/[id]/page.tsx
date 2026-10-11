@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ import { AiReplyPanel } from "@/components/admin/AiReplyPanel";
 import { AiPostGeneratorPanel } from "@/components/admin/AiPostGeneratorPanel";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPage();
   const { id } = await params;
 
   // 依頼データを取得
@@ -27,6 +29,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     });
   }
 
+  const receipt = await prisma.submissionReceipt.findUnique({ where: { entityType_entityId: { entityType: "ORDER", entityId: id } } });
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div className="flex items-center gap-4 mb-8">
@@ -37,6 +41,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="space-y-6">
+        <p className="font-bold">受付番号：{receipt?.receiptNumber || "旧受付（番号未発行）"}</p>
         <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
       </div>
 

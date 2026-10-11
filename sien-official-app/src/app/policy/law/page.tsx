@@ -1,8 +1,8 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { Metadata } from "next";
+import { CANCELLATION_TERMS } from "@/lib/contract-terms";
 
-export const metadata: Metadata = {
-  title: "特定商取引法に基づく表記 | Sien-Official",
-};
+export const metadata: Metadata = pageMetadata("/policy/law", {title: "特定商取引法に基づく表記 | Sien-Official"});
 
 export default function LawPage() {
   return (
@@ -56,7 +56,7 @@ export default function LawPage() {
               </tr>
               <tr>
                 <th className="py-4 px-4 font-bold text-slate-800 bg-slate-50 rounded-bl-lg">返品・キャンセルについて</th>
-                <td className="py-4 px-4 text-slate-600">サービスの性質上、制作開始後のキャンセルおよび返金は原則としてお受けできません。</td>
+                <td className="py-4 px-4 text-slate-600">{CANCELLATION_TERMS}</td>
               </tr>
             </tbody>
           </table>

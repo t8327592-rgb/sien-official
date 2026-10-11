@@ -1,36 +1,24 @@
 "use client";
+import type { OrderRecord } from "@/lib/admin-types";
+import { ADMIN_PAYMENT_OPTIONS, normalizePaymentMethod } from "@/lib/order-payment";
+import { ORDER_STATUS_LABELS as STATUS_LABELS, ORDER_STATUS_COLORS as STATUS_COLORS, ORDER_STATUS_OPTIONS, normalizeOrderStatus } from "@/lib/order-status";
+import type { Plan } from "@prisma/client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { parseAdminMoney, patchAdminOrder, syncAdminDeadline } from "@/lib/admin-order-client";
 import { Copy, Edit2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-type Order = any; // 簡易的な型定義
+type Order = OrderRecord;
+type TextField = { [K in keyof Order]: Order[K] extends string | null ? K : never }[keyof Order]; // 簡易的な型定義
 
-const PAYMENT_LABELS: Record<string, string> = {
-  bank_transfer: "銀行振込",
-  credit_card: "クレジットカード",
-  paypay: "PayPay",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "受付待ち",
-  ESTIMATING: "見積中",
-  WORKING: "作業中",
-  COMPLETED: "納品済",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
-  ESTIMATING: "bg-blue-100 text-blue-700 border-blue-200",
-  WORKING: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
-
-export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder: Order, planDetails: any }) {
+export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planDetails: Plan | null }) {
   const [order, setOrder] = useState<Order>(initialOrder);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
-  
+  const savingRef = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   // ハイブリッド型のための全体編集モード状態
   const [isEditMode, setIsEditMode] = useState(false);
   const [bulkEditData, setBulkEditData] = useState<Partial<Order>>({});
@@ -56,92 +44,48 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     );
   };
 
-  const startEditing = (field: string, initialVal: any) => {
+  const startEditing = (field: string, initialVal: unknown) => {
+    if (savingRef.current) return;
     setEditingField(field);
-    setEditValue(initialVal === null || initialVal === undefined ? "" : String(initialVal));
+    const value = initialVal === null || initialVal === undefined ? "" : String(initialVal);
+    setEditValue(field === "status" ? normalizeOrderStatus(value) : field === "paymentMethod" ? normalizePaymentMethod(value) : value);
   };
 
   const saveEdit = async () => {
-    if (!editingField) return;
+    if (!editingField || savingRef.current) return;
     const field = editingField;
-    let valueToSave: string | number | null = editValue.trim() === "" ? null : editValue;
-    
-    // 数値型のキャスト
-    if ((field === "price" || field === "basePrice" || field === "optionPrice") && valueToSave !== null) {
-      valueToSave = parseInt(valueToSave as string, 10);
-      if (isNaN(valueToSave)) valueToSave = null;
-    }
-
+    savingRef.current = true;
+    setIsSaving(true);
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: valueToSave })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.order) {
-          setOrder(data.order);
-        } else {
-          setOrder((prev: any) => ({ ...prev, [field]: valueToSave }));
-        }
-        toast.success("更新しました");
-        
-        // カレンダー同期処理
-        if (field === "deadline" && valueToSave) {
-          fetch('/api/admin/calendar/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: order.id, deadline: valueToSave })
-          }).then(async (syncRes) => {
-            const syncData = await syncRes.json();
-            if (syncData.success) {
-              if (syncData.message && syncData.message.includes("skipped")) {
-                toast.success("納期を保存しました（連携未設定のためカレンダー同期はスキップ）");
-              } else {
-                toast.success("Googleカレンダーに同期しました");
-              }
-            } else {
-              toast.error("カレンダー同期に失敗しました: " + syncData.error);
-            }
-          }).catch(err => {
-            console.error("Calendar sync error:", err);
-            toast.error("カレンダー同期でエラーが発生しました");
-          });
-        }
-      } else {
-        toast.error("更新に失敗しました");
+      const value = ["price", "basePrice", "optionPrice"].includes(field) ? parseAdminMoney(editValue) : editValue.trim() || null;
+      setOrder(await patchAdminOrder(order.id, { [field]: value }));
+      setEditingField(null);
+      toast.success("保存しました");
+      if (field === "deadline" && typeof value === "string") {
+        try { toast.success(await syncAdminDeadline(order.id, value)); }
+        catch (error) { toast.error(error instanceof Error ? error.message : "納期は保存しましたが、カレンダー同期に失敗しました"); }
       }
     } catch (error) {
-      console.error(`Failed to update ${field}:`, error);
-      toast.error("エラーが発生しました");
+      toast.error(error instanceof Error ? error.message : "保存に失敗しました");
     } finally {
-      setEditingField(null);
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
 
   const handleBulkSave = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bulkEditData)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.order) {
-          setOrder(data.order);
-        } else {
-          setOrder((prev: any) => ({ ...prev, ...bulkEditData }));
-        }
-        toast.success("更新しました");
-        setIsEditMode(false);
-      } else {
-        toast.error("更新に失敗しました");
-      }
+      setOrder(await patchAdminOrder(order.id, bulkEditData));
+      toast.success("保存しました");
+      setIsEditMode(false);
     } catch (error) {
-      console.error("Failed to update bulk data:", error);
-      toast.error("エラーが発生しました");
+      toast.error(error instanceof Error ? error.message : "保存に失敗しました");
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -150,44 +94,44 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     setIsEditMode(false);
   };
 
-  const renderEditable = (field: string, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' | 'date' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
+  const renderEditable = (field: keyof Order, displayValue: React.ReactNode, type: 'text' | 'number' | 'textarea' | 'select' | 'date' = 'text', options?: {value: string, label: string}[], placeholder: string = "未設定") => {
     if (editingField === field) {
       return (
         <div className="flex gap-2 items-start w-full">
           {type === 'textarea' ? (
-            <textarea 
-              autoFocus
+            <textarea aria-label={String(field)} id={`quick-${field}`}
+              autoFocus disabled={isSaving}
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
               className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-h-[120px]"
               placeholder={placeholder}
             />
           ) : type === 'select' ? (
-            <select
-              autoFocus
+            <select aria-label={String(field)} id={`quick-${field}`}
+              autoFocus disabled={isSaving}
               value={editValue}
               onChange={e => {
                 setEditValue(e.target.value);
               }}
               className="w-full border border-slate-300 rounded p-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="">未設定</option>
+              {field !== "status" && <option value="">未設定</option>}
               {options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           ) : (
-            <input 
+            <input aria-label={String(field)} id={`quick-${field}`}
               type={type}
-              autoFocus
+              autoFocus disabled={isSaving}
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
-              onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
+              onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); void saveEdit(); } if(e.key === 'Escape' && !savingRef.current) setEditingField(null); }}
               onClick={e => {
                 if (type === 'date') {
                   try {
                     if ('showPicker' in HTMLInputElement.prototype) {
                       (e.target as HTMLInputElement).showPicker();
                     }
-                  } catch (err) {}
+                  } catch {}
                 }
               }}
               placeholder={placeholder}
@@ -195,16 +139,16 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             />
           )}
           <div className="flex flex-col gap-1 shrink-0">
-            <button onClick={saveEdit} className="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-700 shadow-sm">保存</button>
-            <button onClick={() => setEditingField(null)} className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-200">ｷｬﾝｾﾙ</button>
+            <button disabled={isSaving} onClick={saveEdit} className="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-700 shadow-sm">{isSaving ? "保存中…" : "保存"}</button>
+            <button disabled={isSaving} onClick={() => setEditingField(null)} className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded hover:bg-slate-200">取消</button>
           </div>
         </div>
       );
     }
 
     return (
-      <div 
-        onClick={() => startEditing(field, order[field])} 
+      <div
+        role="button" tabIndex={0} aria-label={`${({status: "ステータス", paymentMethod: "お支払い方法", deadline: "希望納期", price: "合計金額", basePrice: "基本料金", optionPrice: "オプション料金"} as Partial<Record<keyof Order, string>>)[field] || field}：${order[field] ?? "未設定"}を編集`} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startEditing(field, order[field]); } }} onClick={() => startEditing(field, order[field])}
         className="group relative cursor-pointer min-h-[24px] rounded px-1 -mx-1 hover:bg-slate-100 transition-colors flex items-center justify-between"
       >
         <div className="flex-1 w-full">{displayValue}</div>
@@ -215,9 +159,9 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     );
   };
 
-  const renderHybridField = (field: string, label: string, type: 'text' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[]) => {
+  const renderHybridField = (field: TextField, label: string, type: 'text' | 'textarea' | 'select' = 'text', options?: {value: string, label: string}[]) => {
     const value = isEditMode && bulkEditData[field] !== undefined ? bulkEditData[field] : order[field];
-    
+
     if (!isEditMode) {
       let displayVal = value;
       if (type === 'select' && options) {
@@ -228,17 +172,17 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
 
     if (type === 'textarea') {
       return (
-        <textarea 
+        <textarea disabled={isSaving} aria-label={label} id={`detail-${field}`}
           value={value || ""}
           onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
           className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"
         />
       );
     }
-    
+
     if (type === 'select') {
       return (
-        <select
+        <select disabled={isSaving} aria-label={label} id={`detail-${field}`}
           value={value || ""}
           onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
           className="w-full border border-slate-300 rounded p-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500"
@@ -250,7 +194,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
     }
 
     return (
-      <input 
+      <input disabled={isSaving} aria-label={label} id={`detail-${field}`}
         type="text"
         value={value || ""}
         onChange={e => setBulkEditData(prev => ({...prev, [field]: e.target.value}))}
@@ -261,13 +205,13 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
 
   return (
     <div className="space-y-6">
-      
+
       {/* 画面トップ：モード切替ボタン */}
       <div className="flex justify-end gap-2">
         {isEditMode ? (
           <>
-            <button onClick={cancelBulkEdit} className="px-4 py-2 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">キャンセル</button>
-            <button onClick={handleBulkSave} className="px-4 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg hover:bg-slate-700 shadow-sm">保存して閲覧モードに戻る</button>
+            <button disabled={isSaving} onClick={cancelBulkEdit} className="px-4 py-2 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">キャンセル</button>
+            <button disabled={isSaving} onClick={handleBulkSave} className="px-4 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg hover:bg-slate-700 shadow-sm">保存して閲覧モードに戻る</button>
           </>
         ) : (
           <button onClick={() => { setBulkEditData({}); setIsEditMode(true); }} className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 shadow-sm rounded-lg hover:bg-slate-50 flex items-center gap-2">
@@ -279,7 +223,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
 
       {/* 2カラム トップパネル */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+
         {/* 左：基本情報 */}
         <div className="bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
           <div className="bg-slate-50/50 px-5 py-3 border-b flex items-center justify-between">
@@ -356,20 +300,22 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           <div className="p-5 grid grid-cols-2 gap-4 flex-1">
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">ステータス</p>
-              {renderEditable('status', 
+              {renderEditable('status',
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${STATUS_COLORS[order.status] || "bg-slate-100 text-slate-700"}`}>
                   {STATUS_LABELS[order.status] || order.status}
                 </span>,
                 'select',
-                Object.entries(STATUS_LABELS).map(([k, v]) => ({ value: k, label: v }))
+                ORDER_STATUS_OPTIONS.map(({ value, label }) => ({ value, label }))
               )}
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">お支払い方法</p>
-              {renderEditable('paymentMethod', 
-                <span className="font-bold text-slate-800">{order.paymentMethod ? (PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod) : <span className="text-slate-400 font-normal">未設定</span>}</span>,
+              {renderEditable('paymentMethod',
+                <span className="font-bold text-slate-800">{order.paymentMethod ? normalizePaymentMethod(order.paymentMethod) : <span className="text-slate-400 font-normal">未設定</span>}</span>,
                 'select',
-                Object.entries(PAYMENT_LABELS).map(([k, v]) => ({ value: k, label: v }))
+                order.paymentMethod && !ADMIN_PAYMENT_OPTIONS.some(option => option.value === normalizePaymentMethod(order.paymentMethod!))
+                  ? [...ADMIN_PAYMENT_OPTIONS, { value: order.paymentMethod, label: `${order.paymentMethod}（現在の値）` }]
+                  : ADMIN_PAYMENT_OPTIONS
               )}
             </div>
             <div>
@@ -403,7 +349,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
             <span className="font-medium text-slate-800">
-              {order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType}
+              {order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType === "GUIDE" ? "ボーカルガイド作成" : order.serviceType}
             </span>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
@@ -420,7 +366,7 @@ export function OrderDetailEditor({ initialOrder, planDetails }: { initialOrder:
             <span className="text-[11px] font-bold text-slate-400 mt-1">歌唱キー</span>
             {renderHybridField('vocalKey', '歌唱キー')}
           </div>
-          
+
           {order.serviceType === "ORIGINAL" && (
             <>
               <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">

@@ -1,3 +1,6 @@
+import { validateImageSource } from "@/lib/image-input";
+import { invalidatePublicContent } from "@/lib/public-cache";
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
@@ -5,18 +8,19 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 
-export default function NewPostPage() {
+export default async function NewPostPage() {
+  await requireAdminPage();
   async function createPost(formData: FormData) {
     "use server";
     await requireAdmin();
-    
+
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const type = "NEWS";
     const category = formData.get("category") as string;
-    const imageUrl = formData.get("imageUrl") as string;
+    const imageUrl = await validateImageSource(formData.get("imageUrl"));
     const published = formData.get("published") === "true";
-    
+
     if (!title || !content) return;
 
     await prisma.post.create({
@@ -30,6 +34,7 @@ export default function NewPostPage() {
       },
     });
 
+    invalidatePublicContent("blog", "news");
     redirect("/admin/news");
   }
 
@@ -38,26 +43,26 @@ export default function NewPostPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">新しいお知らせを作成</h1>
       </div>
-      
+
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
         <form action={createPost} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
-              <input 
-                name="title" 
-                type="text" 
-                required 
+              <label htmlFor="page-field-1" className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
+              <input id="page-field-1"
+                name="title"
+                type="text"
+                required
                 placeholder="例: 夏季休業のお知らせ"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">カテゴリー (ブログ用)</label>
-              <input 
-                name="category" 
-                type="text" 
+              <label htmlFor="page-field-2" className="block text-sm font-medium mb-1">カテゴリー (ブログ用)</label>
+              <input id="page-field-2"
+                name="category"
+                type="text"
                 placeholder="例: 音楽制作, 日常, チュートリアル"
                 className="w-full p-2 border rounded-md"
               />
@@ -70,8 +75,8 @@ export default function NewPostPage() {
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">公開設定</label>
-              <select name="published" className="w-full p-2 border rounded-md bg-white">
+              <label htmlFor="page-field-3" className="block text-sm font-medium mb-1">公開設定</label>
+              <select id="page-field-3" name="published" className="w-full p-2 border rounded-md bg-white">
                 <option value="false">下書きとして保存</option>
                 <option value="true">今すぐ公開する</option>
               </select>
@@ -79,13 +84,13 @@ export default function NewPostPage() {
 
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
+                <label htmlFor="post-content" className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
                 <span className="text-xs text-muted-foreground bg-orange-50 text-orange-600 px-2 py-1 rounded">
                   ※AI記事生成アシストは準備中です
                 </span>
               </div>
-              <textarea 
-                name="content" 
+              <textarea id="post-content"
+                name="content"
                 required
                 rows={12}
                 placeholder="本文を入力してください..."
@@ -93,15 +98,15 @@ export default function NewPostPage() {
               />
             </div>
           </div>
-          
+
           <div className="pt-6 border-t flex gap-4">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="bg-primary text-primary-foreground px-8 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               保存する
             </button>
-            <Link 
+            <Link
               href="/admin/news"
               className="px-8 py-2 border rounded-md font-medium hover:bg-slate-50 transition-colors inline-block"
             >

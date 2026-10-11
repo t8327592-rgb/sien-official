@@ -1,11 +1,12 @@
 "use client";
+import type { Service } from "@prisma/client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createService, updateService, deleteService } from "@/app/actions/cms";
+import { createService, deleteService } from "@/app/actions/cms";
 import toast from "react-hot-toast";
 
-export function ServiceList({ initialServices }: { initialServices: any[] }) {
+export function ServiceList({ initialServices }: { initialServices: Service[] }) {
   const [services, setServices] = useState(initialServices);
   const [isAdding, setIsAdding] = useState(false);
   const [newSvc, setNewSvc] = useState({ name: "", category: "MIX", description: "", orderIndex: 0 });
@@ -21,7 +22,7 @@ export function ServiceList({ initialServices }: { initialServices: any[] }) {
       setIsAdding(false);
       setNewSvc({ name: "", category: "MIX", description: "", orderIndex: 0 });
       toast.success("追加しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };
@@ -32,7 +33,7 @@ export function ServiceList({ initialServices }: { initialServices: any[] }) {
       await deleteService(id);
       setServices(services.filter(s => s.id !== id));
       toast.success("削除しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };

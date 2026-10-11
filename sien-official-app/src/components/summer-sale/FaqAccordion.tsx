@@ -13,7 +13,7 @@ interface FaqItemProps {
 function FaqItem({ question, answer, isOpen, onClick }: FaqItemProps) {
   return (
     <div className="border border-slate-100 bg-white rounded-2xl overflow-hidden transition-all duration-200">
-      <button 
+      <button
         onClick={onClick}
         className="w-full px-6 py-5 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors text-left"
       >
@@ -21,9 +21,9 @@ function FaqItem({ question, answer, isOpen, onClick }: FaqItemProps) {
           <span className="text-cyan-500 font-black">Q.</span>
           {question}
         </span>
-        <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-5 h-5 text-slate-600 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      <div 
+      <div
         className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-96 pb-5 opacity-100" : "max-h-0 opacity-0"}`}
       >
         <div className="flex gap-3 text-slate-600 text-sm md:text-base leading-relaxed pt-2 border-t border-slate-50">
@@ -49,7 +49,7 @@ export default function FaqAccordion({ items }: FaqAccordionProps) {
   return (
     <div className="space-y-3">
       {items.map((item, index) => (
-        <FaqItem 
+        <FaqItem
           key={index}
           question={item.question}
           answer={item.answer}

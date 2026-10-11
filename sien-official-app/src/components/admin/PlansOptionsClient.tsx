@@ -1,4 +1,8 @@
 "use client";
+import { AccessibleModal } from "@/components/ui/AccessibleModal";
+import { SaveQueue } from "@/lib/save-queue";
+import type { Plan, Option } from "@prisma/client";
+type EditablePlan = Omit<Plan, "price"> & { price: number | string | null };
 
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
@@ -9,106 +13,64 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Edit, Trash2 } from "lucide-react";
 
-// --- Sortable Components ---
-
-const SortablePlanListItem = ({ p, onEdit, onDelete }: { p: any, onEdit: (p: any) => void, onDelete: (id: string) => void }) => {
+type RowActions = { onMove: (direction: -1 | 1) => void; canMoveUp: boolean; canMoveDown: boolean };
+const rowButton = "min-h-11 min-w-11 flex items-center justify-center rounded-lg border lg:border-transparent text-slate-600 hover:bg-orange-50 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-orange-500 disabled:opacity-30";
+function ItemActions({ name, onEdit, onDelete, onMove, canMoveUp, canMoveDown }: RowActions & { name: string; onEdit: () => void; onDelete: () => void }) {
+  return <div className="col-span-2 flex flex-wrap justify-end gap-1 pt-3 border-t lg:border-0 lg:pt-0 lg:shrink-0">
+    <button type="button" className={rowButton} disabled={!canMoveUp} onClick={() => onMove(-1)} aria-label={`${name}を上へ移動`}>↑</button>
+    <button type="button" className={rowButton} disabled={!canMoveDown} onClick={() => onMove(1)} aria-label={`${name}を下へ移動`}>↓</button>
+    <button type="button" className={rowButton} onClick={onEdit} aria-label={`${name}を編集`} title="編集"><Edit size={18} /></button>
+    <button type="button" className={rowButton} onClick={onDelete} aria-label={`${name}を削除`} title="削除"><Trash2 size={18} /></button>
+  </div>;
+}
+const SortablePlanListItem = ({ p, onEdit, onDelete, ...actions }: RowActions & { p: EditablePlan; onEdit: (p: EditablePlan) => void; onDelete: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 1 };
-
-  return (
-    <div ref={setNodeRef} style={style} className="group flex items-center p-4 bg-white hover:bg-slate-50 transition-colors relative">
-      {/* ドラッグハンドル */}
-      <div {...attributes} {...listeners} className="w-8 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
-        <GripVertical size={18} />
-      </div>
-
-      {/* メイン情報 */}
-      <div className="flex-1 pr-6 pl-2">
-        <h3 className="font-bold text-slate-800 text-base">{p.name}</h3>
-        <p className="text-sm text-slate-500 line-clamp-1">{p.description || "説明なし"}</p>
-      </div>
-
-      {/* 料金 */}
-      <div className="w-32 text-right pr-6 font-bold text-slate-700">
-        {p.price ? `¥${p.price.toLocaleString()}` : "要相談"}
-      </div>
-
-      {/* 納期・修正 */}
-      <div className="w-48 text-right pr-6 text-sm text-slate-500 flex flex-col items-end">
-        <div>{p.period || "-"}</div>
-        <div className="text-xs">{p.revisions || "-"}</div>
-      </div>
-
-      {/* アクション */}
-      <div className="w-24 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(p)} className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors" title="編集">
-          <Edit size={16} />
-        </button>
-        <button onClick={() => onDelete(p.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="削除">
-          <Trash2 size={16} />
-        </button>
-      </div>
+  return <div ref={setNodeRef} style={style} className="grid grid-cols-[minmax(0,1fr)_auto] lg:flex gap-3 lg:items-center p-4 bg-white hover:bg-slate-50 relative min-w-0">
+    <button type="button" {...attributes} {...listeners} aria-label={`${p.name}をドラッグして並び替え`} className="hidden lg:flex w-8 shrink-0 justify-center text-slate-500 cursor-grab touch-none focus-visible:outline-2"><GripVertical size={18} /></button>
+    <div className="col-span-2 min-w-0 lg:flex-1">
+      <h3 className="font-bold text-slate-800 text-base break-words">{p.name}{!p.isActive && <span className="ml-2 text-xs font-normal text-slate-600">非公開</span>}</h3>
+      <p className="text-sm text-slate-500 line-clamp-2 lg:line-clamp-1 break-words">{p.description || "説明なし"}</p>
     </div>
-  );
+    <div className="lg:w-28 lg:shrink-0 lg:text-right font-bold text-slate-700"><span className="block text-xs font-normal text-slate-500 lg:hidden">料金</span>{p.price !== null && p.price !== "" ? `¥${Number(p.price).toLocaleString()}` : "要相談"}</div>
+    <div className="lg:w-36 lg:shrink-0 text-right text-sm text-slate-600"><span className="block text-xs text-slate-500 lg:hidden">納期 / 修正</span><div>{p.period || "—"}</div><div className="text-xs">{p.revisions || "—"}</div></div>
+    <ItemActions name={p.name} onEdit={() => onEdit(p)} onDelete={() => onDelete(p.id)} {...actions} />
+  </div>;
 };
-
-const SortableOptionListItem = ({ opt, onEdit, onDelete }: { opt: any, onEdit: (o: any) => void, onDelete: (id: string) => void }) => {
+const SortableOptionListItem = ({ opt, onEdit, onDelete, ...actions }: RowActions & { opt: Option; onEdit: (o: Option) => void; onDelete: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: opt.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 1 };
-
-  return (
-    <div ref={setNodeRef} style={style} className="group flex items-center p-4 bg-white hover:bg-slate-50 transition-colors relative">
-      {/* ドラッグハンドル */}
-      <div {...attributes} {...listeners} className="w-8 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
-        <GripVertical size={18} />
-      </div>
-
-      {/* メイン情報 */}
-      <div className="flex-1 pr-6 pl-2">
-        <h3 className="font-bold text-slate-800 text-base">{opt.name}</h3>
-        <p className="text-sm text-slate-500 line-clamp-1">{opt.description || "説明なし"}</p>
-      </div>
-
-      {/* 料金テキスト */}
-      <div className="w-48 text-right pr-6 font-bold text-orange-600">
-        {opt.priceText}
-      </div>
-
-      {/* アクション */}
-      <div className="w-24 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(opt)} className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors" title="編集">
-          <Edit size={16} />
-        </button>
-        <button onClick={() => onDelete(opt.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="削除">
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </div>
-  );
+  return <div ref={setNodeRef} style={style} className="grid grid-cols-[minmax(0,1fr)_auto] lg:flex gap-3 lg:items-center p-4 bg-white hover:bg-slate-50 relative min-w-0">
+    <button type="button" {...attributes} {...listeners} aria-label={`${opt.name}をドラッグして並び替え`} className="hidden lg:flex w-8 shrink-0 justify-center text-slate-500 cursor-grab touch-none focus-visible:outline-2"><GripVertical size={18} /></button>
+    <div className="col-span-2 min-w-0 lg:flex-1"><h3 className="font-bold text-slate-800 text-base break-words">{opt.name}{!opt.isActive && <span className="ml-2 text-xs font-normal text-slate-600">非公開</span>}</h3><p className="text-sm text-slate-500 line-clamp-2 lg:line-clamp-1 break-words">{opt.description || "説明なし"}</p></div>
+    <div className="col-span-2 lg:w-36 lg:shrink-0 lg:text-right font-bold text-orange-600 break-words">{opt.priceText}</div>
+    <ItemActions name={opt.name} onEdit={() => onEdit(opt)} onDelete={() => onDelete(opt.id)} {...actions} />
+  </div>;
 };
-
 // --- Main Component ---
 
-export default function PlansOptionsClient({ initialPlans, initialOptions }: { initialPlans: any[], initialOptions: any[] }) {
-  const [plans, setPlans] = useState(initialPlans.sort((a, b) => a.orderIndex - b.orderIndex));
-  const [options, setOptions] = useState(initialOptions.sort((a, b) => a.orderIndex - b.orderIndex));
+export default function PlansOptionsClient({ initialPlans, initialOptions }: { initialPlans: Plan[], initialOptions: Option[] }) {
+  const [plans, setPlans] = useState<EditablePlan[]>([...initialPlans].sort((a, b) => a.orderIndex - b.orderIndex));
+  const [options, setOptions] = useState([...initialOptions].sort((a, b) => a.orderIndex - b.orderIndex));
 
   const [activePlanTab, setActivePlanTab] = useState<"MIX" | "ORIGINAL">("MIX");
   const [activeOptionTab, setActiveOptionTab] = useState<"MIX" | "ORIGINAL">("MIX");
 
-  const [editingPlan, setEditingPlan] = useState<any | null>(null);
-  const [editingOption, setEditingOption] = useState<any | null>(null);
+  const [editingPlan, setEditingPlan] = useState<EditablePlan | null>(null);
+  const [editingOption, setEditingOption] = useState<Option | null>(null);
+  const submittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    setPlans(initialPlans.sort((a, b) => a.orderIndex - b.orderIndex));
-  }, [initialPlans]);
+  const [saveQueue] = useState(() => new SaveQueue(() => { toast.error("保存に失敗しました。編集内容を確認し、再度変更してください。"); setSaveStatus("idle"); }));
+  useEffect(() => () => { void saveQueue.flush(); }, [saveQueue]);
 
-  useEffect(() => {
-    setOptions(initialOptions.sort((a, b) => a.orderIndex - b.orderIndex));
-  }, [initialOptions]);
+  const [previousInput, setPreviousInput] = useState({ plans: initialPlans, options: initialOptions });
+  if (previousInput.plans !== initialPlans || previousInput.options !== initialOptions) {
+    setPreviousInput({ plans: initialPlans, options: initialOptions });
+    setPlans([...initialPlans].sort((a, b) => a.orderIndex - b.orderIndex));
+    setOptions([...initialOptions].sort((a, b) => a.orderIndex - b.orderIndex));
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -121,96 +83,76 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     setTimeout(() => setSaveStatus(prev => prev === "saved" ? "idle" : prev), 2000);
   };
 
-  const handlePlanFieldChange = (field: string, value: any) => {
-    if (!editingPlan) return;
-    const updatedPlan = { ...editingPlan, [field]: value };
-    setEditingPlan(updatedPlan);
-    setPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
-
-    setSaveStatus("saving");
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
-      const res = await updatePlan(updatedPlan.id, updatedPlan);
-      if (res.success) triggerSaveStatus();
-      else toast.error("プランの保存に失敗しました");
-    }, 800);
+  const handlePlanFieldChange = (field: keyof Plan, value: string | number | null) => {
+    if (editingPlan && !submittingRef.current) setEditingPlan({ ...editingPlan, [field]: value });
   };
-
-  const handleOptionFieldChange = (field: string, value: any) => {
-    if (!editingOption) return;
-    const updatedOption = { ...editingOption, [field]: value };
-    setEditingOption(updatedOption);
-    setOptions(prev => prev.map(o => o.id === updatedOption.id ? updatedOption : o));
-
-    setSaveStatus("saving");
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
-      const res = await updateOption(updatedOption.id, updatedOption);
-      if (res.success) triggerSaveStatus();
-      else toast.error("オプションの保存に失敗しました");
-    }, 800);
+  const handleOptionFieldChange = (field: keyof Option, value: string) => {
+    if (editingOption && !submittingRef.current) setEditingOption({ ...editingOption, [field]: value });
+  };
+  const closePlan = () => { if (!submittingRef.current) setEditingPlan(null); };
+  const closeOption = () => { if (!submittingRef.current) setEditingOption(null); };
+  const savePlan = async (publish: boolean) => {
+    if (!editingPlan || submittingRef.current) return;
+    submittingRef.current = true; setIsSubmitting(true);
+    try {
+      const input = { ...editingPlan, isActive: publish };
+      const result = editingPlan.id ? await updatePlan(editingPlan.id, input) : await createPlan(input);
+      if (!result.success || !result.data) throw new Error(result.error || "保存に失敗しました");
+      const saved = result.data;
+      setPlans(previous => [...previous.filter(plan => plan.id !== saved.id), saved]);
+      setEditingPlan(null); triggerSaveStatus();
+      toast.success(publish ? "プランを公開しました" : "プランを非公開で保存しました");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "保存に失敗しました"); }
+    finally { submittingRef.current = false; setIsSubmitting(false); }
+  };
+  const saveOption = async (publish: boolean) => {
+    if (!editingOption || submittingRef.current) return;
+    submittingRef.current = true; setIsSubmitting(true);
+    try {
+      const input = { ...editingOption, isActive: publish };
+      const result = editingOption.id ? await updateOption(editingOption.id, input) : await createOption(input);
+      if (!result.success || !result.data) throw new Error(result.error || "保存に失敗しました");
+      const saved = result.data;
+      setOptions(previous => [...previous.filter(option => option.id !== saved.id), saved]);
+      setEditingOption(null); triggerSaveStatus();
+      toast.success(publish ? "オプションを公開しました" : "オプションを非公開で保存しました");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "保存に失敗しました"); }
+    finally { submittingRef.current = false; setIsSubmitting(false); }
   };
 
   // --- DND Handlers ---
-  const handleDragEndPlan = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setPlans((items) => {
-        // 現在のタブに表示されているアイテム
-        const visibleItems = items.filter(p => p.category === activePlanTab).sort((a,b) => a.orderIndex - b.orderIndex);
-        // それ以外のアイテム
-        const hiddenItems = items.filter(p => p.category !== activePlanTab);
-        
-        const oldIndex = visibleItems.findIndex((item) => item.id === active.id);
-        const newIndex = visibleItems.findIndex((item) => item.id === over.id);
-        
-        const newVisibleArray = arrayMove(visibleItems, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
-        const newArray = [...newVisibleArray, ...hiddenItems];
-        
-        setSaveStatus("saving");
-        updatePlanOrders(newVisibleArray.map(p => ({ id: p.id, orderIndex: p.orderIndex })))
-          .then(() => triggerSaveStatus());
-        return newArray;
-      });
-    }
-  };
-
-  const handleDragEndOption = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setOptions((items) => {
-        // 現在のタブに表示されているアイテム (COMMONも含む)
-        const visibleItems = items.filter(o => o.category === activeOptionTab || o.category === "COMMON").sort((a,b) => a.orderIndex - b.orderIndex);
-        // それ以外のアイテム
-        const hiddenItems = items.filter(o => !(o.category === activeOptionTab || o.category === "COMMON"));
-
-        const oldIndex = visibleItems.findIndex((item) => item.id === active.id);
-        const newIndex = visibleItems.findIndex((item) => item.id === over.id);
-        
-        const newVisibleArray = arrayMove(visibleItems, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
-        const newArray = [...newVisibleArray, ...hiddenItems];
-        
-        setSaveStatus("saving");
-        updateOptionOrders(newVisibleArray.map(o => ({ id: o.id, orderIndex: o.orderIndex })))
-          .then(() => triggerSaveStatus());
-        return newArray;
-      });
-    }
-  };
-
-  // --- Create / Delete Handlers ---
-  const handleCreatePlan = async () => {
+  const reorderPlan = (active: { id: string | number }, over: { id: string | number } | null) => {
+    if (!over || active.id === over.id) return;
+    const visible = plans.filter(p => p.category === activePlanTab).sort((a, b) => a.orderIndex - b.orderIndex);
+    const oldIndex = visible.findIndex(p => p.id === active.id), newIndex = visible.findIndex(p => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const ordered = arrayMove(visible, oldIndex, newIndex).map((p, orderIndex) => ({ ...p, orderIndex }));
+    setPlans([...ordered, ...plans.filter(p => p.category !== activePlanTab)]);
     setSaveStatus("saving");
-    // 現在選択中のタブのカテゴリをデフォルトにする
-    const res = await createPlan({ category: activePlanTab });
-    if (res.success && res.data) {
-      setPlans(prev => [...prev, res.data]);
-      setEditingPlan(res.data);
+    saveQueue.enqueue("plan-order:" + activePlanTab, async () => {
+      const result = await updatePlanOrders(ordered.map(p => ({ id: p.id, orderIndex: p.orderIndex })));
+      if (!result.success) throw new Error(result.error || "並び順の保存に失敗しました");
       triggerSaveStatus();
-    } else {
-      toast.error("追加に失敗しました");
-      setSaveStatus("idle");
-    }
+    });
+  };
+  const reorderOption = (active: { id: string | number }, over: { id: string | number } | null) => {
+    if (!over || active.id === over.id) return;
+    const visible = options.filter(p => p.category === activeOptionTab || p.category === "COMMON").sort((a, b) => a.orderIndex - b.orderIndex);
+    const oldIndex = visible.findIndex(p => p.id === active.id), newIndex = visible.findIndex(p => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const ordered = arrayMove(visible, oldIndex, newIndex).map((p, orderIndex) => ({ ...p, orderIndex }));
+    setOptions([...ordered, ...options.filter(p => !(p.category === activeOptionTab || p.category === "COMMON"))]);
+    setSaveStatus("saving");
+    saveQueue.enqueue("option-order:" + activeOptionTab, async () => {
+      const result = await updateOptionOrders(ordered.map(p => ({ id: p.id, orderIndex: p.orderIndex })));
+      if (!result.success) throw new Error(result.error || "並び順の保存に失敗しました");
+      triggerSaveStatus();
+    });
+  };
+  // --- Create / Delete Handlers ---
+  const handleCreatePlan = () => {
+    const now = new Date();
+    setEditingPlan({ id: "", name: "", category: activePlanTab, price: null, description: "", period: "", revisions: "", features: null, isActive: false, orderIndex: 0, createdAt: now, updatedAt: now });
   };
 
   const handleDeletePlan = async (id: string) => {
@@ -226,17 +168,9 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
     }
   };
 
-  const handleCreateOption = async () => {
-    setSaveStatus("saving");
-    const res = await createOption({ category: activeOptionTab });
-    if (res.success && res.data) {
-      setOptions(prev => [...prev, res.data]);
-      setEditingOption(res.data);
-      triggerSaveStatus();
-    } else {
-      toast.error("追加に失敗しました");
-      setSaveStatus("idle");
-    }
+  const handleCreateOption = () => {
+    const now = new Date();
+    setEditingOption({ id: "", name: "", category: activeOptionTab, priceText: "", description: "", isActive: false, orderIndex: 0, createdAt: now, updatedAt: now });
   };
 
   const handleDeleteOption = async (id: string) => {
@@ -268,24 +202,24 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
 
       {/* 料金プラン管理 */}
       <section>
-        <div className="flex justify-between items-end mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-800">料金プラン</h2>
-            <p className="text-slate-500 text-sm mt-1">公開ページの料金プランとして表示されます。ドラッグで並び替えできます。</p>
+            <p className="text-slate-500 text-sm mt-1">公開ページの料金プランとして表示されます。ドラッグまたは上下ボタンで並び替えできます。</p>
           </div>
           <Button onClick={handleCreatePlan}>＋ プラン追加</Button>
         </div>
 
         {/* タブUI */}
-        <div className="flex border-b border-slate-200 mb-6">
-          <button 
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activePlanTab === 'MIX' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        <div className="flex overflow-x-auto border-b border-slate-200 mb-6">
+          <button
+            className={`whitespace-nowrap px-3 sm:px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activePlanTab === 'MIX' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             onClick={() => setActivePlanTab('MIX')}
           >
             MIXプラン
           </button>
-          <button 
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activePlanTab === 'ORIGINAL' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          <button
+            className={`whitespace-nowrap px-3 sm:px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activePlanTab === 'ORIGINAL' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             onClick={() => setActivePlanTab('ORIGINAL')}
           >
             オリジナルプラン
@@ -295,7 +229,7 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
         {/* テーブル風リスト */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* ヘッダー行 */}
-          <div className="flex items-center p-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+          <div className="hidden lg:flex items-center p-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
             <div className="w-8"></div>
             <div className="flex-1 pl-2">プラン名 / 説明</div>
             <div className="w-32 text-right pr-6">料金</div>
@@ -303,12 +237,12 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
             <div className="w-24"></div>
           </div>
 
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndPlan}>
+          <DndContext id="admin-plans-sort" sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event: DragEndEvent) => reorderPlan(event.active, event.over)}>
             <SortableContext items={filteredPlans.map(p => p.id)} strategy={verticalListSortingStrategy}>
               <div className="divide-y divide-slate-100">
                 {filteredPlans.length > 0 ? (
-                  filteredPlans.map(p => (
-                    <SortablePlanListItem key={p.id} p={p} onEdit={setEditingPlan} onDelete={handleDeletePlan} />
+                  filteredPlans.map((p, index) => (
+                    <SortablePlanListItem key={p.id} p={p} onEdit={setEditingPlan} onDelete={handleDeletePlan} canMoveUp={index > 0} canMoveDown={index < filteredPlans.length - 1} onMove={direction => reorderPlan({ id: p.id }, filteredPlans[index + direction] ? { id: filteredPlans[index + direction].id } : null)} />
                   ))
                 ) : (
                   <div className="p-8 text-center text-slate-500 text-sm">
@@ -323,24 +257,24 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
 
       {/* オプション管理 */}
       <section>
-        <div className="flex justify-between items-end mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-800">オプション</h2>
-            <p className="text-slate-500 text-sm mt-1">エンコードや特急料金などの追加オプションです。ドラッグで並び替えできます。</p>
+            <p className="text-slate-500 text-sm mt-1">エンコードや特急料金などの追加オプションです。ドラッグまたは上下ボタンで並び替えできます。</p>
           </div>
           <Button onClick={handleCreateOption}>＋ オプション追加</Button>
         </div>
 
         {/* タブUI */}
-        <div className="flex border-b border-slate-200 mb-6">
-          <button 
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'MIX' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        <div className="flex overflow-x-auto border-b border-slate-200 mb-6">
+          <button
+            className={`whitespace-nowrap px-3 sm:px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'MIX' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             onClick={() => setActiveOptionTab('MIX')}
           >
             MIXオプション
           </button>
-          <button 
-            className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'ORIGINAL' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          <button
+            className={`whitespace-nowrap px-3 sm:px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeOptionTab === 'ORIGINAL' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             onClick={() => setActiveOptionTab('ORIGINAL')}
           >
             オリジナルオプション
@@ -349,19 +283,19 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* ヘッダー行 */}
-          <div className="flex items-center p-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+          <div className="hidden lg:flex items-center p-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
             <div className="w-8"></div>
             <div className="flex-1 pl-2">オプション名 / 説明</div>
             <div className="w-48 text-right pr-6">料金</div>
             <div className="w-24"></div>
           </div>
 
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndOption}>
+          <DndContext id="admin-options-sort" sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event: DragEndEvent) => reorderOption(event.active, event.over)}>
             <SortableContext items={filteredOptions.map(o => o.id)} strategy={verticalListSortingStrategy}>
               <div className="divide-y divide-slate-100">
                 {filteredOptions.length > 0 ? (
-                  filteredOptions.map(opt => (
-                    <SortableOptionListItem key={opt.id} opt={opt} onEdit={setEditingOption} onDelete={handleDeleteOption} />
+                  filteredOptions.map((opt, index) => (
+                    <SortableOptionListItem key={opt.id} opt={opt} onEdit={setEditingOption} onDelete={handleDeleteOption} canMoveUp={index > 0} canMoveDown={index < filteredOptions.length - 1} onMove={direction => reorderOption({ id: opt.id }, filteredOptions[index + direction] ? { id: filteredOptions[index + direction].id } : null)} />
                   ))
                 ) : (
                   <div className="p-8 text-center text-slate-500 text-sm">
@@ -376,89 +310,93 @@ export default function PlansOptionsClient({ initialPlans, initialOptions }: { i
 
       {/* プラン編集用モーダル */}
       {editingPlan && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <AccessibleModal label="プランの編集" onClose={closePlan}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
-              <h3 className="text-lg font-bold">プランの編集 <span className="text-sm font-normal text-slate-400 ml-2">※自動保存されます</span></h3>
-              <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
+              <h3 className="text-lg font-bold">プランの編集 <span className="text-sm font-normal text-slate-400 ml-2">※保存するまで公開内容は変わりません</span></h3>
+              <button aria-label="編集を閉じる" disabled={isSubmitting} onClick={closePlan} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
             </div>
             <div className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
-                  <select value={editingPlan.category} onChange={e => handlePlanFieldChange("category", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white transition-all">
+                  <label htmlFor="plansoptionsclient-field-1" className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
+                  <select disabled={isSubmitting} id="plansoptionsclient-field-1" value={editingPlan.category} onChange={e => handlePlanFieldChange("category", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white transition-all">
                     <option value="MIX">MIX・マスタリング</option>
                     <option value="ORIGINAL">オリジナル楽曲制作</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">プラン名</label>
-                  <input type="text" value={editingPlan.name} onChange={e => handlePlanFieldChange("name", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                  <label htmlFor="plansoptionsclient-field-2" className="block text-sm font-medium text-slate-700 mb-1">プラン名</label>
+                  <input disabled={isSubmitting} id="plansoptionsclient-field-2" type="text" value={editingPlan.name} onChange={e => handlePlanFieldChange("name", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">料金 (円・半角数字のみ・未定の場合は空欄)</label>
-                <input type="number" value={editingPlan.price || ""} onChange={e => handlePlanFieldChange("price", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                <label htmlFor="plansoptionsclient-field-3" className="block text-sm font-medium text-slate-700 mb-1">料金 (円・半角数字のみ・未定の場合は空欄)</label>
+                <input disabled={isSubmitting} id="plansoptionsclient-field-3" type="number" value={editingPlan.price ?? ""} onChange={e => handlePlanFieldChange("price", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">目安納期</label>
-                  <input type="text" placeholder="例: 7日〜" value={editingPlan.period || ""} onChange={e => handlePlanFieldChange("period", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                  <label htmlFor="plansoptionsclient-field-4" className="block text-sm font-medium text-slate-700 mb-1">目安納期</label>
+                  <input disabled={isSubmitting} id="plansoptionsclient-field-4" type="text" placeholder="例: 7日〜" value={editingPlan.period || ""} onChange={e => handlePlanFieldChange("period", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">無料修正</label>
-                  <input type="text" placeholder="例: 5回" value={editingPlan.revisions || ""} onChange={e => handlePlanFieldChange("revisions", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                  <label htmlFor="plansoptionsclient-field-5" className="block text-sm font-medium text-slate-700 mb-1">無料修正</label>
+                  <input disabled={isSubmitting} id="plansoptionsclient-field-5" type="text" placeholder="例: 5回" value={editingPlan.revisions || ""} onChange={e => handlePlanFieldChange("revisions", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">プラン説明文</label>
-                <textarea rows={4} value={editingPlan.description || ""} onChange={e => handlePlanFieldChange("description", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"></textarea>
+                <label htmlFor="plansoptionsclient-field-6" className="block text-sm font-medium text-slate-700 mb-1">プラン説明文</label>
+                <textarea disabled={isSubmitting} id="plansoptionsclient-field-6" rows={4} value={editingPlan.description || ""} onChange={e => handlePlanFieldChange("description", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"></textarea>
               </div>
-              
-              <div className="pt-4 flex justify-end gap-3 shrink-0">
-                <Button type="button" onClick={() => setEditingPlan(null)} className="px-8">閉じる</Button>
+
+              <div className="pt-4 flex flex-wrap justify-end gap-3 shrink-0">
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={closePlan}>取消</Button>
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => void savePlan(false)}>{isSubmitting ? "保存中…" : editingPlan.isActive ? "非公開で保存" : "下書き保存"}</Button>
+                <Button type="button" disabled={isSubmitting} onClick={() => void savePlan(true)}>公開して保存</Button>
               </div>
             </div>
           </div>
-        </div>
+        </AccessibleModal>
       )}
 
       {/* オプション編集用モーダル */}
       {editingOption && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <AccessibleModal label="オプションの編集" onClose={closeOption}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
-              <h3 className="text-lg font-bold">オプションの編集 <span className="text-sm font-normal text-slate-400 ml-2">※自動保存されます</span></h3>
-              <button onClick={() => setEditingOption(null)} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
+              <h3 className="text-lg font-bold">オプションの編集 <span className="text-sm font-normal text-slate-400 ml-2">※保存するまで公開内容は変わりません</span></h3>
+              <button aria-label="編集を閉じる" disabled={isSubmitting} onClick={closeOption} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
             </div>
             <div className="p-6 space-y-4 overflow-y-auto">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
-                <select value={editingOption.category || "MIX"} onChange={e => handleOptionFieldChange("category", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white transition-all">
+                <label htmlFor="plansoptionsclient-field-7" className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
+                <select disabled={isSubmitting} id="plansoptionsclient-field-7" value={editingOption.category || "MIX"} onChange={e => handleOptionFieldChange("category", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white transition-all">
                   <option value="MIX">MIXオプション</option>
                   <option value="ORIGINAL">オリジナルオプション</option>
                   <option value="COMMON">共通（両方に表示）</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">オプション名</label>
-                <input type="text" value={editingOption.name} onChange={e => handleOptionFieldChange("name", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                <label htmlFor="plansoptionsclient-field-8" className="block text-sm font-medium text-slate-700 mb-1">オプション名</label>
+                <input disabled={isSubmitting} id="plansoptionsclient-field-8" type="text" value={editingOption.name} onChange={e => handleOptionFieldChange("name", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">料金テキスト (例: 要相談, 2,000円)</label>
-                <input type="text" value={editingOption.priceText} onChange={e => handleOptionFieldChange("priceText", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                <label htmlFor="plansoptionsclient-field-9" className="block text-sm font-medium text-slate-700 mb-1">料金テキスト (例: 要相談, 2,000円)</label>
+                <input disabled={isSubmitting} id="plansoptionsclient-field-9" type="text" value={editingOption.priceText} onChange={e => handleOptionFieldChange("priceText", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">説明文</label>
-                <textarea rows={4} value={editingOption.description || ""} onChange={e => handleOptionFieldChange("description", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"></textarea>
+                <label htmlFor="plansoptionsclient-field-10" className="block text-sm font-medium text-slate-700 mb-1">説明文</label>
+                <textarea disabled={isSubmitting} id="plansoptionsclient-field-10" rows={4} value={editingOption.description || ""} onChange={e => handleOptionFieldChange("description", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"></textarea>
               </div>
-              
-              <div className="pt-4 flex justify-end gap-3 shrink-0">
-                <Button type="button" onClick={() => setEditingOption(null)} className="px-8">閉じる</Button>
+
+              <div className="pt-4 flex flex-wrap justify-end gap-3 shrink-0">
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={closeOption}>取消</Button>
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => void saveOption(false)}>{isSubmitting ? "保存中…" : editingOption.isActive ? "非公開で保存" : "下書き保存"}</Button>
+                <Button type="button" disabled={isSubmitting} onClick={() => void saveOption(true)}>公開して保存</Button>
               </div>
             </div>
           </div>
-        </div>
+        </AccessibleModal>
       )}
     </div>
   );

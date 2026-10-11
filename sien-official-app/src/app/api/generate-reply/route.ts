@@ -1,25 +1,26 @@
+import { externalText } from "@/lib/external-text";
 import { prisma } from "@/lib/prisma";
 import { readJson, apiErrorResponse, textField } from "@/lib/api-input";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import { isAdmin } from "@/lib/auth";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(req))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     await consumeRateLimit("admin-ai", 30, 3600);
     const body = await readJson(req);
     for (const key of Object.keys(body)) {
       if (typeof body[key] === "string") textField(body, key, false, 5000);
     }
-    const { 
+    const {
       clientName, isRepeater, serviceType, message,
-      songTitle, options, vocalKey, referenceUrl, referenceFidelity, 
-      materialsUrl, paymentMethod, deadline 
+      songTitle, options, vocalKey, referenceUrl, referenceFidelity,
+      materialsUrl, paymentMethod, deadline
     } = body;
 
     const serviceName = serviceType === "MIX" ? "ミックス・マスタリング" : "オリジナル楽曲制作";
-    
+
     // Orders historically contain either an ID or a Japanese name snapshot.
     const reference = textField(body, "planId", false, 150);
     const legacyNames: Record<string, string> = {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
       : "プラン情報を確認できません。料金・納期を推測せず、管理者による確認が必要としてください。";
 
     // 挨拶の分岐
-    const greeting = isRepeater 
+    const greeting = isRepeater
       ? `お世話になっております！\nこの度もご依頼いただき、誠にありがとうございます！`
       : `はじめまして！\nこの度は数ある中から「Sien」にご依頼・お問い合わせいただき、誠にありがとうございます。`;
 
@@ -53,20 +54,20 @@ export async function POST(req: Request) {
 以下のクライアントからの依頼内容に対して、Twitter(X)などのDMでそのまま送信できる、丁寧でプロフェッショナルな返信文（下書き）を作成してください。
 
 【クライアント・ご依頼情報】
-・お名前: ${clientName} 様
+・お名前: [お客様] 様
 ・顧客ステータス: ${isRepeater ? "リピーター" : "新規"}
-・希望サービス: ${serviceName} (プラン: ${planName})
+・希望サービス: ${serviceName} (プラン: ${externalText(planName, typeof clientName === "string" ? clientName : undefined)})
 ・プラン詳細仕様: ${planContext || "なし"}
-・曲名: ${songTitle || "未設定"}
-・歌唱キー: ${vocalKey || "未設定"}
-・参考曲URL: ${referenceUrl || "なし"}
+・曲名: ${externalText(songTitle, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・歌唱キー: ${externalText(vocalKey, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・参考曲URL: ${referenceUrl ? "参考資料あり（URLは外部送信しません）" : "なし"}
 ・リファレンス再現度: ${fidelityText}
-・素材提出URL: ${materialsUrl || "なし"}
-・希望納期: ${deadline || "未設定"}
-・支払い方法: ${paymentMethod || "未設定"}
-・オプション: ${options || "なし"}
+・素材提出URL: ${materialsUrl ? "提出あり（URLは外部送信しません）" : "なし"}
+・希望納期: ${externalText(deadline, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・支払い方法: ${externalText(paymentMethod, typeof clientName === "string" ? clientName : undefined) || "未設定"}
+・オプション: ${externalText(options, typeof clientName === "string" ? clientName : undefined) || "なし"}
 ・要望・メッセージ:
-${message || "なし"}
+${externalText(message, typeof clientName === "string" ? clientName : undefined) || "なし"}
 
 【返信文の条件】
 ・DMで送信するため、「件名」は絶対に含めないでください。
@@ -97,13 +98,13 @@ Web: [サイトURL]
     // コンテンツを生成
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();
+    const text = response.text().replaceAll("[お客様]", typeof clientName === "string" ? clientName : "お客様");
 
     return Response.json({ reply: text });
   } catch (error) {
     const response = apiErrorResponse(error);
     if (response) return response;
-    console.error("AI Generation Error:", error);
+    console.error("AI generation unavailable");
     return Response.json({ error: 'Failed to generate reply' }, { status: 500 });
   }
 }

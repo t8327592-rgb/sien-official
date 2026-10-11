@@ -1,10 +1,11 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
  * リピーターかどうかを判定する関数
  * 優先順位: ① メールアドレス ② X(Twitter)ID ③ 名前
  * 判定条件: キャンセル案件（CANCELED, CANCELLED）を除く過去の依頼が存在すること
- * 
+ *
  * @param email クライアントのメールアドレス
  * @param twitterId クライアントのX(Twitter)ID
  * @param name クライアントの氏名
@@ -19,25 +20,24 @@ export async function checkIsRepeater(
   excludeOrderId?: string,
   createdAtBefore?: Date
 ): Promise<boolean> {
-  const orConditions: any[] = [];
-  
+  const orConditions: Prisma.OrderWhereInput[] = [];
+
   if (email && email.trim() !== "") {
     orConditions.push({ clientEmail: email });
   }
-  
+
   if (twitterId && twitterId.trim() !== "" && twitterId.trim() !== "@" && twitterId.trim() !== "なし" && twitterId.trim() !== "無し") {
     orConditions.push({ twitterId: twitterId });
   }
-  
+
   // 名前(clientName)だけの一致は誤判定(同姓同名や「テスト」等)が多いため除外
 
-  
+
   if (orConditions.length === 0) {
     return false;
   }
 
-  const whereClause: any = {
-    AND: [
+  const conditions: Prisma.OrderWhereInput[] = [
       {
         status: {
           notIn: ["CANCELED", "CANCELLED"]
@@ -46,11 +46,11 @@ export async function checkIsRepeater(
       {
         OR: orConditions
       }
-    ]
-  };
+    ];
+  const whereClause: Prisma.OrderWhereInput = { AND: conditions };
 
   if (excludeOrderId) {
-    whereClause.AND.push({
+    conditions.push({
       id: {
         not: excludeOrderId
       }
@@ -58,7 +58,7 @@ export async function checkIsRepeater(
   }
 
   if (createdAtBefore) {
-    whereClause.AND.push({
+    conditions.push({
       createdAt: {
         lt: createdAtBefore
       }
@@ -79,16 +79,16 @@ export async function updateAllClientOrdersToRepeater(
   email: string | null | undefined,
   twitterId: string | null | undefined
 ) {
-  const orConditions: any[] = [];
-  
+  const orConditions: Prisma.OrderWhereInput[] = [];
+
   if (email && email.trim() !== "") {
     orConditions.push({ clientEmail: email });
   }
-  
+
   if (twitterId && twitterId.trim() !== "" && twitterId.trim() !== "@" && twitterId.trim() !== "なし" && twitterId.trim() !== "無し") {
     orConditions.push({ twitterId: twitterId });
   }
-  
+
   if (orConditions.length === 0) {
     return;
   }

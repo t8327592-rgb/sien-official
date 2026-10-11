@@ -1,0 +1,44 @@
+name: Retry acceptance notifications
+
+on:
+  schedule:
+    - cron: '2-57/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: acceptance-notifications
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Process pending notifications
+        env:
+          WORKER_URL: ${{ secrets.NOTIFICATION_WORKER_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$WORKER_URL" =~ ^https://[a-zA-Z0-9][a-zA-Z0-9.-]*/api/notifications/process$ ]] || [[ ${#CRON_SECRET} -lt 32 ]]; then
+            echo 'Configure a production HTTPS worker URL and CRON_SECRET (32+ characters).'
+            exit 1
+          fi
+          response_file=$(mktemp)
+          trap 'rm -f "$response_file"' EXIT
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 55 \
+            --request POST --header "Authorization: Bearer $CRON_SECRET" \
+            --output "$response_file" "$WORKER_URL"
+          python3 - "$response_file" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding='utf-8') as response:
+              result = json.load(response)
+          delivered, failed = result.get('delivered'), result.get('failed')
+          if type(delivered) is not int or type(failed) is not int:
+              raise SystemExit('Unexpected worker response')
+          print(f'Notifications delivered: {delivered}; failed: {failed}')
+          if failed:
+              raise SystemExit('Delivery failed. Inspect admin notifications and provider settings.')
+          PY

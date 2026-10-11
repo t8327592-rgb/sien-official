@@ -1,9 +1,11 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminNewsPage() {
+  await requireAdminPage();
   const posts = await prisma.post.findMany({
     where: { type: "NEWS" },
     orderBy: { createdAt: "desc" },

@@ -1,6 +1,9 @@
 "use client";
+import { AccessibleModal } from "@/components/ui/AccessibleModal";
+import Image from "next/image";
+import { SaveQueue } from "@/lib/save-queue";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { updatePortfolio, createPortfolio, deletePortfolio, updatePortfolioOrders, bulkDeletePortfolio, bulkUpdatePublishStatus } from "@/app/actions/portfolio";
 import { Button } from "@/components/ui/button";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
@@ -22,20 +25,20 @@ type Portfolio = {
 };
 
 // --- テーブル行コンポーネント ---
-const SortablePortfolioRow = ({ 
-  item, 
-  isCompact, 
-  isSelected, 
-  onToggleSelect, 
-  onEdit, 
-  onDelete 
-}: { 
-  item: Portfolio; 
-  isCompact: boolean; 
-  isSelected: boolean; 
-  onToggleSelect: (id: string) => void; 
-  onEdit: (p: Portfolio) => void; 
-  onDelete: (id: string) => void; 
+const SortablePortfolioRow = ({
+  item,
+  isCompact,
+  isSelected,
+  onToggleSelect,
+  onEdit,
+  onDelete
+}: {
+  item: Portfolio;
+  isCompact: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onEdit: (p: Portfolio) => void;
+  onDelete: (id: string) => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : 1 };
@@ -53,16 +56,16 @@ const SortablePortfolioRow = ({
     <div ref={setNodeRef} style={style} className={`group flex items-center ${paddingClass} hover:bg-slate-50 transition-colors bg-white relative`}>
       {/* チェックボックス */}
       <div className="w-10 text-center">
-        <input 
-          type="checkbox" 
-          checked={isSelected} 
-          onChange={() => onToggleSelect(item.id)} 
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(item.id)}
           className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
         />
       </div>
 
       {/* ドラッグハンドル */}
-      <div {...attributes} {...listeners} className="w-8 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 flex justify-center transition-opacity">
+      <div {...attributes} {...listeners} className="w-8 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing opacity-100 flex justify-center transition-opacity">
         <GripVertical size={16} />
       </div>
 
@@ -70,8 +73,7 @@ const SortablePortfolioRow = ({
       <div className="w-16">
         <div className="w-12 h-8 bg-slate-100 rounded overflow-hidden">
           {thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnail} alt={item.title} className="w-full h-full object-cover" />
+            <Image width={120} height={80} src={thumbnail} alt={item.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-300 text-[10px]">NoImg</div>
           )}
@@ -108,7 +110,7 @@ const SortablePortfolioRow = ({
       </div>
 
       {/* アクションボタン */}
-      <div className="w-24 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="w-24 flex justify-end gap-1 opacity-100 transition-opacity">
         <button onClick={() => onEdit(item)} className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors" title="編集">
           <Edit size={16} />
         </button>
@@ -122,10 +124,11 @@ const SortablePortfolioRow = ({
 
 // --- メインコンポーネント ---
 export default function PortfolioClient({ initialData }: { initialData: Portfolio[] }) {
-  const [portfolios, setPortfolios] = useState(initialData.sort((a, b) => a.orderIndex - b.orderIndex));
+  const [portfolios, setPortfolios] = useState([...initialData].sort((a, b) => a.orderIndex - b.orderIndex));
   const [editingItem, setEditingItem] = useState<Portfolio | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [saveQueue] = useState(() => new SaveQueue(() => { alert("保存に失敗しました。編集内容を確認し、再度変更してください。"); setSaveStatus("idle"); }));
+  useEffect(() => () => { void saveQueue.flush(); }, [saveQueue]);
 
   // フィルター・UIステート
   const [searchTerm, setSearchTerm] = useState("");
@@ -138,9 +141,11 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = isCompact ? 50 : 20;
 
-  useEffect(() => {
-    setPortfolios(initialData.sort((a, b) => a.orderIndex - b.orderIndex));
-  }, [initialData]);
+  const [previousInput, setPreviousInput] = useState(initialData);
+  if (previousInput !== initialData) {
+    setPreviousInput(initialData);
+    setPortfolios([...initialData].sort((a, b) => a.orderIndex - b.orderIndex));
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -150,14 +155,14 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
   // --- 検索・フィルター処理 ---
   const filteredPortfolios = useMemo(() => {
     return portfolios.filter(p => {
-      const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (p.tags && p.tags.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchCategory = categoryFilter === "ALL" || p.serviceCategory === categoryFilter;
-      const matchStatus = statusFilter === "ALL" 
-        ? true 
-        : statusFilter === "PUBLISHED" ? p.isPublished 
-        : statusFilter === "HIDDEN" ? !p.isPublished 
-        : statusFilter === "FEATURED" ? p.isFeatured 
+      const matchStatus = statusFilter === "ALL"
+        ? true
+        : statusFilter === "PUBLISHED" ? p.isPublished
+        : statusFilter === "HIDDEN" ? !p.isPublished
+        : statusFilter === "FEATURED" ? p.isFeatured
         : true;
       return matchSearch && matchCategory && matchStatus;
     });
@@ -173,24 +178,19 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
     setTimeout(() => setSaveStatus(prev => prev === "saved" ? "idle" : prev), 2000);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setPortfolios((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newArray = arrayMove(items, oldIndex, newIndex).map((item, index) => ({ ...item, orderIndex: index }));
-        
-        setSaveStatus("saving");
-        updatePortfolioOrders(newArray.map(p => ({ id: p.id, orderIndex: p.orderIndex })))
-          .then(() => triggerSaveStatus())
-          .catch(() => alert("並び順の保存に失敗しました"));
-          
-        return newArray;
-      });
-    }
+    if (!over || active.id === over.id) return;
+    const oldIndex = portfolios.findIndex(p => p.id === active.id), newIndex = portfolios.findIndex(p => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const ordered = arrayMove(portfolios, oldIndex, newIndex).map((p, orderIndex) => ({ ...p, orderIndex }));
+    setPortfolios(ordered); setSaveStatus("saving");
+    saveQueue.enqueue("portfolio-order", async () => {
+      const result = await updatePortfolioOrders(ordered.map(p => ({ id: p.id, orderIndex: p.orderIndex })));
+      if (!result.success) throw new Error(result.error || "並び順の保存に失敗しました");
+      triggerSaveStatus();
+    });
   };
-
   const handleCreateNew = async () => {
     setSaveStatus("saving");
     const res = await createPortfolio({ serviceCategory: categoryFilter !== "ALL" ? categoryFilter : "MIX" });
@@ -207,19 +207,18 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
     }
   };
 
-  const handleFieldChange = (field: keyof Portfolio, value: any) => {
+  const handleFieldChange = (field: keyof Portfolio, value: Portfolio[keyof Portfolio]) => {
     if (!editingItem) return;
     const updatedItem = { ...editingItem, [field]: value };
     setEditingItem(updatedItem);
     setPortfolios(prev => prev.map(p => p.id === updatedItem.id ? updatedItem : p));
 
     setSaveStatus("saving");
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
+    saveQueue.enqueue(updatedItem.id, async () => {
       const res = await updatePortfolio(updatedItem.id, updatedItem);
       if (res.success) triggerSaveStatus();
-      else alert("保存に失敗しました");
-    }, 800);
+      else throw new Error("Portfolio save failed");
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -300,18 +299,18 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
           {/* 検索 */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
+            <input
               type="text"
-              placeholder="タイトルやタグで検索..." 
-              value={searchTerm} 
+              placeholder="タイトルやタグで検索..."
+              value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
             />
           </div>
-          
+
           {/* カテゴリ */}
-          <select 
-            value={categoryFilter} 
+          <select
+            value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white cursor-pointer"
           >
@@ -321,8 +320,8 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
           </select>
 
           {/* ステータス */}
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
             className="px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white cursor-pointer"
           >
@@ -335,10 +334,10 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
 
         {/* 右側オプション */}
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 select-none">
-            <input 
-              type="checkbox" 
-              checked={isCompact} 
+          <label htmlFor="portfolioclient-field-1" className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 select-none">
+            <input id="portfolioclient-field-1"
+              type="checkbox"
+              checked={isCompact}
               onChange={(e) => setIsCompact(e.target.checked)}
               className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
             />
@@ -365,8 +364,8 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
         {/* ヘッダー */}
         <div className="flex items-center p-3 bg-slate-50 text-xs font-bold text-slate-500 border-b border-slate-200 select-none">
           <div className="w-10 text-center">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={paginatedPortfolios.length > 0 && selectedIds.length === paginatedPortfolios.length}
               onChange={(e) => handleToggleSelectAll(e.target.checked)}
               className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
@@ -381,14 +380,14 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
         </div>
 
         {/* リスト本体 */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext id="admin-portfolio-sort" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={paginatedPortfolios.map(p => p.id)} strategy={verticalListSortingStrategy}>
             <div className="divide-y divide-slate-100">
               {paginatedPortfolios.length > 0 ? (
                 paginatedPortfolios.map(p => (
-                  <SortablePortfolioRow 
-                    key={p.id} 
-                    item={p} 
+                  <SortablePortfolioRow
+                    key={p.id}
+                    item={p}
                     isCompact={isCompact}
                     isSelected={selectedIds.includes(p.id)}
                     onToggleSelect={handleToggleSelect}
@@ -417,20 +416,20 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
 
       {/* 編集モーダル */}
       {editingItem && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+        <AccessibleModal label="実績の編集" onClose={() => { setEditingItem(null); }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b flex justify-between items-center shrink-0 bg-slate-50">
               <h3 className="text-lg font-bold">実績の編集 <span className="text-sm font-normal text-slate-400 ml-2">※自動保存されます</span></h3>
-              <button onClick={() => setEditingItem(null)} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
+              <button aria-label="編集を閉じる" onClick={() => setEditingItem(null)} className="text-slate-400 hover:text-slate-600 bg-slate-200 hover:bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center transition-colors">✕</button>
             </div>
             <div className="overflow-y-auto">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between border-b pb-4 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-700 select-none">
-                    <input 
-                      type="checkbox" 
-                      checked={editingItem.isPublished} 
-                      onChange={e => handleFieldChange("isPublished", e.target.checked)} 
+                  <label htmlFor="portfolioclient-field-2" className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-700 select-none">
+                    <input id="portfolioclient-field-2"
+                      type="checkbox"
+                      checked={editingItem.isPublished}
+                      onChange={e => handleFieldChange("isPublished", e.target.checked)}
                       className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
                     />
                     サイトに公開する (非公開にすると表示されません)
@@ -438,54 +437,54 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">タイトル</label>
-                  <input type="text" value={editingItem.title} onChange={e => handleFieldChange("title", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                  <label htmlFor="portfolioclient-field-3" className="block text-sm font-medium text-slate-700 mb-1">タイトル</label>
+                  <input id="portfolioclient-field-3" type="text" value={editingItem.title} onChange={e => handleFieldChange("title", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">YouTube URL</label>
-                  <input type="url" value={editingItem.url || ""} onChange={e => handleFieldChange("url", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                  <label htmlFor="portfolioclient-field-4" className="block text-sm font-medium text-slate-700 mb-1">YouTube URL</label>
+                  <input id="portfolioclient-field-4" type="url" value={editingItem.url || ""} onChange={e => handleFieldChange("url", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
-                    <select value={editingItem.serviceCategory || "MIX"} onChange={e => handleFieldChange("serviceCategory", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all bg-white">
+                    <label htmlFor="portfolioclient-field-5" className="block text-sm font-medium text-slate-700 mb-1">カテゴリ</label>
+                    <select id="portfolioclient-field-5" value={editingItem.serviceCategory || "MIX"} onChange={e => handleFieldChange("serviceCategory", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all bg-white">
                       <option value="MIX">MIX</option>
                       <option value="ORIGINAL">オリジナル</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">タグ (カンマ区切り)</label>
-                    <input type="text" placeholder="例: ボカロ, ロック" value={editingItem.tags || ""} onChange={e => handleFieldChange("tags", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                    <label htmlFor="portfolioclient-field-6" className="block text-sm font-medium text-slate-700 mb-1">タグ (カンマ区切り)</label>
+                    <input id="portfolioclient-field-6" type="text" placeholder="例: ボカロ, ロック" value={editingItem.tags || ""} onChange={e => handleFieldChange("tags", e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-lg mt-4 border border-slate-100">
                   <div className="font-bold text-sm text-slate-700 border-b border-slate-200 pb-2 mb-1">掲載場所の設定</div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editingItem.isFeatured} onChange={e => handleFieldChange("isFeatured", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
+                  <label htmlFor="portfolioclient-field-7" className="flex items-center gap-2 cursor-pointer">
+                    <input id="portfolioclient-field-7" type="checkbox" checked={editingItem.isFeatured} onChange={e => handleFieldChange("isFeatured", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
                     <span className="text-sm font-medium text-slate-700">TOPページへ掲載</span>
                   </label>
 
                   {editingItem.serviceCategory === "ORIGINAL" || editingItem.serviceCategory === "オリジナル楽曲制作" ? (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={editingItem.showOnOriginal || false} onChange={e => handleFieldChange("showOnOriginal", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
+                    <label htmlFor="portfolioclient-field-8" className="flex items-center gap-2 cursor-pointer">
+                      <input id="portfolioclient-field-8" type="checkbox" checked={editingItem.showOnOriginal || false} onChange={e => handleFieldChange("showOnOriginal", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
                       <span className="text-sm font-medium text-slate-700">オリジナルページへ掲載</span>
                     </label>
                   ) : (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={editingItem.showOnMix || false} onChange={e => handleFieldChange("showOnMix", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
+                    <label htmlFor="portfolioclient-field-9" className="flex items-center gap-2 cursor-pointer">
+                      <input id="portfolioclient-field-9" type="checkbox" checked={editingItem.showOnMix || false} onChange={e => handleFieldChange("showOnMix", e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer" />
                       <span className="text-sm font-medium text-slate-700">MIXページへ掲載</span>
                     </label>
                   )}
                 </div>
-              
+
               <div className="pt-4 flex justify-end gap-3">
                 <Button type="button" onClick={() => setEditingItem(null)} className="px-8">閉じる</Button>
               </div>
             </div>
             </div>
           </div>
-        </div>
+        </AccessibleModal>
       )}
     </div>
   );

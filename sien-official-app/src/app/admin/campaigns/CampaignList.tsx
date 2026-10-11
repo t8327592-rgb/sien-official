@@ -1,11 +1,12 @@
 "use client";
+import type { Campaign } from "@prisma/client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { createCampaign, updateCampaign, deleteCampaign } from "@/app/actions/cms";
+import { createCampaign, deleteCampaign } from "@/app/actions/cms";
 import toast from "react-hot-toast";
 
-export function CampaignList({ initialCampaigns }: { initialCampaigns: any[] }) {
+export function CampaignList({ initialCampaigns }: { initialCampaigns: Campaign[] }) {
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [isAdding, setIsAdding] = useState(false);
   const [newCamp, setNewCamp] = useState({ name: "", targetPlanId: "", campaignPrice: 0, description: "" });
@@ -26,7 +27,7 @@ export function CampaignList({ initialCampaigns }: { initialCampaigns: any[] }) 
       setIsAdding(false);
       setNewCamp({ name: "", targetPlanId: "", campaignPrice: 0, description: "" });
       toast.success("追加しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };
@@ -37,7 +38,7 @@ export function CampaignList({ initialCampaigns }: { initialCampaigns: any[] }) 
       await deleteCampaign(id);
       setCampaigns(campaigns.filter(c => c.id !== id));
       toast.success("削除しました");
-    } catch (e) {
+    } catch {
       toast.error("エラーが発生しました");
     }
   };
@@ -66,7 +67,7 @@ export function CampaignList({ initialCampaigns }: { initialCampaigns: any[] }) 
           <div key={camp.id} className="bg-white p-6 rounded-2xl border shadow-sm">
             <div className="flex justify-between">
               <div className="space-y-2">
-                <div className="font-bold text-xl">{camp.name} 
+                <div className="font-bold text-xl">{camp.name}
                   <span className={`text-xs px-2 py-1 rounded ml-2 ${camp.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                     {camp.isActive ? "開催中" : "終了"}
                   </span>

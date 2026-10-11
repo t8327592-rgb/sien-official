@@ -1,11 +1,13 @@
+import { requireAdminPage } from "@/lib/admin-page-auth";
 
-import { getFAQs } from "@/lib/data/cms";
+import { prisma } from "@/lib/prisma";
 import { FAQList } from "./FAQList";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminFAQPage() {
-  const faqs = await getFAQs();
+  await requireAdminPage();
+  const faqs = await prisma.fAQ.findMany({ orderBy: { orderIndex: "asc" } });
 
   return (
     <div className="max-w-4xl mx-auto pb-24">

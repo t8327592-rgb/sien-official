@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/api/'],
+      disallow: ['/admin', '/api/', '/login', '/order', '/summer-sale/order'],
     },
     sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.sien-official.com'}/sitemap.xml`,
   };

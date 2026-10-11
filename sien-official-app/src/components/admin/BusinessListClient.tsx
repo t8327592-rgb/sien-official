@@ -1,11 +1,13 @@
 "use client";
+import Link from "next/link";
+import type { BusinessRecord } from "@/lib/admin-types";
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ArrowUpDown, ChevronDown } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-type BusinessContact = any;
+type BusinessContact = BusinessRecord;
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "未対応",
@@ -28,21 +30,21 @@ const STATUS_OPTIONS = [
 
 type MainTab = "ALL" | "PENDING" | "ESTIMATING" | "WAITING_PAYMENT" | "WORKING" | "COMPLETED" | "CANCELED";
 
-const formatDate = (date: any) => {
+const formatDate = (date: string | Date | null) => {
   if (!date) return "未対応";
   return new Date(date).toLocaleDateString("ja-JP");
 };
 
 export default function BusinessListClient({ initialContacts }: { initialContacts: BusinessContact[] }) {
   const router = useRouter();
-  
+
   const [contacts, setContacts] = useState<BusinessContact[]>(initialContacts);
   const [activeTab, setActiveTab] = useState<MainTab>("ALL");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  
+
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
-  
+
   // インライン編集用の状態
   const [editingField, setEditingField] = useState<{contactId: string, field: string} | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -93,8 +95,8 @@ export default function BusinessListClient({ initialContacts }: { initialContact
   const saveEdit = async () => {
     if (!editingField) return;
     const { contactId, field } = editingField;
-    
-    let valueToSave: any = editValue;
+
+    let valueToSave: string | number | null = editValue;
     if (field === "estimatedPrice" || field === "finalPrice") {
       if (editValue.trim() === "") {
         valueToSave = null;
@@ -115,7 +117,7 @@ export default function BusinessListClient({ initialContacts }: { initialContact
         body: JSON.stringify({ [field]: valueToSave })
       });
       if (res.ok) {
-        setContacts((prev: any) => prev.map((c: any) => c.id === contactId ? { ...c, [field]: valueToSave } : c));
+        setContacts((prev) => prev.map((c) => c.id === contactId ? { ...c, [field]: valueToSave } : c));
         toast.success("保存しました");
       } else {
         toast.error("保存に失敗しました");
@@ -172,16 +174,16 @@ export default function BusinessListClient({ initialContacts }: { initialContact
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-3 md:top-2.5 h-4 w-4 text-slate-500" />
-            <input 
-              type="text" 
-              placeholder="会社名, 担当者, メール, 内容..." 
+            <input aria-label="検索・編集中の値"
+              type="text"
+              placeholder="会社名, 担当者, メール, 内容..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 placeholder:text-slate-500 py-2.5 pr-3 pl-9 md:py-2 md:pr-3 md:pl-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
             />
           </div>
           <div className="relative flex-1 sm:flex-none group">
-            <select
+            <select aria-label="表示順序"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
               className="w-full appearance-none border border-slate-200 rounded-lg text-base md:text-sm bg-slate-50 text-slate-900 py-2.5 pl-3 pr-9 md:py-2 md:pl-3 md:pr-9 outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/50 transition-colors"
@@ -213,7 +215,7 @@ export default function BusinessListClient({ initialContacts }: { initialContact
 
       {/* リスト表示 */}
       <div className="bg-slate-50 md:bg-white md:rounded-xl md:shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0 p-4 md:p-0">
-        
+
         {/* スマホ用カード表示 */}
         <div className="md:hidden flex flex-col gap-3">
           {displayContacts.length === 0 ? (
@@ -222,14 +224,14 @@ export default function BusinessListClient({ initialContacts }: { initialContact
             </div>
           ) : (
             displayContacts.map((contact) => (
-              <div 
-                key={contact.id} 
+              <div
+                key={contact.id}
                 onClick={() => router.push(`/admin/business/${contact.id}`)}
                 className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer group text-sm relative"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="relative overflow-visible">
-                    <div 
+                    <div
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingStatusId(editingStatusId === contact.id ? null : contact.id);
@@ -243,7 +245,7 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                     </div>
                     {/* ステータス変更ポップアップ */}
                     {editingStatusId === contact.id && (
-                      <div 
+                      <div
                         ref={dropdownRef}
                         className="absolute z-50 mt-1 left-0 w-44 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                       >
@@ -269,7 +271,7 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                 </div>
 
                 <div className="mb-2">
-                  <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{contact.companyName}</div>
+                  <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base"><Link href={`/admin/business/${contact.id}`} className="underline underline-offset-4">{contact.companyName}</Link></div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-slate-700 text-sm">{contact.contactName} 様</span>
                   </div>
@@ -284,18 +286,18 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                     <span className="text-slate-500 font-bold">ご予算感</span>
                     <span className="text-slate-700">{contact.budget || "未定"}</span>
                   </div>
-                  
+
                   {/* 希望納期のインライン編集 */}
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">希望納期</span>
-                    <div onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                    <div role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
                       {editingField?.contactId === contact.id && editingField?.field === 'deadline' ? (
-                        <input 
+                        <input aria-label="検索・編集中の値"
                           type="text"
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right w-32"
@@ -309,13 +311,13 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                   {/* 見積金額のインライン編集 */}
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">見積金額</span>
-                    <div onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                    <div role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
                       {editingField?.contactId === contact.id && editingField?.field === 'estimatedPrice' ? (
-                        <input 
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                        <input aria-label="検索・編集中の値"
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
@@ -327,17 +329,17 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                       )}
                     </div>
                   </div>
-                  
+
                   {/* 確定金額のインライン編集 */}
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">確定金額</span>
-                    <div onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
+                    <div role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
                       {editingField?.contactId === contact.id && editingField?.field === 'finalPrice' ? (
-                        <input 
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                        <input aria-label="検索・編集中の値"
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
@@ -383,13 +385,13 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                 </tr>
               ) : (
                 displayContacts.map((contact) => (
-                  <tr 
-                    key={contact.id} 
+                  <tr
+                    key={contact.id}
                     onClick={() => router.push(`/admin/business/${contact.id}`)}
                     className="hover:bg-orange-50/50 transition-colors cursor-pointer group text-sm relative"
                   >
                     <td className="py-3 px-4 pl-5 relative overflow-visible">
-                      <div 
+                      <div
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingStatusId(editingStatusId === contact.id ? null : contact.id);
@@ -401,10 +403,10 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                         {STATUS_LABELS[contact.status] || contact.status}
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </div>
-                      
+
                       {/* ステータス変更ポップアップ */}
                       {editingStatusId === contact.id && (
-                        <div 
+                        <div
                           ref={dropdownRef}
                           className="absolute z-50 mt-1 left-4 w-40 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                         >
@@ -428,19 +430,19 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                       {formatDate(contact.createdAt)}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{contact.companyName}</div>
+                      <div className="font-bold text-slate-900"><Link href={`/admin/business/${contact.id}`} className="underline underline-offset-4">{contact.companyName}</Link></div>
                       <div className="text-[10px] text-slate-500 mt-0.5">{contact.contactName} 様</div>
                     </td>
-                    
+
                     {/* 希望納期のインライン編集 */}
-                    <td className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)}>
+                    <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(contact.id, 'deadline', contact.deadline, e)}>
                       {editingField?.contactId === contact.id && editingField?.field === 'deadline' ? (
-                        <input 
+                        <input aria-label="検索・編集中の値"
                           type="text"
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-32 text-slate-900"
@@ -453,13 +455,13 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                     </td>
 
                     {/* 見積金額のインライン編集 */}
-                    <td className="py-3 px-4 pr-5 font-bold text-slate-900 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)}>
+                    <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 px-4 pr-5 font-bold text-slate-900 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'estimatedPrice', contact.estimatedPrice, e)}>
                       {editingField?.contactId === contact.id && editingField?.field === 'estimatedPrice' ? (
-                        <input 
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                        <input aria-label="検索・編集中の値"
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right"
@@ -472,13 +474,13 @@ export default function BusinessListClient({ initialContacts }: { initialContact
                     </td>
 
                     {/* 確定金額のインライン編集 */}
-                    <td className="py-3 px-4 pr-5 font-bold text-emerald-700 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)}>
+                    <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 px-4 pr-5 font-bold text-emerald-700 text-right cursor-text" onClick={(e) => startEditing(contact.id, 'finalPrice', contact.finalPrice, e)}>
                       {editingField?.contactId === contact.id && editingField?.field === 'finalPrice' ? (
-                        <input 
-                          autoFocus 
-                          value={editValue} 
-                          onChange={e => setEditValue(e.target.value)} 
-                          onBlur={saveEdit} 
+                        <input aria-label="検索・編集中の値"
+                          autoFocus
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          onBlur={saveEdit}
                           onKeyDown={e => { if(e.key === 'Enter') saveEdit(); }}
                           onClick={e => e.stopPropagation()}
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right text-slate-900"

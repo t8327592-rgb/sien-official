@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle }: { orderId: string, initialDeadline: string | null, clientName: string, songTitle: string | null }) {
+export function DeadlinePanel({ orderId, initialDeadline }: { orderId: string, initialDeadline: string | null, clientName: string, songTitle: string | null }) {
   const [deadline, setDeadline] = useState(initialDeadline || "");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -20,7 +20,7 @@ export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle 
       });
 
       if (!res.ok) throw new Error("データベースへの保存に失敗しました");
-      
+
       // Google Calendar API へ同期
       const syncRes = await fetch("/api/admin/calendar/sync", {
         method: "POST",
@@ -34,15 +34,15 @@ export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle 
         throw new Error("カレンダーへの同期に失敗しました");
       }
 
-      if (syncData.message && syncData.message.includes("skipped")) {
+      if (syncData.synced === false) {
         setMessage("納期は保存されましたが、カレンダー連携は未設定のためスキップされました");
       } else {
         setMessage("納期を保存し、カレンダーへ連携しました！");
       }
-      setTimeout(() => setMessage(""), 3000);
+
     } catch (error) {
       console.error(error);
-      setMessage("エラーが発生しました");
+      setMessage("保存・同期に失敗しました。納期が保存されている場合もあります。画面を確認して再試行してください。");
     } finally {
       setIsSaving(false);
     }
@@ -59,10 +59,10 @@ export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle 
         <p className="text-sm text-slate-600">
           この依頼の納品予定日（デッドライン）を設定します。
         </p>
-        
+
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">納品予定日</label>
-          <input
+          <label htmlFor="deadlinepanel-field-1" className="block text-sm font-bold text-slate-700 mb-1">納品予定日</label>
+          <input id="deadlinepanel-field-1"
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
@@ -70,16 +70,16 @@ export function DeadlinePanel({ orderId, initialDeadline, clientName, songTitle 
           />
         </div>
 
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving}
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || !deadline}
           className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
         >
           {isSaving ? "保存中..." : "納期を保存してカレンダーに登録"}
         </Button>
 
         {message && (
-          <div className={`p-3 rounded-xl text-sm font-bold text-center ${message.includes("エラー") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+          <div role="status" className={`p-3 rounded-xl text-sm font-bold text-center ${message.includes("失敗") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
             {message}
           </div>
         )}

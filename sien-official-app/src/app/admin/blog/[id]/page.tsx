@@ -1,3 +1,6 @@
+import { validateImageSource } from "@/lib/image-input";
+import { invalidatePublicContent } from "@/lib/public-cache";
+import { requireAdminPage } from "@/lib/admin-page-auth";
 import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +9,7 @@ import Link from "next/link";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPage();
   const { id } = await params;
 
   // 投稿データを取得
@@ -21,14 +25,14 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   async function updatePost(formData: FormData) {
     "use server";
     await requireAdmin();
-    
+
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const type = "BLOG";
     const category = formData.get("category") as string;
-    const imageUrl = formData.get("imageUrl") as string;
+    const imageUrl = await validateImageSource(formData.get("imageUrl"));
     const published = formData.get("published") === "true";
-    
+
     if (!title || !content) return;
 
     await prisma.post.update({
@@ -43,6 +47,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
       },
     });
 
+    invalidatePublicContent("blog", "news");
     redirect("/admin/blog");
   }
 
@@ -53,6 +58,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
     await prisma.post.delete({
       where: { id },
     });
+    invalidatePublicContent("blog", "news");
     redirect("/admin/blog");
   }
 
@@ -61,8 +67,8 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">ブログ記事を編集</h1>
         <form action={deletePost}>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="text-red-600 hover:text-red-800 font-medium text-sm hover:underline"
             title="完全に削除する"
           >
@@ -70,26 +76,26 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
           </button>
         </form>
       </div>
-      
+
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
         <form action={updatePost} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
-              <input 
-                name="title" 
-                type="text" 
-                required 
+              <label htmlFor="page-field-1" className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
+              <input id="page-field-1"
+                name="title"
+                type="text"
+                required
                 defaultValue={post.title}
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">カテゴリー</label>
-              <input 
-                name="category" 
-                type="text" 
+              <label htmlFor="page-field-2" className="block text-sm font-medium mb-1">カテゴリー</label>
+              <input id="page-field-2"
+                name="category"
+                type="text"
                 defaultValue={post.category || ""}
                 placeholder="例: 音楽制作, 日常, チュートリアル"
                 className="w-full p-2 border rounded-md"
@@ -103,8 +109,8 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">公開設定</label>
-              <select name="published" defaultValue={post.published.toString()} className="w-full p-2 border rounded-md bg-white">
+              <label htmlFor="page-field-3" className="block text-sm font-medium mb-1">公開設定</label>
+              <select id="page-field-3" name="published" defaultValue={post.published.toString()} className="w-full p-2 border rounded-md bg-white">
                 <option value="false">下書きとして保存</option>
                 <option value="true">今すぐ公開する</option>
               </select>
@@ -112,10 +118,10 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
 
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
+                <label htmlFor="post-content" className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
               </div>
-              <textarea 
-                name="content" 
+              <textarea id="post-content"
+                name="content"
                 required
                 rows={12}
                 defaultValue={post.content}
@@ -123,15 +129,15 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
               />
             </div>
           </div>
-          
+
           <div className="pt-6 border-t flex gap-4">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="bg-primary text-primary-foreground px-8 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               更新する
             </button>
-            <Link 
+            <Link
               href="/admin/blog"
               className="px-8 py-2 border rounded-md font-medium hover:bg-slate-50 transition-colors inline-block"
             >

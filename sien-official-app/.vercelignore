@@ -9,6 +9,12 @@ prisma/dev.db-journal
 
 # Build outputs
 .next
+.next-qa
+dev.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 out
 build
 

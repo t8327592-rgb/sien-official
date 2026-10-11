@@ -1,9 +1,20 @@
 @import "tailwindcss";
+
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+
 @plugin "@tailwindcss/typography";
 
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #9a3412;
+  outline-offset: 3px;
+}
+
+
 @custom-variant dark (&:is(.dark *));
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -156,13 +167,13 @@
   .blog-prose {
     /* 左寄せレイアウトにしつつ、文字幅が広がりすぎないように制限 */
     @apply max-w-[800px] w-full;
-    
+
     /* フォントサイズ: PC 18px / SP 16px */
     @apply text-[16px] md:text-[18px];
-    
+
     /* 行間: 1.8〜2.0 */
     @apply leading-[1.8] md:leading-loose;
-    
+
     /* 段落間の余白を大胆に取る (40px以上) */
   }
 

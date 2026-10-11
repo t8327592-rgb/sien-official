@@ -1,4 +1,5 @@
 "use server";
+import { invalidatePublicContent } from "@/lib/public-cache";
 import { requireAdmin } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ export async function updateSiteSetting(data: {
   await requireAdmin();
   const status = data.orderStatus || "AVAILABLE";
   const legacyAccepting = status !== "UNAVAILABLE";
-  
+
   const setting = await prisma.siteSetting.upsert({
     where: { id: "default" },
     update: {
@@ -31,6 +32,7 @@ export async function updateSiteSetting(data: {
   });
 
   // トップページと設定画面のキャッシュを無効化
+  invalidatePublicContent("site-settings");
   revalidatePath("/");
   revalidatePath("/admin/settings");
 

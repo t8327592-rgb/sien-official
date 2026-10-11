@@ -1,10 +1,12 @@
 "use server";
+import { invalidatePublicContent } from "@/lib/public-cache";
 import { requireAdmin } from "@/lib/auth";
 
+import type { PortfolioInput } from "@/lib/admin-types";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function updatePortfolio(id: string, data: any) {
+export async function updatePortfolio(id: string, data: PortfolioInput) {
   await requireAdmin();
   try {
     await prisma.portfolio.update({
@@ -18,10 +20,11 @@ export async function updatePortfolio(id: string, data: any) {
         showOnMix: data.showOnMix,
         showOnOriginal: data.showOnOriginal,
         isPublished: data.isPublished !== undefined ? data.isPublished : undefined,
-        orderIndex: data.orderIndex !== undefined ? parseInt(data.orderIndex) : undefined,
+        orderIndex: data.orderIndex !== undefined ? Number(data.orderIndex) : undefined,
       },
     });
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");
@@ -33,7 +36,7 @@ export async function updatePortfolio(id: string, data: any) {
   }
 }
 
-export async function createPortfolio(data: any) {
+export async function createPortfolio(data: PortfolioInput) {
   await requireAdmin();
   try {
     const maxOrder = await prisma.portfolio.findFirst({
@@ -54,7 +57,8 @@ export async function createPortfolio(data: any) {
         orderIndex: nextOrder,
       },
     });
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");
@@ -70,7 +74,8 @@ export async function deletePortfolio(id: string) {
   await requireAdmin();
   try {
     await prisma.portfolio.delete({ where: { id } });
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");
@@ -91,7 +96,8 @@ export async function updatePortfolioOrders(orders: { id: string, orderIndex: nu
         data: { orderIndex: item.orderIndex },
       });
     }
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");
@@ -110,7 +116,8 @@ export async function bulkDeletePortfolio(ids: string[]) {
     await prisma.portfolio.deleteMany({
       where: { id: { in: ids } },
     });
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");
@@ -130,7 +137,8 @@ export async function bulkUpdatePublishStatus(ids: string[], isPublished: boolea
       where: { id: { in: ids } },
       data: { isPublished },
     });
-    revalidatePath("/admin/portfolio");
+    invalidatePublicContent("portfolios");
+  revalidatePath("/admin/portfolio");
     revalidatePath("/works");
     revalidatePath("/");
     revalidatePath("/mix");

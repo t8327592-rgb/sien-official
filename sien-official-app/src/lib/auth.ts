@@ -2,6 +2,12 @@ import { getServerSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { ApiError } from "@/lib/api-input";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { requestIdentity } from "@/lib/request-identity";
+
+function sameCredential(value: string | undefined, expected: string) {
+  return timingSafeEqual(createHash("sha256").update(value || "").digest(), createHash("sha256").update(expected).digest());
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,7 +17,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const adminUsername = process.env.ADMIN_USERNAME;
         const adminPassword = process.env.ADMIN_PASSWORD;
 
@@ -21,10 +27,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // One administrator: share the attempt budget across instances and
-        // usernames so rotating submitted names cannot bypass it.
+        const validName = sameCredential(credentials?.username, adminUsername);
+        const validPassword = sameCredential(credentials?.password, adminPassword);
+        // A valid administrator cannot be locked out by invalid shared attempts.
+        if (validName && validPassword) return { id: "1", name: "Admin", email: "admin@sien-official.com" };
         try {
-          await consumeRateLimit("admin-login", 10, 900);
+          await consumeRateLimit("admin-login-client", 10, 900, requestIdentity(request?.headers || {}, credentials?.username || "anonymous"));
+          await consumeRateLimit("admin-login-emergency", 10000, 3600);
         } catch (error) {
           if (error instanceof ApiError && error.status === 429) {
             throw new Error("LOGIN_RATE_LIMITED");
@@ -32,9 +41,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("LOGIN_UNAVAILABLE");
         }
 
-        if (credentials?.username === adminUsername && credentials?.password === adminPassword) {
-          return { id: "1", name: "Admin", email: "admin@sien-official.com" };
-        }
         return null;
       }
     })

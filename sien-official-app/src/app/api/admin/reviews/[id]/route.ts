@@ -1,9 +1,10 @@
-import { isAdmin } from "@/lib/auth";
+import { invalidatePublicContent } from "@/lib/public-cache";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
 
     const { id } = await params;
@@ -22,6 +23,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       },
     });
 
+    invalidatePublicContent("reviews");
+
     return NextResponse.json(review);
   } catch (error) {
     console.error('Failed to update review:', error);
@@ -30,7 +33,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
 
     const { id } = await params;
@@ -38,6 +41,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     await prisma.review.delete({
       where: { id },
     });
+
+    invalidatePublicContent("reviews");
 
     return NextResponse.json({ success: true });
   } catch (error) {

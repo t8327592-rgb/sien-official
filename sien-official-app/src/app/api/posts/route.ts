@@ -1,9 +1,10 @@
-import { isAdmin } from "@/lib/auth";
+import { invalidatePublicContent } from "@/lib/public-cache";
+import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(req))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
     const { title, content, type = "WORKS", published = true } = body;
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
         published,
       },
     });
+
+    invalidatePublicContent("blog", "news");
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {

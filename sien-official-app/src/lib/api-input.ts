@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public retryAfter?: number, public code?: string) { super(message); }
 }
 
 export async function readJson(request: Request, maxBytes = 24000): Promise<Record<string, unknown>> {
@@ -48,6 +48,6 @@ export function emailField(body: Record<string, unknown>, key: string): string {
 
 export function apiErrorResponse(error: unknown): Response | null {
   return error instanceof ApiError
-    ? Response.json({ success: false, error: error.message }, { status: error.status })
+    ? Response.json({ success: false, error: error.message, ...(error.code ? { code: error.code } : {}), ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}) }, { status: error.status, headers: error.retryAfter ? { "Retry-After": String(error.retryAfter) } : undefined })
     : null;
 }

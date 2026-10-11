@@ -1,10 +1,17 @@
+import { externalText } from "@/lib/external-text";
 import { getPlans } from "@/lib/data/cms";
 import { readJson, textField, ApiError, apiErrorResponse } from "@/lib/api-input";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { chatVisitor } from "@/lib/chat-visitor";
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
+  let visitorCookie: string | undefined;
+  const respond = (response: Response) => {
+    if (visitorCookie) response.headers.append("Set-Cookie", visitorCookie);
+    return response;
+  };
   try {
     const body = await readJson(req, 32000);
     const message = textField(body, "message", true, 2000);
@@ -12,17 +19,22 @@ export async function POST(req: Request) {
     if (!Array.isArray(history) || history.length > 12 || history.some(msg =>
       !msg || !["user", "ai"].includes(msg.role) || typeof msg.text !== "string" || msg.text.length > 2000
     )) throw new ApiError(400, "会話が長くなりました。チャットを開き直してください。");
-    await consumeRateLimit("chat-minute", 20, 60);
-    await consumeRateLimit("chat-day", 200, 86400);
+    const visitor = chatVisitor(req);
+    visitorCookie = visitor.cookie;
+    await consumeRateLimit("chat-minute", 20, 60, visitor.identity);
+    await consumeRateLimit("chat-day", 50, 86400, visitor.identity);
+    const configuredBudget = Number(process.env.CHAT_DAILY_BUDGET || "1000");
+    const budget = Number.isSafeInteger(configuredBudget) && configuredBudget > 0 ? configuredBudget : 1000;
+    await consumeRateLimit("chat-emergency-budget", budget, 86400);
     const plans = await getPlans();
     const planSummary = plans.map(plan => plan.name + " / 基本料金: " + (plan.price === null ? "要相談" : plan.price + "円") + " / 納期: " + (plan.period || "要相談") + " / 修正: " + (plan.revisions || "要相談")).join("\n");
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "APIキーが設定されていません。" },
-        { status: 500 }
-      );
+      return respond(NextResponse.json(
+        { error: "現在チャットをご利用いただけません。無料相談をご利用ください。" },
+        { status: 503 }
+      ));
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -58,7 +70,7 @@ ${planSummary}
       history.forEach((msg) => {
         formattedHistory.push({
           role: msg.role === "ai" ? "model" : "user",
-          parts: [{ text: msg.text }],
+          parts: [{ text: externalText(msg.text) }],
         });
       });
     }
@@ -66,23 +78,23 @@ ${planSummary}
     // 最新のメッセージを履歴に追加
     formattedHistory.push({
       role: "user",
-      parts: [{ text: message }],
+      parts: [{ text: externalText(message) }],
     });
 
     const result = await model.generateContent({
       contents: formattedHistory,
     });
-    
+
     const reply = result.response.text();
 
-    return NextResponse.json({ reply });
+    return respond(NextResponse.json({ reply }));
   } catch (error) {
     const response = apiErrorResponse(error);
-    if (response) return response;
-    console.error("Chat API Error:", error);
-    return NextResponse.json(
+    if (response) return respond(response);
+    console.error("Chat API unavailable");
+    return respond(NextResponse.json(
       { error: "エラーが発生しました。" },
       { status: 500 }
-    );
+    ));
   }
 }

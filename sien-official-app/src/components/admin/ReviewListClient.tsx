@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2, GripVertical, Star } from "lucide-react";
+import { Plus, Edit2, Trash2, Star } from "lucide-react";
 
 type Review = {
   id: string;
@@ -94,7 +94,7 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
 
     const newReviews = [...reviews];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     // Swap
     const temp = newReviews[index];
     newReviews[index] = newReviews[targetIndex];
@@ -107,7 +107,7 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
     // Save to DB
     try {
       await Promise.all(
-        updatedReviews.map(r => 
+        updatedReviews.map(r =>
           fetch(`/api/admin/reviews/${r.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -129,8 +129,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">お名前・活動名</label>
-              <input
+              <label htmlFor="reviewlistclient-field-1" className="text-sm font-bold text-slate-700">お名前・活動名</label>
+              <input id="reviewlistclient-field-1"
                 required
                 type="text"
                 className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none"
@@ -139,8 +139,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">利用サービス</label>
-              <input
+              <label htmlFor="reviewlistclient-field-2" className="text-sm font-bold text-slate-700">利用サービス</label>
+              <input id="reviewlistclient-field-2"
                 required
                 type="text"
                 placeholder="例: ボーカルMIX、オリジナル楽曲制作"
@@ -152,8 +152,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">レビュー本文</label>
-            <textarea
+            <label htmlFor="reviewlistclient-field-3" className="text-sm font-bold text-slate-700">レビュー本文</label>
+            <textarea id="reviewlistclient-field-3"
               required
               rows={5}
               className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none"
@@ -164,8 +164,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">評価 (1-5)</label>
-              <select
+              <label htmlFor="reviewlistclient-field-4" className="text-sm font-bold text-slate-700">評価 (1-5)</label>
+              <select id="reviewlistclient-field-4"
                 className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none"
                 value={currentReview.rating || 5}
                 onChange={(e) => setCurrentReview({ ...currentReview, rating: parseInt(e.target.value) })}
@@ -176,8 +176,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
               </select>
             </div>
             <div className="space-y-2 flex flex-col justify-center">
-              <label className="flex items-center gap-2 cursor-pointer mt-6">
-                <input
+              <label htmlFor="reviewlistclient-field-5" className="flex items-center gap-2 cursor-pointer mt-6">
+                <input id="reviewlistclient-field-5"
                   type="checkbox"
                   className="w-5 h-5 text-orange-500 rounded border-slate-300 focus:ring-orange-500"
                   checked={currentReview.isPublished ?? true}
@@ -232,7 +232,7 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
                   <button onClick={() => moveItem(index, 'up')} disabled={index === 0} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▲</button>
                   <button onClick={() => moveItem(index, 'down')} disabled={index === reviews.length - 1} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▼</button>
                 </div>
-                
+
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-3">
                     <h3 className="font-bold text-lg text-slate-900">{review.name}</h3>

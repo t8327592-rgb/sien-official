@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import NextImage from "next/image";
+import { useState, useRef, useId } from "react";
 import { Image as ImageIcon, Upload, X } from "lucide-react";
 
 interface ImageUploaderProps {
@@ -10,54 +11,54 @@ interface ImageUploaderProps {
 export function ImageUploader({ defaultValue = "" }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string>(defaultValue);
   const [isCompressing, setIsCompressing] = useState(false);
+  const inputId = useId();
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 画像が選択されたときの処理
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // 画像以外は弾く
-    if (!file.type.startsWith("image/")) {
-      alert("画像ファイルを選択してください");
-      return;
-    }
-
+    setError("");
     setIsCompressing(true);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // リサイズ処理 (最大幅: 1200px)
-        const MAX_WIDTH = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          // 画質0.8でJPEGとして圧縮しBase64化
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
-          setPreview(compressedBase64);
-        }
-        setIsCompressing(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    let objectUrl = "";
+    try {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("JPEG・PNG・WebP画像を選択してください。");
+      if (file.size > 5 * 1024 * 1024) throw new Error("画像は5MB以下にしてください。");
+      const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+      const jpeg = header[0] === 255 && header[1] === 216 && header[2] === 255;
+      const png = [137,80,78,71,13,10,26,10].every((byte, i) => header[i] === byte);
+      const webp = String.fromCharCode(...header.slice(0,4)) === "RIFF" && String.fromCharCode(...header.slice(8,12)) === "WEBP";
+      if (!(file.type === "image/jpeg" && jpeg || file.type === "image/png" && png || file.type === "image/webp" && webp)) throw new Error("拡張子と画像形式が一致しません。");
+      objectUrl = URL.createObjectURL(file);
+      const image = new window.Image();
+      image.src = objectUrl;
+      await image.decode();
+      if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth * image.naturalHeight > 20000000) throw new Error("画像は2,000万画素以下にしてください。");
+      const ratio = Math.min(1, 2048 / image.naturalWidth, 2048 / image.naturalHeight);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("画像を処理できませんでした。");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      let result = "";
+      for (const quality of [0.9, 0.8, 0.65, 0.5]) {
+        result = canvas.toDataURL("image/webp", quality);
+        if (result.length <= 1400000) break;
+      }
+      if (result.length > 1400000) throw new Error("圧縮後も画像が大きすぎます。小さい画像を選択してください。");
+      setPreview(result);
+    } catch (cause) {
+      setError(cause instanceof Error && cause.name !== "EncodingError" ? cause.message : "画像を読み込めません。別の画像をお試しください。");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setIsCompressing(false);
+    }
   };
 
   const handleClear = () => {
+    setError("");
     setPreview("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -97,17 +98,24 @@ export function ImageUploader({ defaultValue = "" }: ImageUploaderProps) {
       </div>
 
       <input
+        id={inputId}
+        aria-label="JPEG・PNG・WebP画像をアップロード"
+        aria-describedby={`${inputId}-help${error ? ` ${inputId}-error` : ""}`}
+        aria-invalid={!!error}
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
       />
+
+      <p id={`${inputId}-help`} className="text-sm text-slate-600">JPEG・PNG・WebP、5MB・2,000万画素まで。最大2048px・1MB以下に圧縮します。</p>
+      {error && <p id={`${inputId}-error`} role="alert" className="text-sm text-red-700">{error}</p>}
 
       {/* プレビュー表示 */}
       <div className="w-full max-w-md aspect-[16/9] border-2 border-dashed border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex flex-col items-center justify-center relative">
         {preview ? (
-          <img src={preview} alt="プレビュー" className="w-full h-full object-cover" />
+          <NextImage src={preview} alt="選択した画像のプレビュー" fill unoptimized className="object-contain" />
         ) : (
           <div className="text-slate-400 flex flex-col items-center gap-2">
             <ImageIcon className="w-8 h-8" />
