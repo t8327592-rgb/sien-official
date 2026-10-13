@@ -82,7 +82,7 @@ export default async function RootLayout({
         <Header showBlog={showBlog} />
         <FragmentNavigation />
         <main className="flex-1">{children}</main>
-        <Footer settings={settings} showBlog={showBlog} />
+        <Footer settings={settings} showBlog={showBlog} analyticsEnabled={/^G-[A-Z0-9]+$/.test(process.env.NEXT_PUBLIC_GA_ID || "")} />
         <AnalyticsConsent gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
         <Toaster position="top-center" />
       </body>

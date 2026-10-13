@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation';
 import { siteConfig } from '@/config/site';
 import { footerNavigation } from '@/config/navigation';
 import type { PublicSettings } from "@/lib/data/public-settings";
+import { CookieSettingsButton } from "@/components/layout/AnalyticsConsent";
 
-export function Footer({ settings, showBlog = true }: { settings: PublicSettings; showBlog?: boolean }) {
+export function Footer({ settings, showBlog = true, analyticsEnabled = false }: { settings: PublicSettings; showBlog?: boolean; analyticsEnabled?: boolean }) {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
   if (pathname?.startsWith("/admin")) return null;
@@ -56,6 +57,7 @@ export function Footer({ settings, showBlog = true }: { settings: PublicSettings
           {footerNavigation.legal.map(item => (
             <Link key={item.href} href={item.href} className="text-muted-foreground hover:text-primary transition-colors py-2 md:py-0">{item.label}</Link>
           ))}
+          {analyticsEnabled && !/^\/(admin|login|order)(\/|$)/.test(pathname) && pathname !== "/summer-sale/order" && <CookieSettingsButton />}
         </div>
       </div>
       <div className="container mx-auto px-4 mt-8 md:mt-16 border-t pt-6 md:pt-8 text-center text-xs text-muted-foreground">
