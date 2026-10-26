@@ -3,6 +3,18 @@ import Image from "next/image";
 import { Headphones, Music, Mic2 } from "lucide-react";
 import { getProfile } from "@/lib/data/cms";
 import { getPublicSettings } from "@/lib/data/public-settings";
+import type { ReactNode } from "react";
+
+function EquipmentCard({ title, icon, items, className }: { title: string; icon: ReactNode; items: string[]; className: string }) {
+  return <div className={`min-w-0 ${className}`}>
+    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-orange-400">{icon}{title}</h4>
+    <div className="rounded-xl border border-orange-100 bg-white/70 px-5">
+      <ul className="divide-y divide-orange-100/80">
+        {items.map(item => <li key={item} className="break-words py-3 text-base font-medium leading-relaxed text-slate-800">{item}</li>)}
+      </ul>
+    </div>
+  </div>;
+}
 
 export const metadata = pageMetadata("/profile", {title: "Profile | Sien-Official", description: "しえんのプロフィールと使用機材・得意ジャンルについて"});
 
@@ -115,76 +127,43 @@ export default async function ProfilePage() {
 
             <div className="relative z-10">
               <h3 className="text-2xl font-bold text-slate-900 mb-10 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-orange-200">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-white flex items-center justify-center border border-orange-200">
                   <Headphones className="w-6 h-6 text-orange-400" />
                 </div>
-                主要使用機材・ソフトウェア
+                <span className="min-w-0"><span className="inline-block">主要使用機材・</span><span className="inline-block">ソフトウェア</span></span>
               </h3>
 
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-start">
                 {/* Column 1 */}
-                <div className="space-y-8">
-                  <div>
-                    <h4 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                      <Mic2 className="w-4 h-4" /> ハードウェア & DAW
-                    </h4>
-                    <div className="bg-white/50 rounded-xl p-5 border border-orange-100">
-                      <ul className="space-y-2 text-slate-700">
-                        <li>Studio One Pro</li>
-                        <li>MOTU M2</li>
-                        <li>YAMAHA MSP3</li>
-                        <li>AKG K702</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                      <Music className="w-4 h-4" /> ボーカルエディット
-                    </h4>
-                    <div className="bg-white/50 rounded-xl p-5 border border-orange-100">
-                      <ul className="space-y-2 text-slate-700">
-                        <li>Melodyne</li>
-                        <li>Auto-Tune</li>
-                        <li>VocAlign 6 Pro</li>
-                      </ul>
-                    </div>
-                  </div>
+                <div className="contents md:block md:min-w-0 md:space-y-8">
+                  <EquipmentCard className="order-1" title="ハードウェア＆DAW" icon={<Mic2 className="h-4 w-4 shrink-0" />} items={[
+                    "Studio One Pro",
+                    "MOTU M2",
+                    "YAMAHA MSP3",
+                    "AKG K702",
+                  ]} />
+                  <EquipmentCard className="order-3" title="ミックス／マスタリング" icon={<Headphones className="h-4 w-4 shrink-0" />} items={[
+                    "Ozone 12",
+                    "RX 11",
+                    "soothe3",
+                  ]} />
                 </div>
 
                 {/* Column 2 */}
-                <div className="space-y-8">
-                  <div>
-                    <h4 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                      <Headphones className="w-4 h-4" /> 主要プラグイン
-                    </h4>
-                    <div className="bg-white/50 rounded-xl p-5 border border-orange-100">
-                      <ul className="space-y-2 text-slate-700">
-                        <li>iZotope (Ozone 12, RX 11, Neutron 5)</li>
-                        <li>Waves (Clarity Vx 等)</li>
-                        <li>Universal Audio UADx (1176, LA-2A)</li>
-                        <li>Soundtoys</li>
-                        <li>Valhalla DSP</li>
-                        <li>Softube / OTT 等多数</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                      <Music className="w-4 h-4" /> ソフト音源・シンセサイザー
-                    </h4>
-                    <div className="bg-white/50 rounded-xl p-5 border border-orange-100">
-                      <ul className="space-y-2 text-slate-700">
-                        <li>Kontakt 8</li>
-                        <li>Serum</li>
-                        <li>Synthesizer V</li>
-                        <li>MODO BASS 2</li>
-                      </ul>
-                    </div>
-                  </div>
+                <div className="contents md:block md:min-w-0 md:space-y-8">
+                  <EquipmentCard className="order-2" title="ボーカルエディット" icon={<Music className="h-4 w-4 shrink-0" />} items={[
+                    "Melodyne",
+                    "Auto-Tune Pro",
+                    "VocAlign 6 Pro",
+                  ]} />
+                  <EquipmentCard className="order-4" title="ソフト音源・シンセサイザー" icon={<Music className="h-4 w-4 shrink-0" />} items={[
+                    "Kontakt 8",
+                    "Serum 2",
+                    "Synthesizer V Studio 2",
+                  ]} />
                 </div>
               </div>
+              <p className="mt-8 text-sm leading-relaxed text-slate-600">楽曲やご依頼内容に合わせて、使用する機材・ソフトウェアを選定しています。</p>
             </div>
           </div>
 
