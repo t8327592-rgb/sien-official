@@ -16,7 +16,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
   const previous = await previousFeedbackText(id);
   return <div className="max-w-5xl mx-auto space-y-6 pb-16">
     <Link href={`/admin/orders/${id}`} className="text-sm text-slate-600 hover:underline">← 依頼詳細に戻る</Link>
-    <div><h1 className="text-2xl font-extrabold text-slate-800">録音・歌唱フィードバック</h1><p className="text-sm text-slate-500 mt-2">順不同のメモをAIが項目別の文章案に整理します。確認・修正してからPDFにできます。</p></div>
-    <FeedbackEditor order={{ id: order.id, clientName: order.clientName, songTitle: order.songTitle }} initialContent={order.feedback ? validateFeedback(order.feedback.content) : emptyFeedback()} initialVersion={order.feedback?.version ?? 0} previous={previous} aiAvailable={Boolean(process.env.OPENAI_API_KEY)} />
+    <div><h1 className="text-2xl font-extrabold text-slate-800">録音・歌唱フィードバック</h1><p className="text-sm text-slate-500 mt-2">メモをCodexへ渡して文章整理・固定デザインのPDFを作成できます。この画面からの手入力・PDF出力も利用できます。</p></div>
+    <FeedbackEditor order={{ id: order.id, clientName: order.clientName, songTitle: order.songTitle }} initialContent={order.feedback ? validateFeedback(order.feedback.content) : emptyFeedback()} initialVersion={order.feedback?.version ?? 0} previous={previous} />
   </div>;
 }

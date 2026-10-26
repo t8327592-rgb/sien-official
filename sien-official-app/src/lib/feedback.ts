@@ -59,8 +59,14 @@ export function feedbackExportErrors(value: FeedbackContent): string[] {
   return errors;
 }
 
-export type FeedbackAiDraft = {
-  content: FeedbackContent;
-  evidence: Partial<Record<FeedbackKey, string[]>>;
-  questions: string[];
-};
+export function buildCodexFeedbackRequest(order: { clientName: string; songTitle: string | null }, content: FeedbackContent, previous: string): string {
+  return [
+    "$sien-feedback-pdf を使って、以下のメモを整理し、SIEN.OFFICIALの固定デザインでフィードバックPDFを作成してください。",
+    "ロゴ・書体・配色・余白・見出し・評価欄は固定の描画スクリプトを使い、デザインを作り直さないでください。外部AI APIは呼び出さないでください。",
+    `クライアント名：${order.clientName}`, `楽曲名：${order.songTitle || "未設定"}`, `発行日：${content.date}`,
+    `比較：${content.comparison === "first" ? "今回が初回。前回比較は掲載しない" : content.comparison === "skip" ? "今回は比較しない" : "前回と比較する。確認できる変化のみ記載"}`,
+    "", "【気づいたこと・順不同のメモ】", content.memo,
+    ...(content.comparison === "compare" && previous ? ["", "【前回のフィードバック本文・比較用】", previous] : []),
+    "", "メモにない長所・具体的な原因は作り足さず、曖昧な点は確認事項として伝えてください。PDFに依頼IDや管理用メモを掲載しないでください。",
+  ].join("\n");
+}
