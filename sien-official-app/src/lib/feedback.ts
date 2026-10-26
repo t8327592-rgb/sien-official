@@ -59,7 +59,9 @@ export function feedbackExportErrors(value: FeedbackContent): string[] {
   return errors;
 }
 
-export function buildCodexFeedbackRequest(order: { clientName: string; songTitle: string | null }, content: FeedbackContent, previous: string): string {
+export type FeedbackMemo = Pick<FeedbackContent, "memo" | "date" | "comparison">;
+
+export function buildCodexFeedbackRequest(order: { clientName: string; songTitle: string | null }, content: FeedbackMemo, previous: string): string {
   return [
     "$sien-feedback-pdf を使って、以下のメモを整理し、SIEN.OFFICIALの固定デザインでフィードバックPDFを作成してください。",
     "ロゴ・書体・配色・余白・見出し・評価欄は固定の描画スクリプトを使い、デザインを作り直さないでください。外部AI APIは呼び出さないでください。",

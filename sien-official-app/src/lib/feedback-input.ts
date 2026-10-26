@@ -1,5 +1,14 @@
 import { ApiError, textField } from "./api-input";
-import { FEEDBACK_ITEMS, FEEDBACK_RATINGS, type FeedbackContent, type FeedbackRating } from "./feedback";
+import { FEEDBACK_ITEMS, FEEDBACK_RATINGS, type FeedbackContent, type FeedbackMemo, type FeedbackRating } from "./feedback";
+
+export function validateFeedbackMemo(body: Record<string, unknown>): FeedbackMemo {
+  const memo = textField(body, "memo", true, 6000);
+  const date = textField(body, "date", true, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new ApiError(400, "発行日を確認してください。");
+  const comparison = body.comparison ?? "first";
+  if (!["first", "compare", "skip"].includes(comparison as string)) throw new ApiError(400, "前回との比較方法を確認してください。");
+  return { memo, date, comparison: comparison as FeedbackMemo["comparison"] };
+}
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ApiError(400, "フィードバックの入力形式を確認してください。");

@@ -181,20 +181,20 @@ test('feedback validates dates, limits and ratings and permits incomplete drafts
 test('feedback API requires admin access, rejects malformed inputs and protects concurrent drafts', async () => {
   let writes = 0;
   const prisma = { order: { findUnique: async () => ({ id: 'test' }) }, orderFeedback: {
-    create: async () => { writes++; }, updateMany: async () => { writes++; return { count: 0 }; },
+    findUnique: async () => ({ content: { summary: '保存済みの文章', memo: '前のメモ' } }), create: async ({ data }) => { writes++; assert.equal(data.content.summary, '保存済みの文章'); }, updateMany: async () => { writes++; return { count: 0 }; },
   } };
   const mocks = { '@/lib/prisma': { prisma }, '@/lib/admin-api-auth': { isAdminRequest: async () => false } };
   const file = 'src/app/api/admin/orders/[id]/feedback/route.ts';
   const request = body => new Request('http://localhost/api/admin/orders/test/feedback', { method: 'PUT', body: JSON.stringify(body) });
   const context = { params: Promise.resolve({ id: 'test' }) };
-  assert.equal((await loader(mocks)(file).GET(new Request('http://localhost/'), context)).status, 401);
+  assert.equal(loader(mocks)(file).GET, undefined);
   assert.equal((await loader(mocks)(file).PUT(request({}), context)).status, 401);
   mocks['@/lib/admin-api-auth'] = { isAdminRequest: async () => true };
-  const load = loader(mocks), route = load(file), content = load('src/lib/feedback.ts').emptyFeedback();
+  const load = loader(mocks), route = load(file), content = { memo: 'ノイズが気になる', date: '2026-10-27', comparison: 'first' };
   assert.equal((await route.PUT(request({ content: {}, version: 0 }), context)).status, 400);
   assert.equal(writes, 0);
-  assert.equal((await route.PUT(request({ content, version: 0 }), context)).status, 200);
-  assert.equal((await route.PUT(request({ content, version: 1 }), context)).status, 409);
+  assert.equal((await route.PUT(request({ ...content, version: 0 }), context)).status, 200);
+  assert.equal((await route.PUT(request({ ...content, version: 1 }), context)).status, 409);
   assert.equal(writes, 2);
 });
 

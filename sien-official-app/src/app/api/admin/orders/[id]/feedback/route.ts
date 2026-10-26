@@ -2,8 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/admin-api-auth";
 import { ApiError, apiErrorResponse, readJson } from "@/lib/api-input";
-import { feedbackVersion, validateFeedback } from "@/lib/feedback-input";
-import { feedbackExportErrors } from "@/lib/feedback";
+import { feedbackVersion, validateFeedbackMemo } from "@/lib/feedback-input";
+import { emptyFeedback } from "@/lib/feedback";
 
 export const runtime = "nodejs";
 const privateHeaders = { "Cache-Control": "private, no-store" };
@@ -13,11 +13,14 @@ export async function PUT(request: Request, { params }: Context) {
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
-    const body = await readJson(request, 64000);
-    const content = validateFeedback(body.content);
+    const body = await readJson(request, 24000);
+    const memo = validateFeedbackMemo(body);
     const version = feedbackVersion(body.version);
     if (!(await prisma.order.findUnique({ where: { id }, select: { id: true } }))) throw new ApiError(404, "依頼が見つかりません。");
-    const data = content as unknown as Prisma.InputJsonValue;
+    const current = await prisma.orderFeedback.findUnique({ where: { orderId: id }, select: { content: true } });
+    const previous = current?.content && typeof current.content === "object" && !Array.isArray(current.content) ? current.content : emptyFeedback();
+    // Update only the working memo. Previously saved reports stay intact.
+    const data = { ...previous, ...memo, reviewed: false } as unknown as Prisma.InputJsonValue;
     if (version === 0) {
       await prisma.orderFeedback.create({ data: { orderId: id, content: data } });
     } else {
@@ -28,29 +31,5 @@ export async function PUT(request: Request, { params }: Context) {
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return Response.json({ error: "別の画面で作成されました。入力内容を控え、再読み込みしてください。" }, { status: 409 });
     return apiErrorResponse(error) || Response.json({ error: "保存できませんでした。時間をおいて再度お試しください。" }, { status: 500 });
-  }
-}
-
-export async function GET(request: Request, { params }: Context) {
-  if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  try {
-    const { id } = await params;
-    const order = await prisma.order.findUnique({ where: { id }, select: { id: true, clientName: true, songTitle: true, feedback: true } });
-    if (!order) throw new ApiError(404, "依頼が見つかりません。");
-    if (!order.feedback) throw new ApiError(404, "先にフィードバックを保存してください。");
-    const content = validateFeedback(order.feedback.content);
-    const errors = feedbackExportErrors(content);
-    if (errors.length) throw new ApiError(400, errors.join("\n"));
-    const [{ createFeedbackPdf }, { readFile }, path] = await Promise.all([import("@/lib/feedback-pdf"), import("node:fs/promises"), import("node:path")]);
-    const [font, logo] = await Promise.all([readFile(path.join(process.cwd(), "public/fonts/ZenKakuGothicNew-Regular.ttf")), readFile(path.join(process.cwd(), "public/logo.png"))]);
-    const bytes = await createFeedbackPdf(order, content, font, logo);
-    const filename = encodeURIComponent(`フィードバック_${order.songTitle || "楽曲名未設定"}.pdf`);
-    const disposition = new URL(request.url).searchParams.get("inline") === "1" ? "inline" : "attachment";
-    return new Response(new Uint8Array(bytes), { headers: {
-      ...privateHeaders, "Content-Type": "application/pdf", "X-Content-Type-Options": "nosniff",
-      "Content-Disposition": `${disposition}; filename="feedback.pdf"; filename*=UTF-8''${filename}`,
-    } });
-  } catch (error) {
-    return apiErrorResponse(error) || Response.json({ error: "PDFを作成できませんでした。時間をおいて再度お試しください。" }, { status: 500 });
   }
 }

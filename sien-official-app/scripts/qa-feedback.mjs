@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import { PrismaClient } from '@prisma/client';
-const base='http://127.0.0.1:3002', orderId='qa-feedback-api-'+Date.now();
+const base='http://127.0.0.1:3002', orderId='qa-feedback-memo-'+Date.now();
 const db=new PrismaClient({datasources:{db:{url:'postgresql://qa:qa@127.0.0.1:55432/qa?sslmode=disable&connection_limit=1&statement_cache_size=0&pgbouncer=true'}}});
 const cookies=new Map();
 async function call(url,options={}) {
@@ -14,26 +13,25 @@ try {
  const endpoint='/api/admin/orders/'+orderId+'/feedback';
  assert.equal((await call(endpoint)).status,401);
  assert.equal((await call(endpoint,{method:'PUT',body:'{}'})).status,401);
- const csrf=await (await call('/api/auth/csrf')).json();
+ const csrf=await(await call('/api/auth/csrf')).json();
  await call('/api/auth/callback/credentials',{method:'POST',body:new URLSearchParams({csrfToken:csrf.csrfToken,username:'qa-admin',password:'qa-only-password',callbackUrl:base+'/admin',json:'true'})});
- await db.order.create({data:{id:orderId,clientName:'PDF確認クライアント',clientEmail:'qa-pdf@example.invalid',songTitle:'夜明けのサンプル',serviceType:'MIX'}});
+ await db.order.create({data:{id:orderId,clientName:'QAメモ確認',clientEmail:'qa-memo@example.invalid',songTitle:'メモ専用テスト',serviceType:'MIX'}});
  const keys=['noise','room','level','mic','pitch','rhythm','words','expression'];
- const content={memo:'検証用の管理メモ',comparison:'first',reviewed:true,aiQuestions:[],date:'2026-10-27',summary:'サビの強弱が明確で、曲の盛り上がりが伝わります。次回は部屋の響きを整えると、さらに聴きやすくなりそうです。',strengths:'語尾まで声が安定しており、歌詞が聞き取りやすいです。',items:Object.fromEntries(keys.map(k=>[k,{rating:'良好',comment:'今回確認した範囲では、目立つ問題はありません。'}])),priorities:[{title:'部屋の響きを抑える',observation:'Aメロの語尾に響きが残っています。',action:'厚手のカーテンがある場所で試し録りし、語尾の響きを比べてみてください。'}],changes:'前回より語尾の明瞭さが向上しています。曲や録音条件の違いがあるため、確認できる範囲で比較しています。',closing:'まずは部屋の響きを確認してみてください。今回の強弱の付け方も活かしていきましょう。'};
- content.items.room={rating:'少し気になる',comment:'Aメロの語尾に、部屋の反射と思われる響きが残っています。'};
- async function put(content,version,origin=base){return call(endpoint,{method:'PUT',headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify({content,version})});}
- assert.equal((await put(content,0,'https://untrusted.invalid')).status,401);
- assert.equal((await put({...content,date:'2026-02-30'},0)).status,400);
- assert.equal((await put({...content,summary:''},0)).status,200);
- assert.equal((await call(endpoint)).status,400);
- assert.equal((await put(content,1)).status,200);
- assert.equal((await put(content,1)).status,409);
- const stored=await db.orderFeedback.findUnique({where:{orderId}});assert.equal(stored.version,2);
- const response=await call(endpoint);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/application\/pdf/);assert.match(response.headers.get('cache-control'),/no-store/);
- fs.mkdirSync('../audit/feedback-2026-10-27',{recursive:true});
- const bytes=Buffer.from(await response.arrayBuffer());assert.equal(bytes.subarray(0,5).toString(),'%PDF-');fs.writeFileSync('../audit/feedback-2026-10-27/generated.pdf',bytes);
- content.items.noise.comment=('長いコメントと改行の確認です。\n').repeat(25);
- content.summary='長い総評の折り返し確認です。'.repeat(65);
- assert.equal((await put(content,2)).status,200);
- const long=await call(endpoint);assert.equal(long.status,200);fs.writeFileSync('../audit/feedback-2026-10-27/long.pdf',Buffer.from(await long.arrayBuffer()));
- console.log('PASS: admin auth, cross-origin rejection, input validation, draft persistence, incomplete export blocked, concurrent save conflict, Japanese PDF download, long comments');
-} finally {await db.$disconnect();}
+ const original={date:'2026-10-27',memo:'前のメモ',comparison:'first',summary:'保存済みの評価文章',strengths:'保存済みの長所',items:Object.fromEntries(keys.map(k=>[k,{rating:'確認対象外',comment:''}])),priorities:[],changes:'',closing:'',customMarker:'preserve-this'};
+ await db.orderFeedback.create({data:{orderId,content:original}});
+ const memo={memo:'・ノイズ目立つ\n・語尾きれい',date:'2026-10-27',comparison:'first'};
+ const put=(body,origin=base)=>call(endpoint,{method:'PUT',headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify(body)});
+ assert.equal((await put({...memo,version:1},'https://untrusted.invalid')).status,401);
+ for(const bad of [{...memo,date:'2026-02-30'}, {...memo,comparison:'invalid'}, {...memo,memo:' '}, {...memo,memo:'あ'.repeat(6001)}]) assert.equal((await put({...bad,version:1})).status,400);
+ assert.equal((await put({...memo,version:1,summary:'上書きしない'})).status,200);
+ const stored=await db.orderFeedback.findUnique({where:{orderId}});
+ assert.equal(stored.version,2);assert.equal(stored.content.memo,memo.memo);
+ assert.equal(stored.content.summary,original.summary);assert.equal(stored.content.customMarker,'preserve-this');
+ assert.equal((await put({...memo,version:1})).status,409);
+ assert.equal((await call(endpoint)).status,405);
+ const html=await(await call('/admin/orders/'+orderId+'/feedback')).text();
+ assert.ok(html.includes('Codex用にメモをコピー'));
+ for(const removed of ['保存してPDFダウンロード','内容プレビュー','手入力・項目別編集を開く','ノイズの評価','内容を確認・修正しました']) assert.ok(!html.includes(removed),removed);
+ assert.ok(!html.includes(original.summary));
+ console.log(JSON.stringify({result:'PASS',orderId,checks:['admin auth','cross-origin rejection','memo validation','save persistence','existing report preserved','version conflict','PDF endpoint removed (405)','memo-only page']}));
+}finally{await db.$disconnect();}

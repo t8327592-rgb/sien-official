@@ -14,9 +14,10 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
   const order = await prisma.order.findUnique({ where: { id }, select: { id: true, clientName: true, songTitle: true, feedback: true } });
   if (!order) notFound();
   const previous = await previousFeedbackText(id);
+  const saved = order.feedback ? validateFeedback(order.feedback.content) : emptyFeedback();
   return <div className="max-w-5xl mx-auto space-y-6 pb-16">
     <Link href={`/admin/orders/${id}`} className="text-sm text-slate-600 hover:underline">← 依頼詳細に戻る</Link>
-    <div><h1 className="text-2xl font-extrabold text-slate-800">録音・歌唱フィードバック</h1><p className="text-sm text-slate-500 mt-2">メモをCodexへ渡して文章整理・固定デザインのPDFを作成できます。この画面からの手入力・PDF出力も利用できます。</p></div>
-    <FeedbackEditor order={{ id: order.id, clientName: order.clientName, songTitle: order.songTitle }} initialContent={order.feedback ? validateFeedback(order.feedback.content) : emptyFeedback()} initialVersion={order.feedback?.version ?? 0} previous={previous} />
+    <div><h1 className="text-2xl font-extrabold text-slate-800">フィードバック用メモ</h1><p className="text-sm text-slate-500 mt-2">気づいたことを書いてコピーし、Codexのチャットに貼り付けてください。文章整理と固定デザインのPDF作成はCodexで行います。</p></div>
+    <FeedbackEditor order={{ id: order.id, clientName: order.clientName, songTitle: order.songTitle }} initialMemo={{ memo: saved.memo, date: saved.date, comparison: saved.comparison }} initialVersion={order.feedback?.version ?? 0} previous={previous} />
   </div>;
 }
