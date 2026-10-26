@@ -18,7 +18,7 @@ try {
  await call('/api/auth/callback/credentials',{method:'POST',body:new URLSearchParams({csrfToken:csrf.csrfToken,username:'qa-admin',password:'qa-only-password',callbackUrl:base+'/admin',json:'true'})});
  await db.order.create({data:{id:orderId,clientName:'PDF確認クライアント',clientEmail:'qa-pdf@example.invalid',songTitle:'夜明けのサンプル',serviceType:'MIX'}});
  const keys=['noise','room','level','mic','pitch','rhythm','words','expression'];
- const content={date:'2026-10-27',summary:'サビの強弱が明確で、曲の盛り上がりが伝わります。次回は部屋の響きを整えると、さらに聴きやすくなりそうです。',strengths:'語尾まで声が安定しており、歌詞が聞き取りやすいです。',items:Object.fromEntries(keys.map(k=>[k,{rating:'良好',comment:'今回確認した範囲では、目立つ問題はありません。'}])),priorities:[{title:'部屋の響きを抑える',observation:'Aメロの語尾に響きが残っています。',action:'厚手のカーテンがある場所で試し録りし、語尾の響きを比べてみてください。'}],changes:'前回より語尾の明瞭さが向上しています。曲や録音条件の違いがあるため、確認できる範囲で比較しています。',closing:'まずは部屋の響きを確認してみてください。今回の強弱の付け方も活かしていきましょう。'};
+ const content={memo:'検証用の管理メモ',comparison:'first',reviewed:true,aiQuestions:[],date:'2026-10-27',summary:'サビの強弱が明確で、曲の盛り上がりが伝わります。次回は部屋の響きを整えると、さらに聴きやすくなりそうです。',strengths:'語尾まで声が安定しており、歌詞が聞き取りやすいです。',items:Object.fromEntries(keys.map(k=>[k,{rating:'良好',comment:'今回確認した範囲では、目立つ問題はありません。'}])),priorities:[{title:'部屋の響きを抑える',observation:'Aメロの語尾に響きが残っています。',action:'厚手のカーテンがある場所で試し録りし、語尾の響きを比べてみてください。'}],changes:'前回より語尾の明瞭さが向上しています。曲や録音条件の違いがあるため、確認できる範囲で比較しています。',closing:'まずは部屋の響きを確認してみてください。今回の強弱の付け方も活かしていきましょう。'};
  content.items.room={rating:'少し気になる',comment:'Aメロの語尾に、部屋の反射と思われる響きが残っています。'};
  async function put(content,version,origin=base){return call(endpoint,{method:'PUT',headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify({content,version})});}
  assert.equal((await put(content,0,'https://untrusted.invalid')).status,401);

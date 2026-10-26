@@ -16,6 +16,10 @@ export function feedbackClientName(name: string): string {
   return /(?:様|御中)$/.test(trimmed) ? trimmed : `${trimmed} 様`;
 }
 export type FeedbackContent = {
+  memo: string;
+  comparison: "first" | "compare" | "skip";
+  reviewed: boolean;
+  aiQuestions: string[];
   date: string;
   summary: string;
   strengths: string;
@@ -26,6 +30,7 @@ export type FeedbackContent = {
 };
 export function emptyFeedback(): FeedbackContent {
   return {
+    memo: "", comparison: "first", reviewed: false, aiQuestions: [],
     date: new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date()),
     summary: "", strengths: "",
     items: Object.fromEntries(FEEDBACK_ITEMS.map(({ key }) => [key, { rating: "未評価", comment: "" }])) as FeedbackContent["items"],
@@ -38,8 +43,8 @@ export function emptyFeedback(): FeedbackContent {
 // an unfinished assessment must not accidentally become a client deliverable.
 export function feedbackExportErrors(value: FeedbackContent): string[] {
   const errors: string[] = [];
+  if (!value.reviewed) errors.push("文章と評価を確認し、「内容を確認・修正しました」にチェックしてください。");
   if (!value.summary.trim()) errors.push("総評を入力してください。");
-  if (!value.strengths.trim()) errors.push("よかったところを入力してください。");
   for (const { key, label } of FEEDBACK_ITEMS) {
     const item = value.items[key];
     if (item.rating === "未評価") errors.push(`${label}の評価を選択してください。`);
@@ -53,3 +58,9 @@ export function feedbackExportErrors(value: FeedbackContent): string[] {
   }
   return errors;
 }
+
+export type FeedbackAiDraft = {
+  content: FeedbackContent;
+  evidence: Partial<Record<FeedbackKey, string[]>>;
+  questions: string[];
+};

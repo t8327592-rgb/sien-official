@@ -42,9 +42,9 @@ export async function GET(request: Request, { params }: Context) {
     const errors = feedbackExportErrors(content);
     if (errors.length) throw new ApiError(400, errors.join("\n"));
     const [{ createFeedbackPdf }, { readFile }, path] = await Promise.all([import("@/lib/feedback-pdf"), import("node:fs/promises"), import("node:path")]);
-    const font = await readFile(path.join(process.cwd(), "public/fonts/ZenKakuGothicNew-Regular.ttf"));
-    const bytes = await createFeedbackPdf(order, content, font);
-    const filename = encodeURIComponent(`フィードバック_${order.songTitle || order.id}.pdf`);
+    const [font, logo] = await Promise.all([readFile(path.join(process.cwd(), "public/fonts/ZenKakuGothicNew-Regular.ttf")), readFile(path.join(process.cwd(), "public/logo.png"))]);
+    const bytes = await createFeedbackPdf(order, content, font, logo);
+    const filename = encodeURIComponent(`フィードバック_${order.songTitle || "楽曲名未設定"}.pdf`);
     const disposition = new URL(request.url).searchParams.get("inline") === "1" ? "inline" : "attachment";
     return new Response(new Uint8Array(bytes), { headers: {
       ...privateHeaders, "Content-Type": "application/pdf", "X-Content-Type-Options": "nosniff",

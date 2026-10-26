@@ -171,6 +171,8 @@ test('feedback validates dates, limits and ratings and permits incomplete drafts
   assert.throws(() => feedbackVersion(-1));
   draft.summary = '今回の総評'; draft.strengths = 'よかった点';
   for (const item of Object.values(draft.items)) item.rating = '確認対象外';
+  assert.match(feedbackExportErrors(draft).join(''), /確認・修正/);
+  draft.reviewed = true;
   assert.deepEqual(feedbackExportErrors(draft), []);
   draft.priorities[0].title = '音程を確認';
   assert.match(feedbackExportErrors(draft).join(''), /試し方/);
@@ -194,6 +196,89 @@ test('feedback API requires admin access, rejects malformed inputs and protects 
   assert.equal((await route.PUT(request({ content, version: 0 }), context)).status, 200);
   assert.equal((await route.PUT(request({ content, version: 1 }), context)).status, 409);
   assert.equal(writes, 2);
+});
+
+test('feedback reads old reports and preserves notes without approving old content', () => {
+  const load = loader(), { emptyFeedback, feedbackExportErrors } = load('src/lib/feedback.ts');
+  const { validateFeedback } = load('src/lib/feedback-input.ts');
+  const old = emptyFeedback();
+  delete old.memo; delete old.comparison; delete old.reviewed; delete old.aiQuestions;
+  old.changes = '前回より改善';
+  const parsed = validateFeedback(old);
+  assert.equal(parsed.comparison, 'compare'); assert.equal(parsed.reviewed, false);
+  const draft = validateFeedback({ ...parsed, memo: '管理用メモ', comparison: 'first', strengths: '', reviewed: true });
+  assert.equal(draft.memo, '管理用メモ');
+  assert.ok(!feedbackExportErrors(draft).some(error => error.includes('よかったところ')));
+  assert.throws(() => validateFeedback({ ...draft, reviewed: 'true' }));
+  assert.throws(() => validateFeedback({ ...draft, comparison: 'other' }));
+});
+
+test('AI classifies shuffled notes with evidence and drops unsupported observations', () => {
+  const { parseFeedbackAiDraft } = loader()('src/lib/feedback-ai.ts');
+  const output = {
+    summary: 'ノイズと音程を確認しましょう。', strengths: '語尾がきれいです。', closing: '', changes: '勝手な前回比較', questions: ['歌唱が微妙の具体的な箇所を確認してください。'],
+    items: [
+      { key: 'words', rating: '良好', comment: '語尾が明瞭です。', sourceQuotes: ['語尾きれい'] },
+      { key: 'pitch', rating: '少し気になる', comment: 'サビ入りが低めです。', sourceQuotes: ['サビ入り低い'] },
+      { key: 'noise', rating: '少し気になる', comment: 'ノイズが目立ちます。', sourceQuotes: ['ノイズ目立つ'] },
+      { key: 'room', rating: '良好', comment: '響きはありません。', sourceQuotes: ['存在しない根拠'] },
+    ],
+    priorities: [{ title: 'サビ入りを確認', observation: 'サビ入りが低めです。', action: 'ガイド音を確認してみてください。', sourceQuote: 'サビ入り低い' }],
+  };
+  const result = parseFeedbackAiDraft(output, '・語尾きれい\n・ノイズ目立つ\n・歌唱が微妙\n・サビ入り低い', 'first', '2026-10-27');
+  assert.equal(result.content.items.noise.rating, '少し気になる');
+  assert.equal(result.content.items.room.rating, '確認対象外');
+  assert.equal(result.content.items.rhythm.rating, '確認対象外');
+  assert.equal(result.content.changes, ''); assert.equal(result.content.reviewed, false);
+  assert.equal(result.content.priorities.length, 3);
+  assert.deepEqual(result.evidence.words, ['語尾きれい']);
+  assert.ok(result.questions.length >= 2);
+});
+
+test('OpenAI generation uses strict JSON, no storage and does not fall back to Gemini', async () => {
+  const original = process.env.OPENAI_API_KEY;
+  try {
+    delete process.env.OPENAI_API_KEY;
+    await assert.rejects(loader()('src/lib/feedback-ai.ts').generateFeedbackDraft('ノイズ', 'first', '2026-10-27', ''), /APIキー/);
+    process.env.OPENAI_API_KEY = 'test-not-a-real-key';
+    let sent;
+    const load = loader({ fetch: async (url, init) => {
+      sent = { url, body: JSON.parse(init.body) };
+      return Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ summary: 'ノイズが目立ちます。', strengths: '', closing: '', changes: '', questions: [], items: [{ key: 'noise', rating: '少し気になる', comment: 'ノイズが目立ちます。', sourceQuotes: ['ノイズ'] }], priorities: [] }) }] }] });
+    } });
+    const result = await load('src/lib/feedback-ai.ts').generateFeedbackDraft('ノイズ', 'first', '2026-10-27', '前回の秘密メモ');
+    assert.equal(sent.url, 'https://api.openai.com/v1/responses');
+    assert.equal(sent.body.store, false); assert.equal(sent.body.text.format.strict, true);
+    assert.ok(!sent.body.input.includes('前回の秘密メモ'));
+    assert.equal(result.content.reviewed, false);
+    const failure = loader({ fetch: async () => Response.json({ error: 'provider details' }, { status: 429 }) });
+    await assert.rejects(failure('src/lib/feedback-ai.ts').generateFeedbackDraft('ノイズ', 'first', '2026-10-27', ''), /上限/);
+  } finally { if (original === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = original; }
+});
+
+test('AI draft API authenticates first and removes client identity from the OpenAI payload', async () => {
+  const file = 'src/app/api/admin/orders/[id]/feedback/draft/route.ts', context = { params: Promise.resolve({ id: 'private-order-id' }) };
+  const request = body => new Request('https://example.test/api/admin/orders/private-order-id/feedback/draft', { method: 'POST', body: JSON.stringify(body) });
+  let received;
+  const mocks = {
+    '@/lib/admin-api-auth': { isAdminRequest: async () => false },
+    '@/lib/prisma': { prisma: { order: { findUnique: async () => ({ clientName: '顧客テスト' }) } } },
+    '@/lib/rate-limit': { consumeRateLimit: async () => {} },
+    '@/lib/feedback-history': { previousFeedbackText: async () => '過去の本文' },
+    '@/lib/feedback-ai': { generateFeedbackDraft: async (...args) => { received = args; return { content: {}, questions: [], evidence: {} }; } },
+  };
+  assert.equal((await loader(mocks)(file).POST(request({}), context)).status, 401);
+  mocks['@/lib/admin-api-auth'].isAdminRequest = async () => true;
+  const original = process.env.OPENAI_API_KEY;
+  try {
+    process.env.OPENAI_API_KEY = 'test-not-a-real-key';
+    const body = { memo: '顧客テスト ノイズ user@example.test https://example.test/private', comparison: 'first', date: '2026-10-27' };
+    const result = await loader(mocks)(file).POST(request(body), context);
+    assert.equal(result.status, 200);
+    assert.ok(!received[0].includes('顧客テスト')); assert.ok(!received[0].includes('user@example.test')); assert.ok(!received[0].includes('https://example.test/private'));
+    assert.equal(received[3], ''); assert.equal((await result.json()).draft.content.memo, body.memo);
+    assert.equal((await loader(mocks)(file).POST(request({ ...body, date: '2026-02-30' }), context)).status, 400);
+  } finally { if (original === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = original; }
 });
 
 function loader(mocks = {}) {
