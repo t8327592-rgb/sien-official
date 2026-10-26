@@ -37,6 +37,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-5">
+          <div><h2 className="font-bold text-slate-800">録音・歌唱フィードバック</h2><p className="text-sm text-slate-500 mt-1">依頼情報を引き継いで評価・コメントを入力し、PDFを作成できます。</p></div>
+          <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700">フィードバックを作成・編集</Link>
+        </div>
         <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
       </div>
 

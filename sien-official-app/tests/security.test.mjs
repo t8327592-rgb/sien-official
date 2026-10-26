@@ -158,6 +158,44 @@ test('form validation clears errors on change without capturing the select input
 });
 
 // Compile actual handlers in memory, replacing only external side effects.
+test('feedback validates dates, limits and ratings and permits incomplete drafts only before export', () => {
+  const load = loader();
+  const { emptyFeedback, feedbackExportErrors } = load('src/lib/feedback.ts');
+  const { validateFeedback, feedbackVersion } = load('src/lib/feedback-input.ts');
+  const draft = emptyFeedback();
+  assert.deepEqual(validateFeedback(draft), draft);
+  assert.ok(feedbackExportErrors(draft).length > 0);
+  assert.throws(() => validateFeedback({ ...draft, date: '2026-02-30' }));
+  assert.throws(() => validateFeedback({ ...draft, summary: 'あ'.repeat(1201) }));
+  assert.throws(() => validateFeedback({ ...draft, items: { ...draft.items, pitch: { rating: '5', comment: '' } } }));
+  assert.throws(() => feedbackVersion(-1));
+  draft.summary = '今回の総評'; draft.strengths = 'よかった点';
+  for (const item of Object.values(draft.items)) item.rating = '確認対象外';
+  assert.deepEqual(feedbackExportErrors(draft), []);
+  draft.priorities[0].title = '音程を確認';
+  assert.match(feedbackExportErrors(draft).join(''), /試し方/);
+});
+
+test('feedback API requires admin access, rejects malformed inputs and protects concurrent drafts', async () => {
+  let writes = 0;
+  const prisma = { order: { findUnique: async () => ({ id: 'test' }) }, orderFeedback: {
+    create: async () => { writes++; }, updateMany: async () => { writes++; return { count: 0 }; },
+  } };
+  const mocks = { '@/lib/prisma': { prisma }, '@/lib/admin-api-auth': { isAdminRequest: async () => false } };
+  const file = 'src/app/api/admin/orders/[id]/feedback/route.ts';
+  const request = body => new Request('http://localhost/api/admin/orders/test/feedback', { method: 'PUT', body: JSON.stringify(body) });
+  const context = { params: Promise.resolve({ id: 'test' }) };
+  assert.equal((await loader(mocks)(file).GET(new Request('http://localhost/'), context)).status, 401);
+  assert.equal((await loader(mocks)(file).PUT(request({}), context)).status, 401);
+  mocks['@/lib/admin-api-auth'] = { isAdminRequest: async () => true };
+  const load = loader(mocks), route = load(file), content = load('src/lib/feedback.ts').emptyFeedback();
+  assert.equal((await route.PUT(request({ content: {}, version: 0 }), context)).status, 400);
+  assert.equal(writes, 0);
+  assert.equal((await route.PUT(request({ content, version: 0 }), context)).status, 200);
+  assert.equal((await route.PUT(request({ content, version: 1 }), context)).status, 409);
+  assert.equal(writes, 2);
+});
+
 function loader(mocks = {}) {
   const cache = new Map();
   function load(file) {
@@ -178,6 +216,7 @@ function loader(mocks = {}) {
         const base = 'src/' + name.slice(2);
         return load(fs.existsSync(path.join(root, base + '.ts')) ? base + '.ts' : base + '.tsx');
       }
+      if (name.startsWith('.')) return load(path.resolve(path.dirname(file), name + '.ts'));
       return nativeRequire(name);
     };
     vm.runInThisContext('(function(require,module,exports,fetch){' + output + '\n})', { filename: file })(requireMock, compiledModule, compiledModule.exports, mocks.fetch || (async () => Response.json({})));
@@ -1015,13 +1054,15 @@ test('Proxy denies anonymous management APIs and redirects pages, allowing only 
 test('additive migrations are repeatable and leave unrelated existing data intact', async () => {
  const { PGlite } = await import('@electric-sql/pglite'); const db = await PGlite.create();
  try {
-  await db.exec(`CREATE TABLE "ExistingOrder" (id text primary key); INSERT INTO "ExistingOrder" VALUES ('qa-existing');`);
-  const directories = ['202610010001_notification_outbox','202610010002_submission_receipts','202610010003_rate_limit','202610110001_retire_receipt_numbers'];
+  await db.exec(`CREATE TABLE "ExistingOrder" (id text primary key); INSERT INTO "ExistingOrder" VALUES ('qa-existing'); CREATE TABLE "Order" (id text primary key); INSERT INTO "Order" VALUES ('qa-feedback');`);
+  const directories = ['202610010001_notification_outbox','202610010002_submission_receipts','202610010003_rate_limit','202610110001_retire_receipt_numbers','202610270001_order_feedback'];
   const sql = directories.map(name => fs.readFileSync(path.join(root,'prisma/migrations',name,'migration.sql'),'utf8')).join('\n');
   await db.exec(sql); await db.exec(sql);
   assert.equal((await db.query('SELECT COUNT(*)::int AS count FROM "ExistingOrder"')).rows[0].count,1);
   const result = await db.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`);
-  assert.ok(['NotificationJob','SubmissionReceipt','ApiRateLimit'].every(name => result.rows.some(row => row.table_name===name)));
+  assert.ok(['NotificationJob','SubmissionReceipt','ApiRateLimit','OrderFeedback'].every(name => result.rows.some(row => row.table_name===name)));
+  await db.exec(`INSERT INTO "OrderFeedback" ("orderId",content,"updatedAt") VALUES ('qa-feedback','{}',CURRENT_TIMESTAMP); DELETE FROM "Order" WHERE id='qa-feedback';`);
+  assert.equal((await db.query('SELECT COUNT(*)::int AS count FROM "OrderFeedback"')).rows[0].count,0);
   await db.exec(`INSERT INTO "SubmissionReceipt" (id,"requestKey","payloadHash","receiptNumber","entityType","entityId",quote) VALUES ('old','old-key','hash','S-OLD','ORDER','old-order','{}');`);
   await db.exec(sql);
   assert.equal((await db.query(`SELECT "receiptNumber" FROM "SubmissionReceipt" WHERE id='old'`)).rows[0].receiptNumber,'S-OLD');

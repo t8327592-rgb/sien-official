@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 // Explicit --apply is required; the default reads schema metadata only.
 const directory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../prisma/migrations');
-const migrations = ['202610010001_notification_outbox', '202610010002_submission_receipts', '202610010003_rate_limit'];
+const migrations = ['202610010001_notification_outbox', '202610010002_submission_receipts', '202610010003_rate_limit', '202610270001_order_feedback'];
 const retirementMigration = '202610110001_retire_receipt_numbers';
 const retirementSql = fs.readFileSync(path.join(directory, retirementMigration, 'migration.sql'), 'utf8').replace(/--[^\n]*/g, '').trim();
 if (retirementSql !== 'ALTER TABLE "SubmissionReceipt" ALTER COLUMN "receiptNumber" DROP NOT NULL;') throw Error('Unexpected receipt retirement SQL');
-const tables = ['NotificationJob', 'SubmissionReceipt', 'ApiRateLimit'];
+const tables = ['NotificationJob', 'SubmissionReceipt', 'ApiRateLimit', 'OrderFeedback'];
 const statements = migrations.flatMap(name => fs.readFileSync(path.join(directory, name, 'migration.sql'), 'utf8').replace(/--[^\n]*/g, '').split(';').map(sql => sql.trim()).filter(Boolean));
 if (statements.some(sql => !/^CREATE (?:TABLE|(?:UNIQUE )?INDEX) IF NOT EXISTS /i.test(sql))) throw Error('Only additive CREATE statements are allowed');
 const expectedColumns = Object.fromEntries(tables.map(table => {

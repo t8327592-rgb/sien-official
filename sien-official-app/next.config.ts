@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: { "/api/admin/orders/*/feedback": ["./public/fonts/ZenKakuGothicNew-Regular.ttf"] },
   experimental: { serverActions: { bodySizeLimit: "2mb" } },
   distDir: process.env.QA_ISOLATED === "1" ? ".next-qa" : ".next",
   async headers() {

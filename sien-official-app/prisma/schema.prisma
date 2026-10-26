@@ -64,6 +64,7 @@ model User {
 
 // 依頼管理・金額管理用モデル
 model Order {
+  feedback          OrderFeedback?
   id                String   @id @default(cuid())
   clientName        String
   clientEmail       String
@@ -94,6 +95,16 @@ model Order {
   isArchived        Boolean  @default(false) // 論理削除（アーカイブ）フラグ
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+// 管理者用フィードバック。依頼情報は Order から参照する。
+model OrderFeedback {
+  orderId   String   @id
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  content   Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ブログ・お知らせ・実績用モデル (CMS)
