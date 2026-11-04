@@ -700,6 +700,37 @@ test('campaign pricing applies only within its valid period and target plan', ()
   assert.equal(currentPlanCampaign('plan-1', [{ ...current, endDate: new Date('2026-07-17') }], now), undefined);
   assert.equal(currentPlanCampaign('plan-1', [{ ...current, isActive: false }], now), undefined);
 });
+test('autumn sale only discounts MIX within the JST window and the former form cannot accept new posts', async () => {
+  const start = Date.parse('2026-11-07T00:00:00+09:00');
+  const end = Date.parse('2026-11-17T00:00:00+09:00');
+  const load = loader({
+    '@/lib/autumn-sale': { saleClock: () => ({ now: end }) },
+    '@/lib/submission': { submissionIdentity: () => ({}), existingSubmission: async () => null },
+  });
+  const { salePhase, salePrice, isAutumnMixSale, salePolicyVersion } = load('src/config/autumn-sale.ts');
+  assert.deepEqual([start - 1, start, end - 1, end].map(salePhase), ['upcoming', 'open', 'open', 'closed']);
+  assert.deepEqual([10000, 13000, 5000, 4000].map(salePrice), [8000, 10400, 4000, 3200]);
+  assert.deepEqual([start - 1, start, end - 1, end].map(now => isAutumnMixSale('MIX', now)), [false, true, true, false]);
+  assert.equal(isAutumnMixSale('ORIGINAL', start), false);
+  assert.equal(isAutumnMixSale('GUIDE', start), false);
+  const { POST } = load('src/app/api/autumn-sale/route.ts');
+  const post = (path, body) => new Request(`http://localhost${path}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idempotencyKey: '00000000-0000-4000-8000-000000000000', ...body }),
+  });
+  const response = await POST(post('/api/autumn-sale', {}));
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).error, /通常のご依頼フォーム/);
+
+  const { TERMS_VERSION } = load('src/lib/contract-terms.ts');
+  const normalOrder = load('src/app/api/orders/route.ts');
+  const stale = await normalOrder.POST(post('/api/orders', {
+    clientName: 'QA', clientEmail: 'qa@example.invalid', serviceType: 'MIX',
+    termsAccepted: true, termsVersion: TERMS_VERSION, autumnSaleVersion: salePolicyVersion,
+  }));
+  assert.equal(stale.status, 409);
+  assert.match((await stale.json()).error, /再読み込み/);
+});
 test('public settings never pass financial settings or unsafe URLs to the client', async () => {
   const load = loader({ '@/lib/data/cms': { getSiteSettings: async () => ({ targetMonthlySales: 999, twitterUrl: 'javascript:alert(1)', youtubeUrl: 'https://www.youtube.com/@sien_mc09', footerText: '<script>text only</script>' }) } });
   const settings = await load('src/lib/data/public-settings.ts').getPublicSettings();

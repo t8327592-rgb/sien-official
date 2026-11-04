@@ -3,7 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "2mb" } },
-  distDir: process.env.QA_ISOLATED === "1" ? ".next-qa" : ".next",
+  distDir: process.env.QA_ISOLATED === "1"
+    ? process.env.QA_AUTUMN_SALE_AFTER === "1" ? ".next-qa/after-sale" : ".next-qa"
+    : ".next",
   async headers() {
     const development = process.env.NODE_ENV === "development";
     // Static/ISR pages contain Next.js hydration scripts. Nonces require dynamic

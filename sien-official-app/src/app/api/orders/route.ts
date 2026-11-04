@@ -1,6 +1,6 @@
 import { validateConsent, validateOrderFields, enumField, validateOptionQuantities } from "@/lib/order-validation";
 import { submissionIdentity, existingSubmission, acceptSubmission, submissionResponse } from "@/lib/submission";
-import { processPendingNotifications } from "@/lib/notifications";
+import { processPendingNotifications, queueAutumnSaleNotifications } from "@/lib/notifications";
 import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readJson, textField, emailField, ApiError, apiErrorResponse } from "@/lib/api-input";
@@ -9,9 +9,12 @@ import { calculateOrderPrice, priceFromText } from "@/lib/order-pricing";
 import { vocalGuideFromOptions, isHumanVocalGuide } from "@/lib/vocal-guide";
 import { currentPlanCampaign } from "@/lib/campaign-pricing";
 import { requestIdentity } from "@/lib/request-identity";
+import { audioDeadline, autumnSale, isAutumnMixSale, salePolicyVersion, salePrice } from "@/config/autumn-sale";
+import { saleCampaignSnapshot, saleClock } from "@/lib/autumn-sale";
 
 export async function POST(request: Request) {
   try {
+    const receivedAt = saleClock().now;
     const body = await readJson(request);
     const identity = submissionIdentity(body, "ORDER");
     const existing = await existingSubmission(identity);
@@ -31,6 +34,10 @@ export async function POST(request: Request) {
       after(async () => { await processPendingNotifications(3); });
       return NextResponse.json(submissionResponse(receipt), { status: 201 });
     }
+    const sale = isAutumnMixSale(serviceType, receivedAt);
+    if (body.autumnSaleVersion !== undefined && (!sale || body.autumnSaleVersion !== salePolicyVersion)) {
+      throw new ApiError(409, "秋のMIXセールの受付条件が変わりました。ページを再読み込みし、料金を確認してください。");
+    }
     const selectedPlanId = textField(body, "planId", true, 150);
     const ids = body.optionIds;
     if (!Array.isArray(ids) || ids.length > 30 || ids.some(id => typeof id !== "string" || id.length > 150) || new Set(ids).size !== ids.length) {
@@ -44,18 +51,23 @@ export async function POST(request: Request) {
     const selectedOptions = await prisma.option.findMany({ where: { id: { in: ids as string[] }, isActive: true, category: { in: [serviceType, "COMMON"] } } });
     if (selectedOptions.length !== ids.length) throw new ApiError(400, "オプションが変更されています。ページを再読み込みしてください。");
     const quantities = validateOptionQuantities(body.optionQuantities, selectedOptions);
-    const campaigns = serviceType === "GUIDE" ? [] : await prisma.campaign.findMany({ where: { isActive: true, targetPlanId: plan.id } });
-    const campaign = currentPlanCampaign(plan.id, campaigns);
-    const estimate = calculateOrderPrice({ price: campaign?.campaignPrice ?? plan.price, hasConsultation: "hasConsultation" in plan && plan.hasConsultation }, selectedOptions, quantities);
-    const { basePrice, optionPrice } = estimate;
-    const price = estimate.hasConsultation ? null : estimate.total;
+    const campaigns = sale || serviceType === "GUIDE" ? [] : await prisma.campaign.findMany({ where: { isActive: true, targetPlanId: plan.id } });
+    const planPrice = currentPlanCampaign(plan.id, campaigns)?.campaignPrice ?? plan.price;
+    const estimate = calculateOrderPrice({ price: planPrice, hasConsultation: "hasConsultation" in plan && plan.hasConsultation }, selectedOptions, quantities);
+    const basePrice = sale ? salePrice(estimate.basePrice) : estimate.basePrice;
+    const total = sale ? salePrice(estimate.total) : estimate.total;
+    const optionPrice = total - basePrice;
+    const price = estimate.hasConsultation ? null : total;
     const planId = plan.name;
     const options = selectedOptions.map(o => o.name + " (" + o.priceText + ")" + (quantities[o.id] ? ` ×${quantities[o.id]}単位（10秒/単位）` : "")).join(", ");
-    const fields = validateOrderFields(body, serviceType, plan.name);
+    const fields = validateOrderFields(body, serviceType, plan.name, sale);
     const { twitterId, discordId, contactMethod, songTitle, vocalKey, referenceUrl, referenceFidelity, materialsUrl, paymentMethod, deadline, activityPurpose, genre, lyricsStatus } = fields;
     if (serviceType === "ORIGINAL" && fields.vocalGuideStatus.includes("人間") && !selectedOptions.some(isHumanVocalGuide)) throw new ApiError(400, "仮歌の選択が一致しません。選び直してください。");
     const vocalGuideStatus = serviceType === "ORIGINAL" ? vocalGuideFromOptions(fields.vocalGuideStatus, selectedOptions) : "不要";
-    const message = textField(body, "message", false, 5000);
+    const notes = textField(body, "message", false, 5000);
+    const message = sale
+      ? [`【${autumnSale.name}】通常見積もり総額から${autumnSale.discount}%OFF。音源提出期限は原則 ${audioDeadline}（日本時間）。`, notes].filter(Boolean).join("\n\n")
+      : notes;
     await consumeRateLimit("orders-client", 10, 3600, requestIdentity(request.headers, clientEmail));
     await consumeRateLimit("orders-email", 5, 3600, clientEmail);
     await consumeRateLimit("orders-emergency", 10000, 3600);
@@ -68,7 +80,7 @@ export async function POST(request: Request) {
       await updateAllClientOrdersToRepeater(clientEmail, twitterId);
     }
 
-    const receipt = await acceptSubmission(identity, { plan: { id: plan.id, name: plan.name, price: campaign?.campaignPrice ?? plan.price, period: plan.period, revisions: plan.revisions }, options: selectedOptions.map(o => ({ id: o.id, name: o.name, priceText: o.priceText, quantity: quantities[o.id] ?? 1 })), basePrice, optionPrice, price, hasConsultation: estimate.hasConsultation }, async tx => {
+    const receipt = await acceptSubmission(identity, { plan: { id: plan.id, name: plan.name, price: planPrice, period: plan.period, revisions: plan.revisions }, options: selectedOptions.map(o => ({ id: o.id, name: o.name, priceText: o.priceText, quantity: quantities[o.id] ?? 1 })), basePrice, optionPrice, price, hasConsultation: estimate.hasConsultation, ...(sale ? { autumnSale: { ...saleCampaignSnapshot, normalTotal: estimate.hasConsultation ? null : estimate.total }, salePolicyVersion } : {}) }, async tx => {
       const record = await tx.order.create({
       data: {
         clientName,
@@ -79,7 +91,7 @@ export async function POST(request: Request) {
         isRepeater,
         serviceType,
         planId,
-        songTitle,
+        songTitle: sale && !songTitle ? "未定" : songTitle,
         options,
         vocalKey,
         referenceUrl,
@@ -99,7 +111,7 @@ export async function POST(request: Request) {
       },
       });
       return record;
-    }, consent);
+    }, consent, sale ? queueAutumnSaleNotifications : undefined);
     after(async () => { await processPendingNotifications(3); });
 
     return NextResponse.json(submissionResponse(receipt), { status: 201 });

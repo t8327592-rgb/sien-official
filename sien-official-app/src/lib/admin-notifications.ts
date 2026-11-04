@@ -1,7 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { confirmedDeadline } from "@/lib/admin-order-filters";
+import { saleConfirmationKind } from "@/config/autumn-sale";
 
 export const NOTIFICATION_KINDS: Record<string, string> = {
+  [saleConfirmationKind]: "秋のMIXセール・お客様への受付確認メール",
   ORDER_ADMIN_EMAIL: "依頼・管理者メール", ORDER_RECEIPT_EMAIL: "依頼・旧自動返信（送信停止）", ORDER_DISCORD: "依頼・Discord",
   BUSINESS_ADMIN_EMAIL: "法人・管理者メール", BUSINESS_RECEIPT_EMAIL: "法人・旧自動返信（送信停止）", BUSINESS_DISCORD: "法人・Discord",
 };

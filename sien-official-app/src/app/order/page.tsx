@@ -6,6 +6,8 @@ import OrderFormClient from "@/components/order/OrderFormClient";
 import { getSiteSetting } from "@/lib/data/site-setting";
 import { resolveOrderSelection, type OrderPlan } from "@/lib/order-selection";
 import Link from "next/link";
+import { salePhase } from "@/config/autumn-sale";
+import { saleClock, salePlans } from "@/lib/autumn-sale";
 
 export const dynamic = "force-dynamic";
 
@@ -49,14 +51,17 @@ export default async function OrderPage({ searchParams }: { searchParams: Promis
 
 
 
-  const rawPlans = await getPlans();
-  const rawOptions = await getOptions();
+  const autumnSaleActive = salePhase(saleClock().now) === "open";
+  const [rawPlans, rawOptions, standardMixPlans] = await Promise.all([
+    getPlans(), getOptions(), autumnSaleActive ? salePlans() : [],
+  ]);
+  const standardPrices = new Map(standardMixPlans.map(plan => [plan.id, plan.price]));
 
   const plans: (OrderPlan & { hasConsultation: boolean })[] = rawPlans.map(p => ({
     id: p.id,
     name: p.name,
     category: p.category,
-    price: p.price ?? null,
+    price: standardPrices.has(p.id) ? standardPrices.get(p.id) ?? null : p.price ?? null,
     hasConsultation: p.price === null
   }));
 
@@ -70,5 +75,5 @@ export default async function OrderPage({ searchParams }: { searchParams: Promis
   }));
 
   const selection = resolveOrderSelection(plans, typeof query.plan === "string" ? query.plan : undefined, typeof query.service === "string" ? query.service : undefined);
-  return <OrderFormClient key={`${selection.serviceType}:${selection.planId}`} initialPlans={plans} initialOptions={options} siteSetting={siteSetting} initialSelection={selection} />;
+  return <OrderFormClient key={`${selection.serviceType}:${selection.planId}`} initialPlans={plans} initialOptions={options} siteSetting={siteSetting} initialSelection={selection} autumnSaleActive={autumnSaleActive} />;
 }

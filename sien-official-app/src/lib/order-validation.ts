@@ -1,6 +1,8 @@
 import { ApiError, textField } from "@/lib/api-input";
 import { TERMS_VERSION } from "@/lib/contract-terms";
 import { VOCAL_GUIDES } from "@/lib/vocal-guide";
+import { VOCAL_KEYS } from "@/lib/order-vocal-keys";
+import { REFERENCE_FIDELITY_OPTIONS } from "@/lib/order-reference";
 
 export const CONTACT_METHODS = ["メール", "X (DM)", "Discord"] as const;
 import { PAYMENT_METHODS } from "@/lib/order-payment";
@@ -29,23 +31,32 @@ export function validateConsent(body: Record<string, unknown>) {
   return { termsVersion: TERMS_VERSION, consentedAt: new Date() };
 }
 
-export function validateOrderFields(body: Record<string, unknown>, serviceType: string, planName: string) {
+export function validateOrderContact(body: Record<string, unknown>) {
   const contactMethod = enumField(body, "contactMethod", CONTACT_METHODS);
   const twitterId = textField(body, "twitterId", contactMethod === "X (DM)", 120);
   if (twitterId && !/^@?[A-Za-z0-9_]{1,15}$/.test(twitterId)) throw new ApiError(400, "XのIDを確認してください。");
   const discordId = textField(body, "discordId", contactMethod === "Discord", 120);
+  return { twitterId, discordId, contactMethod };
+}
+
+export function validateReferenceFidelity(body: Record<string, unknown>) {
+  return enumField(body, "referenceFidelity", REFERENCE_FIDELITY_OPTIONS.map(option => option.value), false);
+}
+
+export function validateOrderFields(body: Record<string, unknown>, serviceType: string, planName: string, allowUnrecorded = false) {
+  const contact = validateOrderContact(body);
   const isOriginal = serviceType === "ORIGINAL";
   const lyricsStatus = !isOriginal ? "" : planName.includes("フルパッケージ") ? "作詞含む（フルパッケージ）" : planName.includes("作詞持ち込み") ? "歌詞あり（持ち込み）" : enumField(body, "lyricsStatus", ["未定", "歌詞あり", "作詞から依頼したい"]);
   return {
-    twitterId, discordId, contactMethod,
+    ...contact,
     paymentMethod: enumField(body, "paymentMethod", PAYMENT_METHODS),
-    songTitle: textField(body, "songTitle", !isOriginal, 300),
+    songTitle: textField(body, "songTitle", !isOriginal && !allowUnrecorded, 300),
     genre: textField(body, "genre", isOriginal, 300),
     deadline: textField(body, "deadline", false, 120),
     activityPurpose: textField(body, "activityPurpose", false, 120),
     lyricsStatus,
-    vocalKey: isOriginal ? "" : enumField(body, "vocalKey", ["±0（原曲キー）", ...Array.from({ length: 6 }, (_, index) => `+${index + 1}`), ...Array.from({ length: 6 }, (_, index) => `-${index + 1}`), "その他"]),
-    referenceFidelity: enumField(body, "referenceFidelity", ["1", "2", "3"], false),
+    vocalKey: isOriginal ? "" : enumField(body, "vocalKey", VOCAL_KEYS, !allowUnrecorded),
+    referenceFidelity: validateReferenceFidelity(body),
     vocalGuideStatus: isOriginal ? enumField(body, "vocalGuideStatus", VOCAL_GUIDES) : "不要",
     referenceUrl: urlField(body, "referenceUrl"), materialsUrl: urlField(body, "materialsUrl"),
   };

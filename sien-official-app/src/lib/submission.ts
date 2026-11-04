@@ -26,7 +26,7 @@ export async function existingSubmission(identity: ReturnType<typeof submissionI
   return verifyReceipt(await prisma.submissionReceipt.findUnique({ where: { requestKey: identity.requestKey } }), identity.payloadHash);
 }
 
-export async function acceptSubmission(identity: ReturnType<typeof submissionIdentity>, quote: Prisma.InputJsonValue, create: (tx: Prisma.TransactionClient) => Promise<{ id: string }>, consent?: { termsVersion: string; consentedAt: Date }) {
+export async function acceptSubmission(identity: ReturnType<typeof submissionIdentity>, quote: Prisma.InputJsonValue, create: (tx: Prisma.TransactionClient) => Promise<{ id: string }>, consent?: { termsVersion: string; consentedAt: Date }, notify = queueNotifications) {
   return prisma.$transaction(async tx => {
     const lock = BigInt.asIntN(64, BigInt(`0x${identity.requestKey.slice(0, 16)}`));
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(${lock})`;
@@ -34,7 +34,7 @@ export async function acceptSubmission(identity: ReturnType<typeof submissionIde
     if (existing) return existing;
     const entity = await create(tx);
     const receipt = await tx.submissionReceipt.create({ data: { ...identity, entityId: entity.id, quote, ...consent } });
-    await queueNotifications(tx, identity.entityType, entity.id);
+    await notify(tx, identity.entityType, entity.id);
     return receipt;
   }, { maxWait: 10000, timeout: 15000 });
 }

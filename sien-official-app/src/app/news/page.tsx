@@ -3,12 +3,17 @@ import { formatPublicDate } from "@/lib/public-format";
 import { getNewsPosts } from "@/lib/data/cms";
 import Link from "next/link";
 import { ArrowRight, Calendar, ChevronLeft } from "lucide-react";
+import { AutumnSaleNewsLink } from "@/components/shared/AutumnSaleNotice";
+import { autumnSale, saleAnnouncementStart, salePhase } from "@/config/autumn-sale";
+import { saleClock } from "@/lib/autumn-sale";
 
 export const metadata = pageMetadata("/news", {title: "お知らせ | Sien-Official", description: "Sien-Officialからの最新のお知らせ、アップデート情報などをご案内します。"});
 
 export const revalidate = 60;
 
 export default async function NewsIndexPage() {
+  const { now } = saleClock();
+  const showAutumnNews = autumnSale.enabled && now >= saleAnnouncementStart;
   const posts = await getNewsPosts();
 
   return (
@@ -30,13 +35,14 @@ export default async function NewsIndexPage() {
 
       <section className="py-10 md:py-16 px-4">
         <div className="container mx-auto max-w-4xl">
-          {posts.length === 0 ? (
+          {posts.length === 0 && !showAutumnNews ? (
             <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
               <p className="text-slate-500 font-medium">現在お知らせはありません。</p>
             </div>
           ) : (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="flex flex-col divide-y divide-slate-100">
+                {showAutumnNews && <div className="p-2"><AutumnSaleNewsLink phase={salePhase(now)} /></div>}
                 {posts.map((post) => (
                   <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 p-6 hover:bg-orange-50/30 transition-colors">
                     <div className="flex items-center gap-4 shrink-0 sm:w-48">

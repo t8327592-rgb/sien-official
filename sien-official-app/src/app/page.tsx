@@ -9,18 +9,35 @@ import { getPublicReception } from "@/lib/data/site-setting";
 import { getFeaturedPortfolios, getNewsPosts } from "@/lib/data/cms";
 import { PublicServices } from "@/components/shared/PublicServices";
 import { PublicCampaigns } from "@/components/shared/PublicCampaigns";
+import { AutumnSaleNewsLink } from "@/components/shared/AutumnSaleNotice";
+import { autumnSale, saleAnnouncementStart, salePhase } from "@/config/autumn-sale";
+import { saleClock } from "@/lib/autumn-sale";
 
 export const metadata = pageMetadata("/", {title: "Sien-Official | 歌ってみたMIX・オリジナル楽曲制作"});
 
 export const revalidate = 60;
 
 export default async function Home() {
+  const { now } = saleClock();
+  const autumnPhase = salePhase(now);
+  const showAutumnNews = autumnSale.enabled && now >= saleAnnouncementStart;
   const [mixPortfolios, originalPortfolios, siteSetting, newsPosts] = await Promise.all([
     getFeaturedPortfolios("MIX", 4),
     getFeaturedPortfolios("ORIGINAL", 3),
     getPublicReception(),
     getNewsPosts(3)
   ]);
+  const showAutumnPromo = showAutumnNews && autumnPhase !== "closed" && siteSetting.orderStatus !== "UNAVAILABLE";
+  const promotions = [
+    ...(showAutumnPromo ? [{
+      href: autumnSale.path,
+      label: autumnPhase === "open" ? "開催中・見積もり総額から" : "開催予告・見積もり総額から",
+      title: "秋のMIXセール",
+      accent: `${autumnSale.discount}%OFF`,
+      featured: true,
+    }] : []),
+    { href: "/mix#plans", label: "毎日投稿・継続活動を応援", title: "ショートMIX", accent: "まとめ依頼", featured: false },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-slate-900">
@@ -101,34 +118,25 @@ export default async function Home() {
           <ChevronsDown className="h-6 w-6 text-orange-600 drop-shadow-sm" aria-hidden="true" />
         </div>
       </section>
-      <PublicCampaigns />
-
-      {/* 1.1. 新プラン告知バナー */}
-      <section className="py-6 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
-        <div className="container px-4 mx-auto max-w-lg">
-          <div className="grid gap-4">
-            {/* 新プランバナー */}
-            <Link href="/mix#plans" className="group block relative overflow-hidden bg-white rounded-2xl shadow-sm border border-orange-200 hover:shadow-md hover:border-orange-300 transition-all p-1 sm:p-2">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 relative z-10">
-                <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-
-                  <div>
-                    <div className="text-orange-700 font-bold text-xs mb-1">毎日投稿・継続活動を応援！</div>
-                    <h3 className="text-slate-900 font-extrabold text-base">ショートMIX <span className="text-orange-700">まとめ依頼</span></h3>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-xs font-bold text-orange-700 group-hover:translate-x-1 transition-transform shrink-0">
-                  詳細 <ArrowRight className="w-3 h-3" />
-                </div>
-              </div>
+      <section aria-label="キャンペーン・おすすめプラン" className="border-b border-orange-100 bg-gradient-to-r from-orange-50 to-amber-50 py-6">
+        <div className={`mx-auto grid gap-3 px-4 ${showAutumnPromo ? "max-w-4xl sm:grid-cols-2" : "max-w-lg"}`}>
+          {promotions.map(({ href, label, title, accent, featured }) => (
+            <Link key={href} href={href} className={`group flex min-h-24 items-center justify-between gap-3 rounded-2xl border px-4 py-4 shadow-sm transition hover:shadow-md sm:px-5 ${featured ? "border-orange-400 bg-gradient-to-br from-orange-100 to-amber-50 hover:border-orange-600" : "border-orange-200 bg-white hover:border-orange-300"}`}>
+              <span>
+                <span className="mb-1 block text-xs font-bold text-orange-700">{label}</span>
+                <span className="block font-extrabold text-slate-900">{title} <span className={featured ? "inline-block rounded-full bg-orange-700 px-2.5 py-0.5 text-xs text-white" : "inline-block text-orange-700"}>{accent}</span></span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-orange-700">
+                詳細 <ArrowRight size={14} aria-hidden="true" />
+              </span>
             </Link>
-          </div>
+          ))}
         </div>
       </section>
+      <PublicCampaigns />
 
       {/* 1.2. お知らせ (NEWS) */}
-      {newsPosts.length > 0 && (
+      {(showAutumnNews || newsPosts.length > 0) && (
         <section className="py-8 md:py-12 bg-white border-b border-orange-100">
           <div className="container px-4 mx-auto max-w-4xl">
             <div className="flex items-center justify-between mb-6">
@@ -141,6 +149,7 @@ export default async function Home() {
               </Link>
             </div>
             <div className="flex flex-col gap-3">
+              {showAutumnNews && <AutumnSaleNewsLink phase={autumnPhase} />}
               {newsPosts.map((post) => (
                 <Link key={post.id} href={`/news/${post.id}`} className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 py-4 px-5 rounded-2xl hover:bg-orange-50/50 transition-colors border border-transparent hover:border-orange-100">
                   <div className="flex items-center gap-3 shrink-0">

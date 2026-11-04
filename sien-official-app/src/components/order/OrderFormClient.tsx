@@ -1,4 +1,10 @@
 "use client";
+import { REFERENCE_FIDELITY_OPTIONS } from "@/lib/order-reference";
+import { autumnSale, salePolicyVersion, salePrice } from "@/config/autumn-sale";
+import { AutumnSaleBanner } from "@/components/shared/AutumnSaleNotice";
+import { PAYMENT_METHODS } from "@/lib/order-payment";
+import { VOCAL_KEYS } from "@/lib/order-vocal-keys";
+import { orderRequiredClass, orderOptionalClass, orderPageClass, orderContainerClass, orderHeaderClass, orderTitleClass, orderSectionClass, orderSectionTitleClass, orderSectionNumberClass, orderCheckboxClass, orderSubmitClass, orderInputClass, orderOptionClass, orderReferenceClass, orderReviewClass } from "./order-form-styles";
 import Link from "next/link";
 import { useFormAccessibility } from "@/lib/form-accessibility";
 import { FormSubmissionError, submitForm } from "@/lib/form-submission";
@@ -44,7 +50,7 @@ const HelpTooltip = ({ text }: { text: string }) => (
   </span>
 );
 
-export default function OrderFormClient({ initialPlans, initialOptions = [], siteSetting, initialSelection = resolveOrderSelection(initialPlans) }: { initialPlans: Plan[], initialOptions?: Option[], siteSetting?: Awaited<ReturnType<typeof getSiteSetting>>, initialSelection?: ReturnType<typeof resolveOrderSelection> }) {
+export default function OrderFormClient({ initialPlans, initialOptions = [], siteSetting, initialSelection = resolveOrderSelection(initialPlans), autumnSaleActive = false }: { initialPlans: Plan[], initialOptions?: Option[], siteSetting?: Awaited<ReturnType<typeof getSiteSetting>>, initialSelection?: ReturnType<typeof resolveOrderSelection>, autumnSaleActive?: boolean }) {
  const validation = useFormAccessibility();
   const [retryUntil, setRetryUntil] = useState(0);
   const retrySeconds = useRetryCountdown(retryUntil);
@@ -115,6 +121,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
 
   const optionQuantities = Object.fromEntries(initialOptions.filter(option => selectedOptions.includes(option.id) && option.name.includes("カットアップ")).map(option => [option.id, Math.ceil((cutSeconds[option.id] || 10) / 10)]));
   const estimate = calculateOrderPrice(selectedPlanObj ?? { price: null }, initialOptions.filter(o => selectedOptions.includes(o.id)), optionQuantities);
+  const sale = autumnSaleActive && formData.serviceType === "MIX";
 
   // 見積りのプラン名＋オプション名の結合
   const planName = selectedPlanObj?.name || "";
@@ -143,6 +150,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
       planId: formData.planId,
       optionIds: selectedOptions,
       optionQuantities,
+      ...(sale ? { autumnSaleVersion: salePolicyVersion } : {}),
       lyricsStatus: finalLyricsStatus
     };
 
@@ -193,9 +201,9 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
     );
   }
 
-  const inputStyle = "w-full min-h-12 p-3 text-base scroll-mt-40 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all";
-  const requiredMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600 border border-red-200 align-middle">必須</span>;
-  const optionalMark = <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 align-middle">任意</span>;
+  const inputStyle = orderInputClass;
+  const requiredMark = <span className={orderRequiredClass}>必須</span>;
+  const optionalMark = <span className={orderOptionalClass}>任意</span>;
 
   const isMix = formData.serviceType !== "ORIGINAL";
   const isOriginal = formData.serviceType === "ORIGINAL";
@@ -209,10 +217,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
 
   return (
     <>
-    <div className="min-h-screen bg-brand-bg py-10 md:py-20 font-sans">
-      <div className="container mx-auto px-4 max-w-3xl relative">
-        <div className="text-center mb-6 md:mb-12">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6">ご依頼フォーム</h1>
+    <div className={orderPageClass}>
+      <div className={orderContainerClass}>
+        <div className={orderHeaderClass}>
+          <h1 className={orderTitleClass}>ご依頼フォーム</h1>
 
           {/* 受付バッジ */}
           {siteSetting && (
@@ -251,6 +259,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
         </div>
 
         {/* ご依頼前の確認事項 */}
+        {sale && <AutumnSaleBanner />}
         <details className="bg-white border border-orange-100 rounded-2xl p-4 mb-4">
           <summary className="cursor-pointer font-bold text-base text-slate-900">
             ご依頼前の準備を確認する
@@ -269,10 +278,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
       <form onInvalidCapture={validation.onInvalidCapture} onChangeCapture={validation.onChangeCapture} onSubmit={handleSubmit} className="space-y-6 md:space-y-8 pb-12 [&_input]:scroll-mt-24 [&_select]:scroll-mt-24 [&_textarea]:scroll-mt-24">
 
           {/* 01 ご希望のサービス */}
-          <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className={orderSectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">01</span>
+            <h2 className={orderSectionTitleClass}>
+              <span className={orderSectionNumberClass}>01</span>
               ご希望のサービス
             </h2>
             <fieldset className="grid md:grid-cols-2 gap-4"><legend className="sr-only">ご希望のサービス</legend>
@@ -314,10 +323,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
 
           {/* 02 オプション */}
           {initialOptions && initialOptions.filter(opt => opt.category === formData.serviceType || opt.category === "COMMON").length > 0 && (
-            <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+            <section className={orderSectionClass}>
               <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-                <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">02</span>
+              <h2 className={orderSectionTitleClass}>
+                <span className={orderSectionNumberClass}>02</span>
                 オプションの追加（任意）
               </h2>
               <div className="grid md:grid-cols-2 gap-4">
@@ -325,7 +334,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                   const desc = getOptionDescription(opt.name);
                   return (
                     <div key={opt.id}>
-                    <label htmlFor={"orderformclient-field-5-" + opt.id} className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col gap-1 ${selectedOptions.includes(opt.id) ? 'border-orange-500 bg-orange-500/5' : 'border-slate-200 bg-slate-50 hover:border-orange-500/30 text-slate-600'}`}>
+                    <label htmlFor={"orderformclient-field-5-" + opt.id} className={orderOptionClass(selectedOptions.includes(opt.id))}>
                       <div className="flex items-start gap-3 w-full">
                         <input {...validation.field("orderformclient-field-5-" + opt.id)} id={"orderformclient-field-5-" + opt.id}
                           type="checkbox"
@@ -337,7 +346,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                               setSelectedOptions(selectedOptions.filter(id => id !== opt.id));
                             }
                           }}
-                          className="w-5 h-5 text-orange-700 focus:ring-orange-500 rounded border-slate-300 shrink-0 mt-0.5"
+                          className={orderCheckboxClass}
                         />{validation.message("orderformclient-field-5-" + opt.id)}
                         <div className="flex flex-col">
                           <span className={`font-bold text-sm sm:text-base leading-snug ${selectedOptions.includes(opt.id) ? 'text-slate-900' : ''}`}>{opt.name}</span>
@@ -357,10 +366,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           )}
 
           {/* 03 基本情報 */}
-          <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className={orderSectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">03</span>
+            <h2 className={orderSectionTitleClass}>
+              <span className={orderSectionNumberClass}>03</span>
               基本情報
             </h2>
             <div className="space-y-6">
@@ -410,18 +419,18 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           </section>
 
           {/* 04 楽曲情報 */}
-          <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className={orderSectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">04</span>
+            <h2 className={orderSectionTitleClass}>
+              <span className={orderSectionNumberClass}>04</span>
               楽曲情報
             </h2>
             <div className="space-y-6">
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="orderformclient-field-11" className="block text-sm font-bold text-brand-text">曲名（ない場合は「なし」） {requiredMark}</label>
-                  <input {...validation.field("orderformclient-field-11")} id="orderformclient-field-11" required type="text" className={inputStyle} placeholder="例: モニタリング / 未定" value={formData.songTitle} onChange={e => setFormData({...formData, songTitle: e.target.value})} />{validation.message("orderformclient-field-11")}
+                  <label htmlFor="orderformclient-field-11" className="block text-sm font-bold text-brand-text">曲名{sale ? "（未定可）" : "（ない場合は「なし」）"} {sale ? optionalMark : requiredMark}</label>
+                  <input {...validation.field("orderformclient-field-11")} id="orderformclient-field-11" required={!sale} type="text" className={inputStyle} placeholder="例: モニタリング / 未定" value={formData.songTitle} onChange={e => setFormData({...formData, songTitle: e.target.value})} />{validation.message("orderformclient-field-11")}
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="orderformclient-field-12" className="block text-sm font-bold text-brand-text">ご希望の納期 {optionalMark}</label>
@@ -492,24 +501,12 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
               {isMix && (
                 <div className="space-y-2">
                   <label htmlFor="orderformclient-field-16" className="block text-sm font-bold text-brand-text">
-                    歌唱キー {requiredMark}
+                    歌唱キー {sale ? optionalMark : requiredMark}
                     <HelpTooltip text="ご自身の声に合うキーが分からない場合や、原曲と同じまま歌った場合は「±0（原曲キー）」をお選びください。" />
                   </label>
-                  <select {...validation.field("orderformclient-field-16")} id="orderformclient-field-16" required className={inputStyle} value={formData.vocalKey} onChange={e => setFormData({...formData, vocalKey: e.target.value})}>
-                    <option value="+6">+6</option>
-                    <option value="+5">+5</option>
-                    <option value="+4">+4</option>
-                    <option value="+3">+3</option>
-                    <option value="+2">+2</option>
-                    <option value="+1">+1</option>
-                    <option value="±0（原曲キー）">±0（原曲キー）</option>
-                    <option value="-1">-1</option>
-                    <option value="-2">-2</option>
-                    <option value="-3">-3</option>
-                    <option value="-4">-4</option>
-                    <option value="-5">-5</option>
-                    <option value="-6">-6</option>
-                    <option value="その他">その他</option>
+                  <select {...validation.field("orderformclient-field-16")} id="orderformclient-field-16" required={!sale} className={inputStyle} value={formData.vocalKey} onChange={e => setFormData({...formData, vocalKey: e.target.value})}>
+                    {sale && <option value="">未定</option>}
+                    {VOCAL_KEYS.map(key => <option key={key}>{key}</option>)}
                   </select>{validation.message("orderformclient-field-16")}
                 </div>
               )}
@@ -526,27 +523,19 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                 <fieldset className="space-y-3 pt-4 border-t border-slate-100">
                   <legend className="block text-sm font-bold text-brand-text">リファレンス音源の再現度の希望 {optionalMark}</legend>
                   <div className="space-y-3">
-                    <label htmlFor="orderformclient-field-18" className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.referenceFidelity === "1" ? 'border-orange-500 bg-orange-500/5' : 'border-transparent hover:bg-slate-50'}`}>
-                      <input {...validation.field("orderformclient-field-18")} id="orderformclient-field-18" type="radio" name="fidelity" className="mt-1 w-5 h-5 text-orange-700 focus:ring-orange-500 shrink-0" checked={formData.referenceFidelity === "1"} onChange={() => setFormData({...formData, referenceFidelity: "1"})} />{validation.message("orderformclient-field-18")}
-                      <div>
-                        <div className={`font-bold ${formData.referenceFidelity === "1" ? 'text-slate-900' : 'text-brand-text'}`}>1. 完全お任せ</div>
-                        <div className="text-sm text-slate-500 mt-1">参考音源は見ますが、全体の方向性はお任せください。</div>
-                      </div>
-                    </label>
-                    <label htmlFor="orderformclient-field-19" className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.referenceFidelity === "2" ? 'border-orange-500 bg-orange-500/5' : 'border-transparent hover:bg-slate-50'}`}>
-                      <input {...validation.field("orderformclient-field-19")} id="orderformclient-field-19" type="radio" name="fidelity" className="mt-1 w-5 h-5 text-orange-700 focus:ring-orange-500 shrink-0" checked={formData.referenceFidelity === "2"} onChange={() => setFormData({...formData, referenceFidelity: "2"})} />{validation.message("orderformclient-field-19")}
-                      <div>
-                        <div className={`font-bold ${formData.referenceFidelity === "2" ? 'text-slate-900' : 'text-brand-text'}`}>2. 参考にしつつ調整</div>
-                        <div className="text-sm text-slate-500 mt-1">参考音源の雰囲気を取り入れながら仕上げます。</div>
-                      </div>
-                    </label>
-                    <label htmlFor="orderformclient-field-20" className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.referenceFidelity === "3" ? 'border-orange-500 bg-orange-500/5' : 'border-transparent hover:bg-slate-50'}`}>
-                      <input {...validation.field("orderformclient-field-20")} id="orderformclient-field-20" type="radio" name="fidelity" className="mt-1 w-5 h-5 text-orange-700 focus:ring-orange-500 shrink-0" checked={formData.referenceFidelity === "3"} onChange={() => setFormData({...formData, referenceFidelity: "3"})} />{validation.message("orderformclient-field-20")}
-                      <div>
-                        <div className={`font-bold ${formData.referenceFidelity === "3" ? 'text-slate-900' : 'text-brand-text'}`}>3. リファレンス重視</div>
-                        <div className="text-sm text-slate-500 mt-1">できる限り参考音源に近い方向で制作します。</div>
-                      </div>
-                    </label>
+                    {REFERENCE_FIDELITY_OPTIONS.map(({ value, label, description }, index) => {
+                      const id = `orderformclient-field-${index + 18}`;
+                      const selected = formData.referenceFidelity === value;
+                      return (
+                        <label key={value} htmlFor={id} className={orderReferenceClass(selected)}>
+                          <input {...validation.field(id)} id={id} type="radio" name="fidelity" className="mt-1 w-5 h-5 text-orange-700 focus:ring-orange-500 shrink-0" checked={selected} onChange={() => setFormData({ ...formData, referenceFidelity: value })} />{validation.message(id)}
+                          <div>
+                            <div className={`font-bold ${selected ? "text-slate-900" : "text-brand-text"}`}>{value}. {label}</div>
+                            <div className="text-sm text-slate-500 mt-1">{description}</div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </fieldset>
               )}
@@ -554,14 +543,15 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           </section>
 
           {/* 05 自由記述 */}
-          <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className={orderSectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">05</span>
+            <h2 className={orderSectionTitleClass}>
+              <span className={orderSectionNumberClass}>05</span>
               自由記述
             </h2>
             <div className="space-y-2">
               <label htmlFor="orderformclient-field-21" className="block text-sm font-bold text-brand-text">ご要望・ご質問・特記事項など {optionalMark}</label>
+              {sale && <p className="text-sm text-slate-600">複数曲をご希望の場合は、曲数や分かっている曲名をこちらにご記入ください。</p>}
               <textarea {...validation.field("orderformclient-field-21")} id="orderformclient-field-21"
                 rows={6}
                 className={`${inputStyle} resize-none`}
@@ -576,10 +566,10 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           </section>
 
           {/* 06 素材提出 */}
-            <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+            <section className={orderSectionClass}>
               <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-                <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">06</span>
+              <h2 className={orderSectionTitleClass}>
+                <span className={orderSectionNumberClass}>06</span>
                 素材提出
               </h2>
               <div className="space-y-4">
@@ -592,30 +582,29 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
             </section>
 
           {/* 07 お支払い方法 */}
-          <section className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <section className={orderSectionClass}>
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 md:mb-8 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-700 flex items-center justify-center text-sm font-black tracking-tighter">07</span>
+            <h2 className={orderSectionTitleClass}>
+              <span className={orderSectionNumberClass}>07</span>
               お支払い方法
             </h2>
             <div className="space-y-2">
               <label htmlFor="orderformclient-field-23" className="block text-sm font-bold text-brand-text">お支払い方法 {requiredMark}</label>
               <select {...validation.field("orderformclient-field-23")} id="orderformclient-field-23" required className={inputStyle} value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})}>
-                <option value="銀行振込">銀行振込</option>
-                <option value="クレジットカード">クレジットカード</option>
-                <option value="その他">その他</option>
+                {PAYMENT_METHODS.map(method => <option key={method}>{method}</option>)}
               </select>{validation.message("orderformclient-field-23")}
             </div>
           </section>
 
           {/* 送信とリアルタイム見積もり */}
-          <div id="order-review" className="scroll-mt-24 bg-orange-50 border border-orange-100 p-5 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center gap-6 md:gap-10 mx-auto w-full mt-6 md:mt-16 relative overflow-hidden">
+          <div id="order-review" className={`${orderReviewClass} flex flex-col items-center gap-6 md:gap-10 mx-auto w-full mt-6 md:mt-16`}>
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
 
             <div className="text-center relative z-10 w-full">
-              <p className="text-orange-700 text-sm font-bold mb-2 tracking-widest uppercase">現在のお見積り概算</p>
+              <p className="text-orange-700 text-sm font-bold mb-2 tracking-widest uppercase">{sale ? `セール適用後のお見積り概算（${autumnSale.discount}%OFF）` : "現在のお見積り概算"}</p>
+              {sale && <p className="text-sm text-slate-600">通常概算 ¥{estimate.total.toLocaleString()}（税込）</p>}
               <div className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
-                ¥{estimate.total.toLocaleString()}
+                ¥{(sale ? salePrice(estimate.total) : estimate.total).toLocaleString()}
                 <span className="text-base font-normal text-slate-500 ml-2">税込</span>
               </div>
 
@@ -653,13 +642,15 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                   <a href="/policy/guidelines" target="_blank" rel="noopener noreferrer" className="text-orange-700 hover:text-orange-700 underline underline-offset-4 decoration-orange-500/50 transition-colors mx-1">
                     ご依頼に関する留意事項
                   </a>
-                  ・<a href="/policy/privacy" target="_blank" rel="noopener noreferrer" className="text-orange-700 underline">プライバシーポリシー</a>に同意する {requiredMark}
+                  ・<a href="/policy/privacy" target="_blank" rel="noopener noreferrer" className="text-orange-700 underline">プライバシーポリシー</a>
+                  {sale && <>・<a href={`${autumnSale.path}#sale-terms`} target="_blank" rel="noopener noreferrer" className="text-orange-700 underline">セール注意事項</a></>}
+                  に同意する {requiredMark}
                 </span>
               </label>
 
               <div className="w-full max-w-md flex flex-col items-center gap-3">
                 <p className="text-sm font-bold text-slate-600">送信後、原則24時間以内にご返信いたします。</p>
-                <Button type="submit" disabled={status === "submitting" || retrySeconds > 0} className="w-full px-6 h-12 md:h-16 text-base md:text-lg font-bold rounded-full shadow-xl shadow-orange-500/20 bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:brightness-95 hover:scale-105 transition-all">
+                <Button type="submit" disabled={status === "submitting" || retrySeconds > 0} className={orderSubmitClass}>
                   {status === "submitting" ? "送信中..." : "ご依頼を送信する"}
                 </Button>
               </div>

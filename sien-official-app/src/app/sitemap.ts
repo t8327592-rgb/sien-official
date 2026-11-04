@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { getAllPublishedPosts } from "@/lib/data/cms";
+import { autumnSale } from "@/config/autumn-sale";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sien-official.com";
@@ -9,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "",
     "/pricing",
     "/mix",
+    autumnSale.path,
     "/original",
     "/business",
     "/profile",
