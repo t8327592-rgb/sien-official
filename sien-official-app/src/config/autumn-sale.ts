@@ -2,7 +2,7 @@ export const autumnSale = {
   name: "2026 AUTUMN MIX SALE",
   path: "/autumn-sale",
   orderPath: "/order?service=MIX",
-  enabled: true,
+  enabled: false,
   discount: 20,
   announcementDay: "2026-11-06",
   firstDay: "2026-11-07",

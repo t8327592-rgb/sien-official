@@ -1,5 +1,6 @@
 import { ArrowRight, CalendarDays, Clock3, CreditCard, Headphones, Mic2, Sparkles, Tags } from "lucide-react";
 import { connection } from "next/server";
+import { notFound } from "next/navigation";
 import { autumnSale, saleDay, salePhase, salePrice } from "@/config/autumn-sale";
 import { saleClock, salePlans } from "@/lib/autumn-sale";
 import { getSiteSetting } from "@/lib/data/site-setting";
@@ -17,11 +18,11 @@ const campaign = pageMetadata(autumnSale.path, {
   description: `歌ってみたMIXの全プラン・全オプションが通常見積もり総額から${discount}。録音前でもお申し込みOK。受付は${startDay}〜${endDay}、音源提出は${dueDay}まで。`,
 });
 const socialImage = `${autumnSale.path}/opengraph-image`;
-export const metadata = {
+export const metadata = autumnSale.enabled ? {
   ...campaign,
   openGraph: { ...campaign.openGraph, images: [{ url: socialImage, width: 1200, height: 630, alt: `${autumnSale.name} — ${discount}` }] },
   twitter: { ...campaign.twitter, images: [socialImage] },
-};
+} : { title: "Sien-Official", robots: { index: false, follow: false } };
 
 const yen = new Intl.NumberFormat("ja-JP");
 const priceText = (price: number | null) => price === null ? "要相談" : `${yen.format(price)}円`;
@@ -53,6 +54,7 @@ const questions = [
 
 export default async function AutumnSalePage() {
   await connection();
+  if (!autumnSale.enabled) notFound();
   const { now, preview } = saleClock();
   const phase = salePhase(now);
   const [plans, setting] = await Promise.all([

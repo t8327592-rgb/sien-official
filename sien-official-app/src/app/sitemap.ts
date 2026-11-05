@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "",
     "/pricing",
     "/mix",
-    autumnSale.path,
+    ...(autumnSale.enabled ? [autumnSale.path] : []),
     "/original",
     "/business",
     "/profile",

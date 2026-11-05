@@ -707,12 +707,18 @@ test('autumn sale only discounts MIX within the JST window and the former form c
     '@/lib/autumn-sale': { saleClock: () => ({ now: end }) },
     '@/lib/submission': { submissionIdentity: () => ({}), existingSubmission: async () => null },
   });
-  const { salePhase, salePrice, isAutumnMixSale, salePolicyVersion } = load('src/config/autumn-sale.ts');
+  const { autumnSale, salePhase, salePrice, isAutumnMixSale, salePolicyVersion } = load('src/config/autumn-sale.ts');
+  const configuredEnabled = autumnSale.enabled;
+  autumnSale.enabled = false;
+  assert.equal(isAutumnMixSale('MIX', start), false);
+  assert.equal(salePhase(start), 'closed');
+  autumnSale.enabled = true;
   assert.deepEqual([start - 1, start, end - 1, end].map(salePhase), ['upcoming', 'open', 'open', 'closed']);
   assert.deepEqual([10000, 13000, 5000, 4000].map(salePrice), [8000, 10400, 4000, 3200]);
   assert.deepEqual([start - 1, start, end - 1, end].map(now => isAutumnMixSale('MIX', now)), [false, true, true, false]);
   assert.equal(isAutumnMixSale('ORIGINAL', start), false);
   assert.equal(isAutumnMixSale('GUIDE', start), false);
+  autumnSale.enabled = configuredEnabled;
   const { POST } = load('src/app/api/autumn-sale/route.ts');
   const post = (path, body) => new Request(`http://localhost${path}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
