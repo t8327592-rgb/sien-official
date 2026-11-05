@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 
 import type { PortfolioInput } from "@/lib/admin-types";
 import { prisma } from "@/lib/prisma";
+import { validateOrderSequence, adminWebUrl, adminText, adminBoolean, adminInteger } from "@/lib/admin-content-input";
 import { revalidatePath } from "next/cache";
 
 export async function updatePortfolio(id: string, data: PortfolioInput) {
@@ -12,15 +13,15 @@ export async function updatePortfolio(id: string, data: PortfolioInput) {
     await prisma.portfolio.update({
       where: { id },
       data: {
-        title: data.title,
-        url: data.url,
+        title: data.title === undefined ? undefined : adminText(data.title, "タイトル", 300, true),
+        url: data.url === undefined ? undefined : adminWebUrl(data.url, "実績のURL"),
         serviceCategory: data.serviceCategory,
         tags: data.tags,
         isFeatured: data.isFeatured,
         showOnMix: data.showOnMix,
         showOnOriginal: data.showOnOriginal,
-        isPublished: data.isPublished !== undefined ? data.isPublished : undefined,
-        orderIndex: data.orderIndex !== undefined ? Number(data.orderIndex) : undefined,
+        isPublished: data.isPublished !== undefined ? adminBoolean(data.isPublished) : undefined,
+        orderIndex: data.orderIndex !== undefined ? adminInteger(Number(data.orderIndex)) : undefined,
       },
     });
     invalidatePublicContent("portfolios");
@@ -46,14 +47,14 @@ export async function createPortfolio(data: PortfolioInput) {
 
     const newPortfolio = await prisma.portfolio.create({
       data: {
-        title: data.title || "新規実績",
-        url: data.url || "",
+        title: adminText(data.title || "新規実績", "タイトル", 300, true),
+        url: adminWebUrl(data.url, "実績のURL"),
         serviceCategory: data.serviceCategory || "MIX",
         tags: data.tags || "",
         isFeatured: data.isFeatured || false,
         showOnMix: data.showOnMix || false,
         showOnOriginal: data.showOnOriginal || false,
-        isPublished: data.isPublished !== undefined ? data.isPublished : true,
+        isPublished: adminBoolean(data.isPublished, false),
         orderIndex: nextOrder,
       },
     });
@@ -90,12 +91,10 @@ export async function deletePortfolio(id: string) {
 export async function updatePortfolioOrders(orders: { id: string, orderIndex: number }[]) {
   await requireAdmin();
   try {
-    for (const item of orders) {
-      await prisma.portfolio.update({
-        where: { id: item.id },
-        data: { orderIndex: item.orderIndex },
-      });
-    }
+    const sequence = validateOrderSequence(orders);
+    await prisma.$transaction(async tx => {
+      for (const item of sequence) await tx.portfolio.update({ where: { id: item.id }, data: { orderIndex: item.orderIndex } });
+    });
     invalidatePublicContent("portfolios");
   revalidatePath("/admin/portfolio");
     revalidatePath("/works");

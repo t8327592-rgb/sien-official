@@ -6,6 +6,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { after, NextResponse } from "next/server";
 
 import { requestIdentity } from "@/lib/request-identity";
+import { businessOrderData } from "@/lib/business-order";
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
         status: "PENDING",
       },
       });
+      await tx.order.create({ data: businessOrderData(record) });
       return record;
     }, consent);
     after(async () => { await processPendingNotifications(3); });

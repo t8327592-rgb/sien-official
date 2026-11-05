@@ -1,3 +1,5 @@
+import { validateReview } from "@/lib/admin-content-input";
+import { readJson, apiErrorResponse } from "@/lib/api-input";
 import { invalidatePublicContent } from "@/lib/public-cache";
 import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from 'next/server';
@@ -22,24 +24,15 @@ export async function POST(request: Request) {
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
 
-    const body = await request.json();
-    const { name, serviceType, content, rating, isPublished, orderIndex } = body;
-
-    const review = await prisma.review.create({
-      data: {
-        name,
-        serviceType,
-        content,
-        rating: rating || 5,
-        isPublished: isPublished ?? true,
-        orderIndex: orderIndex || 0,
-      },
-    });
+    const data = validateReview(await readJson(request));
+    const review = await prisma.review.create({ data });
 
     invalidatePublicContent("reviews");
 
     return NextResponse.json(review);
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error('Failed to create review:', error);
     return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
   }

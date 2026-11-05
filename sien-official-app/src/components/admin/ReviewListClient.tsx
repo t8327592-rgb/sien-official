@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { adminRequest } from "@/lib/admin-request";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit2, Trash2, Star } from "lucide-react";
 
@@ -21,6 +22,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
   const [currentReview, setCurrentReview] = useState<Partial<Review>>({});
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const saving = useRef(false);
+  const [notice, setNotice] = useState("");
 
   const handleAddNew = () => {
     setCurrentReview({
@@ -29,7 +32,7 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
       content: "",
       rating: 5,
       isPublished: true,
-      orderIndex: reviews.length,
+      orderIndex: Math.max(-1, ...reviews.map(r => r.orderIndex)) + 1,
     });
     setIsEditing(true);
   };
@@ -40,92 +43,51 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("本当に削除しますか？")) return;
+    if (saving.current || !confirm("本当に削除しますか？")) return;
+    saving.current = true; setIsLoading(true); setNotice("");
     try {
-      const res = await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setReviews(reviews.filter((r) => r.id !== id));
-        router.refresh();
-      }
-    } catch (err) {
-      console.error(err);
-      alert("削除に失敗しました");
-    }
+      await adminRequest(`/api/admin/reviews/${id}`, "DELETE");
+      setReviews(previous => previous.filter(r => r.id !== id)); router.refresh();
+    } catch (error) { setNotice((error as Error).message); }
+    finally { saving.current = false; setIsLoading(false); }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (saving.current) return;
+    saving.current = true; setIsLoading(true); setNotice("");
 
     const isNew = !currentReview.id;
     const url = isNew ? "/api/admin/reviews" : `/api/admin/reviews/${currentReview.id}`;
     const method = isNew ? "POST" : "PUT";
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentReview),
-      });
-
-      if (res.ok) {
-        const savedReview = await res.json();
-        if (isNew) {
-          setReviews([...reviews, savedReview]);
-        } else {
-          setReviews(reviews.map((r) => (r.id === savedReview.id ? savedReview : r)));
-        }
-        setIsEditing(false);
-        router.refresh();
-      } else {
-        alert("保存に失敗しました");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("エラーが発生しました");
-    } finally {
-      setIsLoading(false);
+      const savedReview = await adminRequest(url, method, currentReview);
+      setReviews(previous => isNew ? [...previous, savedReview] : previous.map(r => r.id === savedReview.id ? savedReview : r));
+      setIsEditing(false); router.refresh();
+    } catch (error) { setNotice((error as Error).message); } finally {
+      saving.current = false; setIsLoading(false);
     }
   };
 
   const moveItem = async (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === reviews.length - 1) return;
-
-    const newReviews = [...reviews];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-    // Swap
-    const temp = newReviews[index];
-    newReviews[index] = newReviews[targetIndex];
-    newReviews[targetIndex] = temp;
-
-    // Update orderIndex
-    const updatedReviews = newReviews.map((r, i) => ({ ...r, orderIndex: i }));
-    setReviews(updatedReviews);
-
-    // Save to DB
+    if (saving.current || (direction === 'up' && index === 0) || (direction === 'down' && index === reviews.length - 1)) return;
+    const next = [...reviews]; const target = direction === 'up' ? index - 1 : index + 1;
+    [next[index], next[target]] = [next[target], next[index]];
+    const ordered = next.map((r, orderIndex) => ({ ...r, orderIndex }));
+    saving.current = true; setIsLoading(true); setNotice("");
     try {
-      await Promise.all(
-        updatedReviews.map(r =>
-          fetch(`/api/admin/reviews/${r.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderIndex: r.orderIndex })
-          })
-        )
-      );
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      alert("並び替えの保存に失敗しました");
-    }
+      await adminRequest("/api/admin/reviews/reorder", "POST", { sequence: ordered.map(({ id, orderIndex }) => ({ id, orderIndex })), previous: reviews.map((r, orderIndex) => ({ id: r.id, orderIndex })) });
+      setReviews(ordered); router.refresh();
+    } catch (error) { setNotice((error as Error).message); }
+    finally { saving.current = false; setIsLoading(false); }
   };
 
   if (isEditing) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-xl font-bold mb-6">{currentReview.id ? "レビューの編集" : "レビューの追加"}</h2>
+        {notice && <p role="alert" className="mb-4 text-sm text-red-700">{notice}</p>}
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -192,7 +154,7 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsEditing(false)}
+              disabled={isLoading} onClick={() => setIsEditing(false)}
               className="px-6"
             >
               キャンセル
@@ -212,8 +174,9 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
 
   return (
     <div className="space-y-6">
+      {notice && <p role="alert" className="rounded-lg border bg-white p-3 text-sm text-red-700">{notice}</p>}
       <div className="flex justify-end">
-        <Button onClick={handleAddNew} className="bg-slate-900 hover:bg-slate-800 text-white">
+        <Button disabled={isLoading} onClick={handleAddNew} className="bg-slate-900 hover:bg-slate-800 text-white">
           <Plus className="w-4 h-4 mr-2" />
           レビューを追加
         </Button>
@@ -229,8 +192,8 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
             {reviews.map((review, index) => (
               <div key={review.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-slate-50 transition-colors">
                 <div className="flex flex-col gap-2 mr-2">
-                  <button onClick={() => moveItem(index, 'up')} disabled={index === 0} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▲</button>
-                  <button onClick={() => moveItem(index, 'down')} disabled={index === reviews.length - 1} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▼</button>
+                  <button onClick={() => moveItem(index, 'up')} aria-label="レビューを上へ移動" disabled={isLoading || index === 0} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▲</button>
+                  <button onClick={() => moveItem(index, 'down')} aria-label="レビューを下へ移動" disabled={isLoading || index === reviews.length - 1} className="p-1 text-slate-400 hover:text-slate-600 disabled:opacity-30">▼</button>
                 </div>
 
                 <div className="flex-1 space-y-2">
@@ -254,10 +217,10 @@ export default function ReviewListClient({ initialReviews }: { initialReviews: R
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-4 sm:mt-0">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(review)}>
+                  <Button variant="outline" size="sm" disabled={isLoading} onClick={() => handleEdit(review)}>
                     <Edit2 className="w-4 h-4 mr-1" /> 編集
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(review.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <Button variant="outline" size="sm" disabled={isLoading} onClick={() => handleDelete(review.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                     <Trash2 className="w-4 h-4 mr-1" /> 削除
                   </Button>
                 </div>

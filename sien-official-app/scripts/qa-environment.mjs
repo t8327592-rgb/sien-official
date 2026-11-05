@@ -6,6 +6,7 @@ import { createServer as createHttpServer } from 'node:http';
 import { createServer as createTcpServer } from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
+import { businessOrderData } from '../src/lib/business-order.ts';
 
 // In-memory test data only. Never loads, copies, or resets the live database.
 const app = path.resolve(import.meta.dirname, '..');
@@ -38,6 +39,25 @@ await prisma.portfolio.createMany({ data: [
 ] });
 await prisma.post.create({ data: { id: 'qa-news', title: 'QA お知らせ', type: 'NEWS', published: true, content: '## QA見出し\n\n**太字**と本文。', createdAt: new Date('2026-07-08T00:00:00+09:00') } });
 await prisma.campaign.create({ data: { id: 'qa-expired', name: '終了済みQAセール', targetPlanId: 'qa-mix', campaignPrice: 8000, endDate: new Date('2026-07-17T23:59:59+09:00') } });
+// Fictional administrative preview fixtures. No live customer data is loaded.
+await prisma.businessContact.createMany({ data: [
+  { id: 'qa-corp-real', companyName: 'プレビュー音楽制作株式会社', contactName: '確認用 担当者', email: 'business@example.invalid', inquiryType: '歌ってみたMIX・マスタリング', budget: '50,000円程度', deadline: '2026-12-01', message: '法人問い合わせの内容を失わずに統合する確認用です。実在の問い合わせではありません。', status: 'PENDING', history: '受付内容を確認。見積はこれから。', invoiceStatus: '未発行' },
+  { id: 'qa-corp-test', companyName: 'テスト送信の確認用法人', contactName: 'テスト担当', email: 'test@example.invalid', inquiryType: 'お見積りのご依頼', message: 'テストとして明示指定したデータ。削除せず通常一覧と集計から除外。', status: 'CANCELED', estimatedPrice: 999999 },
+  { id: 'qa-corp-canceled', companyName: 'キャンセル案件の確認用法人', contactName: '確認担当', email: 'canceled@example.invalid', inquiryType: 'オリジナル楽曲制作（ゲーム・アプリ等）', message: 'キャンセルでもテストと自動判定しない確認用です。', status: 'CANCELED' },
+] });
+for (const contact of await prisma.businessContact.findMany()) await prisma.order.create({ data: businessOrderData(contact, contact.id === 'qa-corp-test') });
+await prisma.order.createMany({ data: [
+  { id: 'qa-order-unconfirmed', clientName: 'プレビュー 未確定', clientEmail: 'pending@example.invalid', serviceType: 'MIX', songTitle: '見積だけの案件', price: 18000, basePrice: 18000, status: 'ESTIMATING' },
+  { id: 'qa-order-october', clientName: 'プレビュー 10月', clientEmail: 'october@example.invalid', serviceType: 'MIX', songTitle: '10月の納品', price: 10000, confirmedPrice: 12000, confirmedAt: new Date('2026-10-02T00:00:00+09:00'), revenueAt: new Date('2026-10-15T00:00:00+09:00'), deliveredAt: new Date('2026-10-15T00:00:00+09:00'), status: 'COMPLETED' },
+  { id: 'qa-order-november', clientName: 'プレビュー 11月', clientEmail: 'november@example.invalid', serviceType: 'MIX', songTitle: '分割入金の案件', price: 15000, confirmedPrice: 20000, confirmedAt: new Date('2026-11-01T00:00:00+09:00'), revenueAt: new Date('2026-11-04T00:00:00+09:00'), status: 'WAITING_PAYMENT' },
+  { id: 'qa-order-previous', clientName: 'プレビュー 前年', clientEmail: 'prior@example.invalid', serviceType: 'MIX', songTitle: '前年同月の比較', confirmedPrice: 10000, revenueAt: new Date('2025-11-10T00:00:00+09:00'), status: 'COMPLETED', isArchived: true },
+  { id: 'qa-order-zero', clientName: 'プレビュー 0円', clientEmail: 'zero@example.invalid', serviceType: 'MIX', songTitle: '0円でも計上件数に含む', confirmedPrice: 0, revenueAt: new Date('2026-10-20T00:00:00+09:00'), status: 'COMPLETED', isArchived: true },
+] });
+await prisma.paymentRecord.createMany({ data: [
+  { orderId: 'qa-order-october', requestKey: 'qa-oct-payment-00001', amount: 10675, fee: 100, withholding: 1225, paidAt: new Date('2026-11-01T00:00:00+09:00') },
+  { orderId: 'qa-order-november', requestKey: 'qa-nov-payment-00001', amount: 10000, paidAt: new Date('2026-11-05T00:00:00+09:00'), memo: '前金' },
+] });
+await prisma.expense.create({ data: { title: 'プレビュー用プラグイン購入', amount: 3000, category: 'ソフトウェア', date: new Date('2026-10-10T00:00:00+09:00') } });
 await prisma.$disconnect();
 await db.exec("DEALLOCATE ALL");
 

@@ -1,6 +1,6 @@
 import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import BusinessDetailClient from "@/components/admin/BusinessDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +12,8 @@ export default async function BusinessDetailPage({
 }) {
   await requireAdminPage();
   const { id } = await params;
+  const linked = await prisma.order.findUnique({ where: { businessContactId: id }, select: { id: true } });
+  if (linked) redirect(`/admin/orders/${linked.id}`);
 
   const contact = await prisma.businessContact.findUnique({
     where: { id },

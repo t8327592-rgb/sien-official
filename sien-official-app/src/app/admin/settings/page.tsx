@@ -23,6 +23,18 @@ export default async function AdminSettingsPage() {
         </div>
       </div>
 
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-bold text-lg text-slate-900">サイトの掲載内容を管理</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["/admin/profile", "プロフィール・サイト情報", "紹介文・SNS・共通の案内文"],
+            ["/admin/services", "サービス内容", "サイトに掲載するサービス説明"],
+            ["/admin/faq", "よくある質問", "個人・法人のお客様向けのFAQ"],
+            ["/admin/campaigns", "キャンペーン", "プランごとの固定価格の設定"],
+          ].map(([href, title, description]) => <Link key={href} href={href} className="rounded-lg border p-4 hover:border-orange-300 hover:bg-orange-50"><span className="block text-sm font-bold text-slate-800">{title} →</span><span className="mt-1 block text-xs text-slate-500">{description}</span></Link>)}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {/* 基本設定 (Client Component) */}

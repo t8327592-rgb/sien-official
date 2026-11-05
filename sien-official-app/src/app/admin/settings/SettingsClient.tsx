@@ -21,15 +21,15 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateSiteSetting({
+      const result = await updateSiteSetting({
         orderStatus,
         announcement,
       });
+      if (!result.success) throw Error(result.error);
       alert("設定を保存しました。");
       router.refresh();
     } catch (error) {
-      console.error(error);
-      alert("保存中にエラーが発生しました。");
+      alert(error instanceof Error ? error.message : "保存中にエラーが発生しました。");
     } finally {
       setIsSaving(false);
     }
@@ -45,8 +45,8 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
       </div>
       <div className="space-y-4 flex-grow">
         <div>
-          <p className="text-sm font-bold text-slate-700 mb-1">受付ステータス</p>
-          <select 
+          <label htmlFor="setting-order-status" className="block text-sm font-bold text-slate-700 mb-1">受付ステータス</label>
+          <select disabled={isSaving} id="setting-order-status"
             value={orderStatus}
             onChange={(e) => setOrderStatus(e.target.value)}
             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
@@ -57,8 +57,8 @@ export function SettingsClient({ initialSetting }: { initialSetting: SiteSetting
           </select>
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-700 mb-1">サイト案内メッセージ</p>
-          <textarea 
+          <label htmlFor="setting-announcement" className="block text-sm font-bold text-slate-700 mb-1">サイト案内メッセージ</label>
+          <textarea disabled={isSaving} id="setting-announcement" maxLength={2000}
             value={announcement}
             onChange={(e) => setAnnouncement(e.target.value)}
             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" 

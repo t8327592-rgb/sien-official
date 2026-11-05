@@ -1,21 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { accountingParts, revenueDate } from "@/lib/admin-finance";
+import { accountingParts, accountingDateInput } from "@/lib/admin-finance";
+import { accountingSummary, isRevenue, activePayments, signedCash, percentChange, type AccountingOrder } from "@/lib/order-accounting";
+import Link from "next/link";
+import { adminRequest } from "@/lib/admin-request";
+import { parseAdminMoney } from "@/lib/admin-order-client";
+import { csvRow } from "@/lib/admin-csv";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { Download, Trash2, Edit2, Check, X, Target, Eye, EyeOff } from "lucide-react";
 
-type Order = {
-  id: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deliveredAt: Date | null;
-  price: number | null;
-  basePrice: number | null;
-  optionPrice: number | null;
-};
+type Order = AccountingOrder & { clientName: string; companyName: string | null };
 
 type Expense = {
   id: string;
@@ -39,92 +35,51 @@ export function FinanceDashboardClient({
 
   const [selectedYear, setSelectedYear] = useState<number>(accountingParts().year);
   const [isAmountsVisible, setIsAmountsVisible] = useState(false);
-  const [mode, setMode] = useState<"created" | "delivered">("created");
   const [targetSales, setTargetSales] = useState<number>(initialTargetSales);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState(initialTargetSales.toString());
 
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [expenseEditData, setExpenseEditData] = useState<Partial<Expense>>({});
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState("");
+  const [pending, setPending] = useState(false);
+  const saving = useRef(false);
+  const [notice, setNotice] = useState("");
+  const mutate = async (work: () => Promise<void>) => {
+    if (saving.current) return;
+    saving.current = true; setPending(true); setNotice("");
+    try { await work(); router.refresh(); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "保存できませんでした。"); }
+    finally { saving.current = false; setPending(false); }
+  };
+  const money = (value: string) => { const n = parseAdminMoney(value); if (n === null) throw Error("金額を入力してください。"); return n; };
 
-  // 利用可能な年度のリスト（過去のデータから抽出）
   const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    years.add(accountingParts().year);
+    const years = new Set<number>([accountingParts().year]);
     initialOrders.forEach(o => {
-      const targetDate = revenueDate(o, mode);
-      if (targetDate) years.add(accountingParts(targetDate).year);
+      if (o.revenueAt) years.add(accountingParts(o.revenueAt).year);
+      activePayments(o).forEach(p => years.add(accountingParts(p.paidAt).year));
     });
     initialExpenses.forEach(e => years.add(accountingParts(e.date).year));
-    return Array.from(years).sort((a, b) => b - a);
-  }, [initialOrders, initialExpenses, mode]);
-
-  // 指定された年度のデータに絞り込み
-  const yearOrders = useMemo(() =>
-    initialOrders.filter(o => {
-      const targetDate = revenueDate(o, mode);
-      if (!targetDate) return false;
-      return accountingParts(targetDate).year === selectedYear;
-    }),
-  [initialOrders, selectedYear, mode]);
-
-  const yearExpenses = useMemo(() =>
-    initialExpenses.filter(e => accountingParts(e.date).year === selectedYear),
-  [initialExpenses, selectedYear]);
-
-  // 今月のデータ計算
-  const currentMonth = accountingParts().month;
-  const currentYear = accountingParts().year;
-  const isCurrentYear = selectedYear === currentYear;
-
-  const thisMonthSales = isCurrentYear
-    ? yearOrders.filter(o => {
-        const targetDate = revenueDate(o, mode);
-        return targetDate && accountingParts(targetDate).month === currentMonth;
-      }).reduce((sum, o) => sum + (o.price || 0), 0)
-    : 0;
-
-  // 年間サマリー
-  const thisYearSales = yearOrders.reduce((sum, o) => sum + (o.price || 0), 0);
-  const thisYearExpenses = yearExpenses.reduce((sum, e) => sum + e.amount, 0);
+    return [...years].sort((a, b) => b - a);
+  }, [initialOrders, initialExpenses]);
+  const summary = useMemo(() => accountingSummary(initialOrders, selectedYear), [initialOrders, selectedYear]);
+  const previous = useMemo(() => accountingSummary(initialOrders, selectedYear - 1), [initialOrders, selectedYear]);
+  const yearOrders = initialOrders.filter(o => isRevenue(o) && accountingParts(o.revenueAt!).year === selectedYear);
+  const yearExpenses = initialExpenses.filter(e => accountingParts(e.date).year === selectedYear);
+  const thisMonthSales = selectedYear === accountingParts().year ? summary.months[accountingParts().month].revenue : 0;
+  const thisYearSales = summary.revenue;
+  const thisYearExpenses = yearExpenses.reduce((s, e) => s + e.amount, 0);
   const thisYearProfit = thisYearSales - thisYearExpenses;
-
-  // 目標達成率
-  const achievementRate = targetSales > 0 ? Math.round((thisMonthSales / targetSales) * 100) : 0;
-
-  // --- グラフ用データ ---
-
-  // 月別売上＆経費推移（棒グラフ）
-  const monthlyData = useMemo(() => {
-    const data = Array.from({ length: 12 }, (_, i) => ({
-      name: `${i + 1}月`,
-      売上: 0,
-      経費: 0,
-      利益: 0,
-    }));
-
-    yearOrders.forEach(o => {
-      const targetDate = revenueDate(o, mode);
-      if (targetDate) {
-        const month = accountingParts(targetDate).month;
-        data[month].売上 += (o.price || 0);
-      }
-    });
-
-    yearExpenses.forEach(e => {
-      const month = accountingParts(e.date).month;
-      data[month].経費 += e.amount;
-    });
-
-    data.forEach(d => {
-      d.利益 = d.売上 - d.経費;
-    });
-
-    return data;
-  }, [yearOrders, yearExpenses, mode]);
+  const achievementRate = targetSales > 0 ? Math.round(thisMonthSales / targetSales * 100) : 0;
+  const missing = initialOrders.filter(o => !o.isTest && !["CANCELED", "CANCELLED"].includes(o.status) && (o.confirmedPrice === null || !o.revenueAt));
+  const monthlyData = summary.months.map((m, i) => ({ name: `${i + 1}月`, 売上: m.revenue, 前年売上: previous.months[i].revenue, 経費: yearExpenses.filter(e => accountingParts(e.date).month === i).reduce((s, e) => s + e.amount, 0) }));
+  const showMoney = (n: number | null) => n === null ? "—" : isAmountsVisible ? `¥${Math.round(n).toLocaleString()}` : "¥ ***,***";
+  const change = (n: number, prior: number) => { const v = percentChange(n, prior); return v === null ? "比較なし" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`; };
 
   // 経費カテゴリ内訳（円グラフ）
-  const expenseCategoryData = useMemo(() => {
+  const expenseCategoryData = (() => {
     const categories: Record<string, number> = {};
     yearExpenses.forEach(e => {
       if (!categories[e.category]) categories[e.category] = 0;
@@ -133,46 +88,25 @@ export function FinanceDashboardClient({
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [yearExpenses]);
+  })();
 
   const COLORS = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#f43f5e', '#64748b'];
 
   // --- アクション ---
 
-  const handleUpdateTarget = async () => {
-    try {
-      const value = parseInt(targetInput, 10);
-      if (isNaN(value)) return;
-
-      const res = await fetch("/api/admin/settings/finance", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetMonthlySales: value }),
-      });
-      if (res.ok) {
-        setTargetSales(value);
-        setIsEditingTarget(false);
-        router.refresh();
-      }
-    } catch {
-      alert("目標額の更新に失敗しました");
-    }
-  };
-
+  const handleUpdateTarget = () => mutate(async () => {
+    const value = money(targetInput);
+    await adminRequest("/api/admin/settings/finance", "PATCH", { targetMonthlySales: value });
+    setTargetSales(value); setIsEditingTarget(false); setNotice("目標額を保存しました。");
+  });
   const handleDeleteExpense = async (id: string) => {
-    if (!window.confirm("この経費を削除しますか？")) return;
-    try {
-      const res = await fetch(`/api/admin/finance/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        router.refresh();
-      }
-    } catch {
-      alert("削除に失敗しました");
-    }
+    if (pending || !window.confirm("この経費を削除しますか？")) return;
+    await mutate(async () => { await adminRequest(`/api/admin/finance/${id}`, "DELETE"); setNotice("経費を削除しました。"); });
   };
 
   const startEditExpense = (expense: Expense) => {
     setEditingExpenseId(expense.id);
+    setExpenseAmount(String(expense.amount)); setExpenseDate(accountingDateInput(expense.date));
     setExpenseEditData({
       title: expense.title,
       amount: expense.amount,
@@ -181,21 +115,10 @@ export function FinanceDashboardClient({
     });
   };
 
-  const saveEditExpense = async (id: string) => {
-    try {
-      const res = await fetch(`/api/admin/finance/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(expenseEditData),
-      });
-      if (res.ok) {
-        setEditingExpenseId(null);
-        router.refresh();
-      }
-    } catch {
-      alert("更新に失敗しました");
-    }
-  };
+  const saveEditExpense = (id: string) => mutate(async () => {
+    await adminRequest(`/api/admin/finance/${id}`, "PATCH", { ...expenseEditData, amount: money(expenseAmount), date: expenseDate });
+    setEditingExpenseId(null); setNotice("経費を保存しました。");
+  });
 
   // CSVダウンロード
   const downloadCSV = () => {
@@ -203,25 +126,22 @@ export function FinanceDashboardClient({
     const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
 
     // Header
-    let csvContent = "日付,区分,カテゴリ,項目・クライアント名,金額\n";
+    let csvContent = csvRow(["日付", "区分", "カテゴリ", "項目・クライアント名", "金額"]);
 
-    // 売上
     yearOrders.forEach(o => {
-      const targetDate = revenueDate(o, mode);
-      if (targetDate) {
-        const d = accountingParts(targetDate);
-        const dateStr = `${d.year}/${String(d.month+1).padStart(2,'0')}/${String(d.day).padStart(2,'0')}`;
-        csvContent += `${dateStr},売上,案件報酬,"Order ID: ${o.id}",${o.price || 0}\n`;
-      }
+      csvContent += csvRow([accountingDateInput(o.revenueAt!), "確定売上", "案件報酬", `${o.companyName || o.clientName} / ${o.id}`, o.confirmedPrice]);
     });
+    initialOrders.filter(o => !o.isTest).forEach(o => activePayments(o).forEach(p => {
+      const d = accountingParts(p.paidAt);
+      if (d.year !== selectedYear) return;
+      csvContent += csvRow([accountingDateInput(p.paidAt), p.kind === "REFUND" ? "返金" : "入金", "資金移動", `Order ID: ${o.id}`, signedCash(p)]);
+      if (p.fee) csvContent += csvRow([accountingDateInput(p.paidAt), "入金控除", "手数料", `Order ID: ${o.id}`, p.fee]);
+      if (p.withholding) csvContent += csvRow([accountingDateInput(p.paidAt), "入金控除", "源泉徴収", `Order ID: ${o.id}`, p.withholding]);
+    }));
 
     // 経費
     yearExpenses.forEach(e => {
-      const d = accountingParts(e.date);
-      const dateStr = `${d.year}/${String(d.month+1).padStart(2,'0')}/${String(d.day).padStart(2,'0')}`;
-      // カンマをエスケープ
-      const safeTitle = `"${e.title.replace(/"/g, '""')}"`;
-      csvContent += `${dateStr},経費,${e.category},${safeTitle},${e.amount}\n`;
+      csvContent += csvRow([accountingDateInput(e.date), "経費", e.category, e.title, e.amount]);
     });
 
     const blob = new Blob([bom, csvContent], { type: "text/csv;charset=utf-8;" });
@@ -232,28 +152,14 @@ export function FinanceDashboardClient({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-slate-800">金額・確定申告管理</h1>
-
-          <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-            <button
-              onClick={() => setMode("created")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${mode === "created" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-            >
-              受注ベース
-            </button>
-            <button
-              onClick={() => setMode("delivered")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${mode === "delivered" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-            >
-              納品ベース
-            </button>
-          </div>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">売上・経費管理</h1>
 
           <button
             onClick={() => setIsAmountsVisible(!isAmountsVisible)}
@@ -262,28 +168,15 @@ export function FinanceDashboardClient({
             {isAmountsVisible ? <><EyeOff className="w-4 h-4"/> 隠す</> : <><Eye className="w-4 h-4"/> 金額を表示</>}
           </button>
         </div>
-        <div className="flex sm:hidden bg-slate-100 p-0.5 rounded-lg border border-slate-200 w-full mb-2">
-          <button
-            onClick={() => setMode("created")}
-            className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${mode === "created" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-          >
-            受注ベース
-          </button>
-          <button
-            onClick={() => setMode("delivered")}
-            className={`flex-1 py-2 text-xs font-bold rounded-md transition-colors ${mode === "delivered" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-          >
-            納品ベース
-          </button>
-        </div>
         <div className="flex items-center gap-3">
           <select
+            aria-label="集計する年"
             value={selectedYear}
             onChange={e => setSelectedYear(parseInt(e.target.value, 10))}
             className="border-slate-200 border rounded-lg py-2 pl-4 pr-10 font-bold text-slate-700 bg-white shadow-sm outline-none focus:ring-2 focus:ring-orange-500"
           >
             {availableYears.map(year => (
-              <option key={year} value={year}>{year}年度</option>
+              <option key={year} value={year}>{year}年</option>
             ))}
           </select>
           <button
@@ -296,8 +189,15 @@ export function FinanceDashboardClient({
         </div>
       </div>
 
+      <p className="text-sm text-slate-600 leading-relaxed">売上は確定金額を売上計上日で集計します。入金は実際の入金日で集計し、売上に加算しません。テストは除外、アーカイブは含みます。金額は税込です。</p>
+      {missing.length > 0 && <details className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm"><summary className="cursor-pointer font-bold text-amber-900">集計前に確認する案件：{missing.length}件（金額未確定・計上日未入力）</summary><p className="mt-2 text-xs text-amber-900">過去の見積や入金状況から金額・日付を自動補完していません。確認済みの案件から入力してください。</p><ul className="mt-3 space-y-2">{missing.map(o => <li key={o.id}><Link className="underline text-amber-900" href={`/admin/orders/${o.id}`}>{o.companyName || o.clientName}：{o.confirmedPrice === null ? "金額未確定" : "計上日未入力"}</Link></li>)}</ul></details>}
+      <div className="grid sm:grid-cols-3 gap-4">
+        {[["売上計上した案件数", `${summary.count}件`], ["平均案件単価", showMoney(summary.average)], ["実入金（返金差引）", showMoney(summary.cash)]].map(([label, value]) => <div key={label} className="rounded-xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-900">{value}</p></div>)}
+      </div>
+      <p className="text-xs text-slate-500">平均案件単価＝対象期間の確定売上 ÷ 同じ期間の売上計上案件数。0円の確定案件も含み、未確定は分母から除外します。</p>
+      {notice && <p role="status" className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">{notice}</p>}
       {/* サマリーダッシュボード */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <Target className="w-20 h-20" />
@@ -326,7 +226,7 @@ export function FinanceDashboardClient({
                   onChange={e => setTargetInput(e.target.value)}
                   className="w-20 text-xs border rounded px-1.5 py-1 outline-none"
                 />
-                <button onClick={handleUpdateTarget} className="text-emerald-600 bg-emerald-50 p-1 rounded hover:bg-emerald-100"><Check className="w-3 h-3" /></button>
+                <button disabled={pending} onClick={handleUpdateTarget} className="text-emerald-600 bg-emerald-50 p-1 rounded hover:bg-emerald-100"><Check className="w-3 h-3" /></button>
                 <button onClick={() => setIsEditingTarget(false)} className="text-slate-400 bg-slate-50 p-1 rounded hover:bg-slate-100"><X className="w-3 h-3" /></button>
               </div>
             ) : (
@@ -346,13 +246,18 @@ export function FinanceDashboardClient({
           <p className="text-3xl font-black text-red-500">{isAmountsVisible ? `¥${thisYearExpenses.toLocaleString()}` : '¥ ***,***'}</p>
         </div>
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-center">
-          <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の最終利益</h3>
+          <h3 className="text-sm font-bold text-slate-500 mb-2">{selectedYear}年の差引（売上 − 登録経費）</h3>
           <p className={`text-3xl font-black ${thisYearProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             {isAmountsVisible ? `¥${thisYearProfit.toLocaleString()}` : '¥ ***,***'}
           </p>
         </div>
       </div>
 
+      <section className="rounded-xl border bg-white shadow-sm overflow-hidden" aria-labelledby="monthly-heading">
+        <div className="p-5"><h2 id="monthly-heading" className="text-lg font-bold text-slate-800">月別比較</h2><p className="text-xs text-slate-500 mt-1">前年同月・前月との比較。比較元が0円の場合は「比較なし」と表示します。</p></div>
+        <div className="overflow-x-auto"><table className="w-full whitespace-nowrap text-sm text-right"><thead className="bg-slate-50 text-slate-500"><tr>{["月", "確定売上", "案件数", "平均案件単価", "前月比", "前年同月売上", "前年同月比", "実入金", "経費", "差引"].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{summary.months.map((m, i) => <tr key={i} className="hover:bg-slate-50"><th className="px-4 py-3">{i+1}月</th><td className="px-4 py-3 font-bold">{showMoney(m.revenue)}</td><td className="px-4 py-3">{m.count}件</td><td className="px-4 py-3">{showMoney(m.average)}</td><td className="px-4 py-3">{isAmountsVisible ? change(m.revenue, i ? summary.months[i-1].revenue : previous.months[11].revenue) : "***"}</td><td className="px-4 py-3">{showMoney(previous.months[i].revenue)}</td><td className="px-4 py-3">{isAmountsVisible ? change(m.revenue, previous.months[i].revenue) : "***"}</td><td className="px-4 py-3">{showMoney(m.cash)}</td><td className="px-4 py-3">{showMoney(monthlyData[i].経費)}</td><td className="px-4 py-3">{showMoney(m.revenue - monthlyData[i].経費)}</td></tr>)}</tbody></table></div>
+      </section>
+      <p className="text-xs text-slate-500">差引は管理用の目安です。入金時の手数料は経費へ自動転記していません。CSVの「入金・返金・入金控除」は売上行と別区分で、合算しないでください。</p>
       {/* グラフエリア */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border bg-white p-6 shadow-sm">
@@ -362,13 +267,14 @@ export function FinanceDashboardClient({
               <BarChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => `¥${Number(value ?? 0).toLocaleString()}`} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(value) => isAmountsVisible ? `¥${Number(value ?? 0).toLocaleString()}` : "***"} />
                 <RechartsTooltip
                   formatter={(value) => [isAmountsVisible ? `¥${Number(value ?? 0).toLocaleString()}` : '¥ ***,***', undefined]}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', fontWeight: 'bold' }} />
                 <Bar dataKey="売上" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="前年売上" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 <Bar dataKey="経費" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>
@@ -430,14 +336,14 @@ export function FinanceDashboardClient({
                     <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-5 py-3">
                         {editingExpenseId === exp.id ? (
-                          <input type="date" value={new Date(expenseEditData.date || new Date()).toISOString().split('T')[0]} onChange={e => setExpenseEditData({...expenseEditData, date: new Date(e.target.value)})} className="border rounded px-2 py-1 outline-none text-xs" />
+                          <input type="date" aria-label="経費の日付" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} className="border rounded px-2 py-1 outline-none text-xs" />
                         ) : (
                           new Date(exp.date).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })
                         )}
                       </td>
                       <td className="px-5 py-3">
                         {editingExpenseId === exp.id ? (
-                          <select value={expenseEditData.category} onChange={e => setExpenseEditData({...expenseEditData, category: e.target.value})} className="border rounded px-2 py-1 outline-none text-xs bg-white">
+                          <select aria-label="経費のカテゴリ" disabled={pending} value={expenseEditData.category} onChange={e => setExpenseEditData({...expenseEditData, category: e.target.value})} className="border rounded px-2 py-1 outline-none text-xs bg-white">
                             <option value="ソフトウェア">ソフトウェア</option>
                             <option value="機材">機材</option>
                             <option value="通信費">通信費</option>
@@ -452,14 +358,14 @@ export function FinanceDashboardClient({
                       </td>
                       <td className="px-5 py-3 font-bold text-slate-800">
                         {editingExpenseId === exp.id ? (
-                          <input type="text" value={expenseEditData.title} onChange={e => setExpenseEditData({...expenseEditData, title: e.target.value})} className="border rounded px-2 py-1 outline-none text-xs w-full" />
+                          <input aria-label="経費の項目名" disabled={pending} type="text" value={expenseEditData.title} onChange={e => setExpenseEditData({...expenseEditData, title: e.target.value})} className="border rounded px-2 py-1 outline-none text-xs w-full" />
                         ) : (
                           exp.title
                         )}
                       </td>
                       <td className="px-5 py-3 text-right font-black text-red-500">
                         {editingExpenseId === exp.id ? (
-                          <input type="number" value={expenseEditData.amount} onChange={e => setExpenseEditData({...expenseEditData, amount: parseInt(e.target.value, 10)})} className="border rounded px-2 py-1 outline-none text-xs w-24 text-right" />
+                          <input type="number" aria-label="経費の金額" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} className="border rounded px-2 py-1 outline-none text-xs w-24 text-right" />
                         ) : (
                           isAmountsVisible ? `¥${exp.amount.toLocaleString()}` : '¥ ***,***'
                         )}
@@ -468,13 +374,13 @@ export function FinanceDashboardClient({
                         <div className="flex items-center justify-center gap-2">
                           {editingExpenseId === exp.id ? (
                             <>
-                              <button onClick={() => saveEditExpense(exp.id)} className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded transition-colors"><Check className="w-4 h-4" /></button>
-                              <button onClick={() => setEditingExpenseId(null)} className="text-slate-400 hover:bg-slate-100 p-1.5 rounded transition-colors"><X className="w-4 h-4" /></button>
+                              <button aria-label="経費の編集を保存" disabled={pending} onClick={() => saveEditExpense(exp.id)} className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded transition-colors"><Check className="w-4 h-4" /></button>
+                              <button aria-label="経費の編集を取り消す" disabled={pending} onClick={() => setEditingExpenseId(null)} className="text-slate-400 hover:bg-slate-100 p-1.5 rounded transition-colors"><X className="w-4 h-4" /></button>
                             </>
                           ) : (
                             <>
-                              <button onClick={() => startEditExpense(exp)} className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors"><Edit2 className="w-4 h-4" /></button>
-                              <button onClick={() => handleDeleteExpense(exp.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              <button aria-label="経費を編集" disabled={pending} onClick={() => startEditExpense(exp)} className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded transition-colors"><Edit2 className="w-4 h-4" /></button>
+                              <button aria-label="経費を削除" disabled={pending} onClick={() => handleDeleteExpense(exp.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
                             </>
                           )}
                         </div>

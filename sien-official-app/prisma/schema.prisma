@@ -64,6 +64,16 @@ model User {
 
 // 依頼管理・金額管理用モデル
 model Order {
+  customerType      String   @default("PERSONAL")
+  companyName       String?
+  businessContactId String?  @unique
+  businessContact   BusinessContact? @relation(fields: [businessContactId], references: [id], onDelete: Restrict)
+  isTest            Boolean  @default(false)
+  confirmedPrice    Int?
+  confirmedAt       DateTime?
+  revenueAt         DateTime?
+  financeVersion    Int      @default(0)
+  payments          PaymentRecord[]
   feedback          OrderFeedback?
   id                String   @id @default(cuid())
   clientName        String
@@ -89,12 +99,30 @@ model Order {
   vocalGuideStatus  String?  // 仮歌の有無 (オリジナル用)
   status            String   @default("PENDING") // PENDING(未対応), ESTIMATING(見積中), WORKING(作業中), COMPLETED(納品済), CANCELLED(キャンセル)
   deliveredAt       DateTime? // 実際の納品日時
-  price             Int?     // 見積もり・確定金額（売上管理用）
+  price             Int?     // 既存の見積・旧金額。確定売上は confirmedPrice で明示管理。
   basePrice         Int?     // 基本料金（内訳用）
   optionPrice       Int?     // オプション料金（内訳用）
   isArchived        Boolean  @default(false) // 論理削除（アーカイブ）フラグ
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+// 入金・返金は追記式。誤登録は削除せず取消理由を残す。
+model PaymentRecord {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  requestKey  String   @unique
+  kind        String   @default("RECEIPT")
+  amount      Int
+  fee         Int      @default(0)
+  withholding Int      @default(0)
+  paidAt      DateTime
+  memo        String?
+  voidedAt    DateTime?
+  voidReason  String?
+  createdAt   DateTime @default(now())
+  @@index([orderId, paidAt])
 }
 
 // 管理者用フィードバック。依頼情報は Order から参照する。
@@ -181,6 +209,7 @@ model Portfolio {
 
 // 法人・企業様お問い合わせ用モデル
 model BusinessContact {
+  order              Order?
   id                 String   @id @default(cuid())
   companyName        String   // 貴社名
   contactName        String   // ご担当者名

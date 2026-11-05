@@ -1,3 +1,5 @@
+import { validateReview } from "@/lib/admin-content-input";
+import { readJson, apiErrorResponse } from "@/lib/api-input";
 import { invalidatePublicContent } from "@/lib/public-cache";
 import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from 'next/server';
@@ -8,25 +10,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
 
     const { id } = await params;
-    const body = await request.json();
-    const { name, serviceType, content, rating, isPublished, orderIndex } = body;
-
-    const review = await prisma.review.update({
-      where: { id },
-      data: {
-        name,
-        serviceType,
-        content,
-        rating,
-        isPublished,
-        orderIndex,
-      },
-    });
+    const data = validateReview(await readJson(request), true);
+    const review = await prisma.review.update({ where: { id }, data });
 
     invalidatePublicContent("reviews");
 
     return NextResponse.json(review);
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error('Failed to update review:', error);
     return NextResponse.json({ error: 'Failed to update review' }, { status: 500 });
   }

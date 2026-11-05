@@ -38,6 +38,7 @@ export async function checkIsRepeater(
   }
 
   const conditions: Prisma.OrderWhereInput[] = [
+      { isTest: false },
       {
         status: {
           notIn: ["CANCELED", "CANCELLED"]
@@ -95,6 +96,7 @@ export async function updateAllClientOrdersToRepeater(
 
   await prisma.order.updateMany({
     where: {
+      isTest: false,
       OR: orConditions
     },
     data: {

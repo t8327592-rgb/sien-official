@@ -64,12 +64,17 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     const { id } = await params;
 
-    await prisma.order.delete({
-      where: { id },
+    await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${`order-finance:${id}`}, 0))`;
+      const record = await tx.order.findUnique({ where: { id }, select: { businessContactId: true, confirmedPrice: true, _count: { select: { payments: true } } } });
+      if (record && (record.businessContactId || record.confirmedPrice !== null || record._count.payments)) throw new ApiError(409, "金額・法人の履歴を保管するため削除できません。アーカイブをご利用ください。");
+      await tx.order.delete({ where: { id } });
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("Failed to delete order:", error);
     return NextResponse.json({ success: false, error: "Failed to delete order" }, { status: 500 });
   }

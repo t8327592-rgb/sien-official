@@ -193,6 +193,7 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
   };
   const handleCreateNew = async () => {
     setSaveStatus("saving");
+    await saveQueue.flush();
     const res = await createPortfolio({ serviceCategory: categoryFilter !== "ALL" ? categoryFilter : "MIX" });
     if (res.success && res.data) {
       setPortfolios(prev => [...prev, res.data as Portfolio]);
@@ -224,12 +225,14 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
   const handleDelete = async (id: string) => {
     if (!confirm("本当に削除しますか？")) return;
     setSaveStatus("saving");
+    await saveQueue.flush();
     const res = await deletePortfolio(id);
     if (res.success) {
       setPortfolios(prev => prev.filter(p => p.id !== id));
       setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
       triggerSaveStatus();
     } else {
+      setSaveStatus("idle");
       alert("削除に失敗しました");
     }
   };
@@ -250,24 +253,28 @@ export default function PortfolioClient({ initialData }: { initialData: Portfoli
   const handleBulkDelete = async () => {
     if (!confirm(`${selectedIds.length}件の実績を本当に削除しますか？`)) return;
     setSaveStatus("saving");
+    await saveQueue.flush();
     const res = await bulkDeletePortfolio(selectedIds);
     if (res.success) {
       setPortfolios(prev => prev.filter(p => !selectedIds.includes(p.id)));
       setSelectedIds([]);
       triggerSaveStatus();
     } else {
+      setSaveStatus("idle");
       alert("一括削除に失敗しました");
     }
   };
 
   const handleBulkUpdateStatus = async (isPublished: boolean) => {
     setSaveStatus("saving");
+    await saveQueue.flush();
     const res = await bulkUpdatePublishStatus(selectedIds, isPublished);
     if (res.success) {
       setPortfolios(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, isPublished } : p));
       setSelectedIds([]);
       triggerSaveStatus();
     } else {
+      setSaveStatus("idle");
       alert("ステータスの更新に失敗しました");
     }
   };

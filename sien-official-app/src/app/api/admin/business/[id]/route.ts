@@ -9,6 +9,8 @@ export async function PATCH(
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
+    const linked = await prisma.order.findUnique({ where: { businessContactId: id }, select: { id: true } });
+    if (linked) return NextResponse.json({ error: "依頼管理から編集してください。元の問い合わせは保管されています。", orderId: linked.id }, { status: 409 });
     const body = await request.json();
 
     const updatedContact = await prisma.businessContact.update({
@@ -34,11 +36,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await prisma.businessContact.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "法人問い合わせは削除できません。依頼管理のアーカイブ・テスト区分をご利用ください。", id }, { status: 409 });
   } catch (error) {
     console.error("Failed to delete business contact:", error);
     return NextResponse.json(

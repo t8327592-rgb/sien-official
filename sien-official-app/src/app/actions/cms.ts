@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { validateImageSource } from "@/lib/image-input";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { validateProfileContent, validateSiteContent, validateFAQContent, validateServiceContent, validateCampaignContent } from "@/lib/admin-content-input";
+import { ApiError } from "@/lib/api-input";
 
 // ---------------------------------------------------------
 // Site Settings
@@ -18,10 +20,11 @@ export async function updateSiteSettings(data: {
   footerText?: string | null;
 }) {
   await requireAdmin();
+  const safeData = validateSiteContent(data);
   const result = await prisma.siteSetting.upsert({
     where: { id: "default" },
-    update: data,
-    create: { id: "default", ...data },
+    update: safeData,
+    create: { id: "default", ...safeData },
   });
   invalidatePublicContent("site-settings");
   revalidatePath("/", "layout");
@@ -40,7 +43,7 @@ export async function updateProfile(data: {
   achievements?: string | null;
 }) {
   await requireAdmin();
-  const safeData = { ...data, imageUrl: await validateImageSource(data.imageUrl) };
+  const safeData = { ...validateProfileContent(data), imageUrl: await validateImageSource(data.imageUrl) };
   const result = await prisma.profile.upsert({
     where: { id: "default" },
     update: safeData,
@@ -49,6 +52,24 @@ export async function updateProfile(data: {
   invalidatePublicContent("profile");
   revalidatePath("/", "layout");
   return { success: true, data: result };
+}
+
+// The screen has one Save button, so profile and site content must commit together.
+export async function updateProfileAndSiteSettings(profile: Parameters<typeof updateProfile>[0], settings: Parameters<typeof updateSiteSettings>[0]) {
+  await requireAdmin();
+  try {
+    const profileData = { ...validateProfileContent(profile), imageUrl: await validateImageSource(profile.imageUrl) };
+    const siteData = validateSiteContent(settings);
+    await prisma.$transaction(async tx => {
+      await tx.profile.upsert({ where: { id: "default" }, update: profileData, create: { id: "default", ...profileData } });
+      await tx.siteSetting.upsert({ where: { id: "default" }, update: siteData, create: { id: "default", ...siteData } });
+    });
+    invalidatePublicContent("profile", "site-settings");
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof ApiError ? error.message : "保存できませんでした。再読み込みして保存状態を確認してください。" };
+  }
 }
 
 // ---------------------------------------------------------
@@ -62,7 +83,7 @@ export async function createFAQ(data: {
   orderIndex?: number;
 }) {
   await requireAdmin();
-  const result = await prisma.fAQ.create({ data });
+  const result = await prisma.fAQ.create({ data: validateFAQContent(data) });
   invalidatePublicContent("faqs");
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -76,10 +97,10 @@ export async function updateFAQ(id: string, data: {
   orderIndex?: number;
 }) {
   await requireAdmin();
-  const result = await prisma.fAQ.update({
-    where: { id },
-    data,
-  });
+  const current = await prisma.fAQ.findUnique({ where: { id } });
+  if (!current) throw new ApiError(404, "FAQが見つかりません。");
+  const safeData = validateFAQContent({ ...current, ...data });
+  const result = await prisma.fAQ.update({ where: { id }, data: safeData });
   invalidatePublicContent("faqs");
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -106,7 +127,7 @@ export async function createService(data: {
   orderIndex?: number;
 }) {
   await requireAdmin();
-  const result = await prisma.service.create({ data });
+  const result = await prisma.service.create({ data: validateServiceContent(data) });
   invalidatePublicContent("services");
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -122,10 +143,10 @@ export async function updateService(id: string, data: {
   orderIndex?: number;
 }) {
   await requireAdmin();
-  const result = await prisma.service.update({
-    where: { id },
-    data,
-  });
+  const current = await prisma.service.findUnique({ where: { id } });
+  if (!current) throw new ApiError(404, "サービスが見つかりません。");
+  const safeData = validateServiceContent({ ...current, ...data });
+  const result = await prisma.service.update({ where: { id }, data: safeData });
   invalidatePublicContent("services");
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -153,7 +174,9 @@ export async function createCampaign(data: {
   description?: string | null;
 }) {
   await requireAdmin();
-  const result = await prisma.campaign.create({ data });
+  const safeData = validateCampaignContent(data);
+  if (safeData.targetPlanId && !await prisma.plan.findUnique({ where: { id: safeData.targetPlanId }, select: { id: true } })) throw new ApiError(400, "対象プランが見つかりません。");
+  const result = await prisma.campaign.create({ data: safeData });
   invalidatePublicContent("campaigns", "plans");
   revalidatePath("/", "layout");
   return { success: true, data: result };
@@ -170,10 +193,11 @@ export async function updateCampaign(id: string, data: {
   description?: string | null;
 }) {
   await requireAdmin();
-  const result = await prisma.campaign.update({
-    where: { id },
-    data,
-  });
+  const current = await prisma.campaign.findUnique({ where: { id } });
+  if (!current) throw new ApiError(404, "キャンペーンが見つかりません。");
+  const safeData = validateCampaignContent({ ...current, ...data });
+  if (safeData.targetPlanId && !await prisma.plan.findUnique({ where: { id: safeData.targetPlanId }, select: { id: true } })) throw new ApiError(400, "対象プランが見つかりません。");
+  const result = await prisma.campaign.update({ where: { id }, data: safeData });
   invalidatePublicContent("campaigns", "plans");
   revalidatePath("/", "layout");
   return { success: true, data: result };

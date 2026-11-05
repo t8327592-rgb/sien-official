@@ -1,4 +1,5 @@
-import type { Prisma } from "@prisma/client";
+import { validateExpense } from "@/lib/admin-content-input";
+import { apiErrorResponse, readJson } from "@/lib/api-input";
 import { isAdminRequest } from "@/lib/admin-api-auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -10,14 +11,7 @@ export async function PATCH(
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await context.params;
-    const data = await request.json();
-
-    // update data creation
-    const updateData: Prisma.ExpenseUpdateInput = {};
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.amount !== undefined) updateData.amount = parseInt(data.amount, 10);
-    if (data.category !== undefined) updateData.category = data.category;
-    if (data.date !== undefined) updateData.date = new Date(data.date);
+    const updateData = validateExpense(await readJson(request), true);
 
     const updatedExpense = await prisma.expense.update({
       where: { id: id },
@@ -26,6 +20,8 @@ export async function PATCH(
 
     return NextResponse.json(updatedExpense);
   } catch (error) {
+    const response = apiErrorResponse(error);
+    if (response) return response;
     console.error("Error updating expense:", error);
     return NextResponse.json(
       { error: "Failed to update expense" },

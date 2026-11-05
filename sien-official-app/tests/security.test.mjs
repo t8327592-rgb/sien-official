@@ -253,6 +253,150 @@ function loader(mocks = {}) {
   return load;
 }
 
+test('admin expenses and goals reject lossy money, malformed calendar dates and blank titles before writes', async () => {
+  const { validateExpense, validateReception, validateReview, validateOrderSequence } = loader()('src/lib/admin-content-input.ts');
+  for (const amount of [-1, 0.1, '123abc', '10.5', 2147483648, NaN]) assert.throws(() => validateExpense({ title: '機材', category: '機材', date: '2026-11-01', amount }));
+  assert.throws(() => validateExpense({ title: ' ', category: '機材', date: '2026-11-01', amount: 100 }));
+  assert.throws(() => validateExpense({ title: '機材', category: '', date: '2026-02-30', amount: 100 }));
+  assert.equal(validateExpense({ title: '既存カテゴリ', category: '独自経費', date: '2026-11-01', amount: 0 }).date.toISOString(), '2026-10-31T15:00:00.000Z');
+  assert.throws(() => validateReception({ orderStatus: 'TYPO' }));
+  assert.equal(validateReception({ orderStatus: 'UNAVAILABLE', announcement: '' }).acceptingOrders, false);
+  assert.throws(() => validateReview({ name: 'A', serviceType: 'MIX', content: '本文', rating: 0 }));
+  assert.throws(() => validateOrderSequence([{ id: 'a', orderIndex: 0 }, { id: 'a', orderIndex: 1 }]));
+  assert.throws(() => validateOrderSequence([{ id: 'a', orderIndex: 0 }, { id: 'b', orderIndex: 0 }]));
+  let writes = 0;
+  const load = loader({ '@/lib/admin-api-auth': { isAdminRequest: async () => true }, '@/lib/prisma': { prisma: { expense: { create: async () => { writes++; }, update: async () => { writes++; } }, siteSetting: { upsert: async () => { writes++; } } } } });
+  assert.equal((await load('src/app/api/admin/finance/route.ts').POST(request({ title: '機材', category: '機材', date: '2026-11-01', amount: 10.5 }))).status, 400);
+  assert.equal((await load('src/app/api/admin/finance/[id]/route.ts').PATCH(request({ amount: '100円' }), { params: Promise.resolve({ id: 'x' }) })).status, 400);
+  assert.equal((await load('src/app/api/admin/settings/finance/route.ts').PATCH(request({ targetMonthlySales: '100abc' }))).status, 400);
+  assert.equal(writes, 0);
+});
+
+test('profile save validates both sections before writing and commits through one transaction', async () => {
+  let writes = 0, transactions = 0;
+  const tx = { profile: { upsert: async () => { writes++; } }, siteSetting: { upsert: async () => { writes++; } } };
+  const load = loader({ '@/lib/auth': { requireAdmin: async () => {} }, '@/lib/prisma': { prisma: { $transaction: async fn => { transactions++; return fn(tx); } } } });
+  const save = load('src/app/actions/cms.ts').updateProfileAndSiteSettings;
+  const profile = { name: '変えたい名前', imageUrl: '' };
+  const invalid = await save(profile, { youtubeUrl: 'javascript:alert(1)' });
+  assert.equal(invalid.success, false); assert.equal(writes, 0); assert.equal(transactions, 0);
+  assert.equal((await save(profile, { youtubeUrl: 'https://www.youtube.com/@sien', contactEmail: 'qa@example.invalid' })).success, true);
+  assert.equal(writes, 2); assert.equal(transactions, 1);
+});
+
+test('admin request reports HTTP and network failures instead of treating fetch resolution as saved', async () => {
+  for (const response of [Response.json({ error: '金額を確認してください' }, { status: 400 }), new Response('bad gateway', { status: 502 })]) {
+    const { adminRequest } = loader({ fetch: async () => response })('src/lib/admin-request.ts');
+    await assert.rejects(() => adminRequest('/api/admin/finance/x', 'PATCH', {}), /金額|保存できません/);
+  }
+  const { adminRequest } = loader({ fetch: async () => { throw Error('network'); } })('src/lib/admin-request.ts');
+  await assert.rejects(() => adminRequest('/api/admin/finance', 'POST', {}), /保存状態を確認/);
+});
+
+test('CSV preserves commas, quotes and line breaks and neutralizes formulas while keeping signed amounts numeric', () => {
+  const { csvCell, csvRow } = loader()('src/lib/admin-csv.ts');
+  assert.equal(csvCell('機材,"購入"\nメモ'), '"機材,""購入""\nメモ"');
+  for (const input of ['=1+1', '+SUM(A1)', ' @cmd', '\t-10+5']) assert.ok(csvCell(input).startsWith('"\''));
+  assert.equal(csvCell(-300), '-300'); assert.equal(csvRow(['経費', 0]), '"経費",0\r\n');
+});
+
+test('article deletion starts with a non-submit button and can be canceled before any form submission', () => {
+  let confirming = false;
+  const load = loader({ react: { useState: () => [confirming, value => { confirming = value; }] }, 'react-dom': { useFormStatus: () => ({ pending: false }) } });
+  const Button = load('src/components/admin/AdminSubmitButton.tsx').AdminSubmitButton;
+  const props = { children: '削除', confirmation: '元に戻せません' };
+  const first = Button(props); assert.equal(first.props.type, 'button'); first.props.onClick(); assert.equal(confirming, true);
+  const confirm = Button(props); const actions = confirm.props.children[1].props.children;
+  assert.equal(actions[0].props.type, 'submit'); assert.equal(actions[1].props.type, 'button'); actions[1].props.onClick(); assert.equal(confirming, false);
+});
+
+test('campaign labels distinguish expired, upcoming, paused and missing-target campaigns', () => {
+  const { campaignDisplayStatus } = loader()('src/lib/campaign-pricing.ts');
+  const now = new Date('2026-11-05T12:00:00Z');
+  const base = { isActive: true, startDate: null, endDate: null, targetPlanId: 'plan' };
+  assert.equal(campaignDisplayStatus({ ...base, endDate: new Date('2026-11-04') }, now), '終了');
+  assert.equal(campaignDisplayStatus({ ...base, startDate: new Date('2026-11-06') }, now), '開始前');
+  assert.equal(campaignDisplayStatus({ ...base, isActive: false }, now), '停止中');
+  assert.equal(campaignDisplayStatus({ ...base, targetPlanId: null }, now), '対象プラン未設定');
+  assert.equal(campaignDisplayStatus(base, now), '開催中');
+});
+
+test('review reorder rejects stale lists without writes and uses one transaction for the full sequence', async () => {
+  let writes = 0, transactions = 0;
+  const tx = { $queryRaw: async () => [], review: { findMany: async () => [{ id: 'a' }, { id: 'b' }], update: async () => { writes++; } } };
+  const load = loader({ '@/lib/admin-api-auth': { isAdminRequest: async () => true }, '@/lib/prisma': { prisma: { $transaction: async fn => { transactions++; return fn(tx); } } } });
+  const POST = load('src/app/api/admin/reviews/reorder/route.ts').POST;
+  const previous = [{ id: 'a', orderIndex: 0 }, { id: 'b', orderIndex: 1 }], sequence = [{ id: 'b', orderIndex: 0 }, { id: 'a', orderIndex: 1 }];
+  assert.equal((await POST(request({ previous: sequence, sequence: previous }))).status, 409); assert.equal(writes, 0);
+  assert.equal((await POST(request({ previous, sequence }))).status, 200); assert.equal(writes, 2); assert.equal(transactions, 2);
+});
+
+test('new portfolio placeholders remain private until explicitly published and reorder uses atomic persistence', async () => {
+  let created, transactions = 0;
+  const tx = { portfolio: { update: async () => {} } };
+  const load = loader({ '@/lib/auth': { requireAdmin: async () => {} }, '@/lib/prisma': { prisma: { portfolio: { findFirst: async () => null, create: async ({ data }) => { created = data; return { id: 'new', ...data }; } }, $transaction: async fn => { transactions++; return fn(tx); } } } });
+  const actions = load('src/app/actions/portfolio.ts');
+  assert.equal((await actions.createPortfolio({})).success, true); assert.equal(created.isPublished, false);
+  assert.equal((await actions.updatePortfolioOrders([{ id: 'new', orderIndex: 0 }, { id: 'old', orderIndex: 1 }])).success, true); assert.equal(transactions, 1);
+});
+
+test('confirmed accounting separates estimates and cash, counts zero jobs, preserves archived sales and JST month boundaries', () => {
+  const { accountingSummary, settledAmount, percentChange } = loader()('src/lib/order-accounting.ts');
+  const base = { id: '1', status: 'WORKING', isTest: false, confirmedPrice: 10000, revenueAt: '2026-10-31T15:00:00Z', payments: [] };
+  const payment = { id: 'p', kind: 'RECEIPT', amount: 8900, fee: 100, withholding: 1000, paidAt: '2026-12-01T00:00:00+09:00', voidedAt: null };
+  const rows = [
+    { ...base, payments: [payment], isArchived: true },
+    { ...base, id: 'zero', confirmedPrice: 0 },
+    { ...base, id: 'estimate', confirmedPrice: null, price: 999999 },
+    { ...base, id: 'nodate', revenueAt: null },
+    { ...base, id: 'test', isTest: true, confirmedPrice: 999999, payments: [payment] },
+    { ...base, id: 'canceled', status: 'CANCELED', payments: [{ ...payment, amount: 1000, fee: 0, withholding: 0 }, { ...payment, id: 'r', kind: 'REFUND', amount: 300, fee: 0, withholding: 0 }] },
+    { ...base, id: 'void', confirmedPrice: null, payments: [{ ...payment, voidedAt: new Date() }] },
+  ];
+  const summary = accountingSummary(rows, 2026);
+  assert.equal(summary.revenue, 10000); assert.equal(summary.count, 2); assert.equal(summary.average, 5000);
+  assert.equal(summary.months[10].revenue, 10000); assert.equal(summary.months[9].revenue, 0);
+  assert.equal(summary.cash, 9600); assert.equal(summary.months[11].cash, 9600);
+  assert.equal(settledAmount(payment), 10000); assert.equal(percentChange(15000, 10000), 50); assert.equal(percentChange(10000, 0), null);
+  assert.equal(accountingSummary([], 2026).average, null);
+});
+
+test('historical corporate mapping keeps source values, never guesses payment dates or classifies all cancellations as tests', () => {
+  const { businessOrderData } = loader()('src/lib/business-order.ts');
+  const source = { id: 'source', status: 'CANCELLED', companyName: 'Original', contactName: 'Person', email: 'a@example.invalid', inquiryType: 'お見積りのご依頼', message: 'Keep original\ncontent', budget: '未定', estimatedPrice: 30000, finalPrice: 25000, createdAt: new Date(), updatedAt: new Date(), paymentStatus: '入金済み' };
+  const snapshot = JSON.stringify(source);
+  const mapped = businessOrderData(source);
+  assert.equal(mapped.status, 'CANCELED'); assert.equal(mapped.isTest, false); assert.equal(mapped.businessContactId, source.id);
+  assert.equal(mapped.confirmedPrice, 25000); assert.equal(mapped.price, 30000); assert.equal(mapped.payments, undefined); assert.equal(mapped.revenueAt, undefined);
+  assert.equal(businessOrderData(source, true).isTest, true); assert.equal(JSON.stringify(source), snapshot);
+});
+
+test('finance validates strict integers, real calendar dates and Japan midnight', () => {
+  const { financeMoney, financeDate, financeVersion } = loader()('src/lib/order-finance-input.ts');
+  for (const amount of [-1, 0.1, '100', Infinity, 2147483648]) assert.throws(() => financeMoney(amount));
+  assert.equal(financeMoney(0), 0); assert.equal(financeMoney(null, true), null);
+  assert.throws(() => financeDate('2026-02-30')); assert.throws(() => financeDate('2026-11-5'));
+  assert.equal(financeDate('2026-11-01').toISOString(), '2026-10-31T15:00:00.000Z'); assert.throws(() => financeVersion(-1));
+});
+
+test('unified schema migration runs twice without altering legacy order amounts or corporate inquiries', async () => {
+  const { PGlite } = nativeRequire('@electric-sql/pglite');
+  const db = await PGlite.create();
+  try {
+    await db.exec(`CREATE TABLE "Order" ("id" TEXT PRIMARY KEY, "price" INTEGER); CREATE TABLE "BusinessContact" ("id" TEXT PRIMARY KEY, "message" TEXT, "status" TEXT); INSERT INTO "Order" VALUES ('old', 12345); INSERT INTO "BusinessContact" VALUES ('real', 'retain exact inquiry', 'PENDING'), ('test', 'retain test too', 'CANCELED');`);
+    const before = await db.query('SELECT * FROM "BusinessContact" ORDER BY "id"');
+    const sql = fs.readFileSync(path.join(root, 'prisma/migrations/202611050001_unified_orders/migration.sql'), 'utf8');
+    await db.exec(sql); await db.exec(sql);
+    assert.deepEqual((await db.query('SELECT * FROM "BusinessContact" ORDER BY "id"')).rows, before.rows);
+    const old = (await db.query('SELECT * FROM "Order"')).rows[0];
+    assert.equal(old.price, 12345); assert.equal(old.confirmedPrice, null); assert.equal(old.isTest, false);
+    await db.exec(`INSERT INTO "Order" ("id","businessContactId") VALUES ('linked','real');`);
+    await assert.rejects(db.exec(`INSERT INTO "Order" ("id","businessContactId") VALUES ('duplicate','real');`));
+    await assert.rejects(db.exec(`DELETE FROM "BusinessContact" WHERE "id"='real';`));
+    await assert.rejects(db.exec(`INSERT INTO "PaymentRecord" ("id","orderId","requestKey","amount","paidAt") VALUES ('p','linked','same-key',-1,now());`));
+  } finally { await db.close(); }
+});
+
 test('admin revenue modes include ongoing bookings and archived revenue, excluding canceled and reopened deliveries', () => {
   const { revenueDate } = loader()('src/lib/admin-finance.ts');
   const order = { status: 'WORKING', createdAt: '2026-10-01T00:00:00Z', deliveredAt: null, isArchived: true };
@@ -785,7 +929,7 @@ test('unused admin AI generators and their routes are removed, keeping public ch
 
 test('corporate acceptance atomically queues notifications instead of sending before saving', async () => {
   const jobs = [];
-  const db = { $queryRaw: async () => [{ locked: 1 }], submissionReceipt: { findUnique: async () => null, create: async ({ data }) => ({ id: 'receipt-1', ...data }) }, businessContact: { create: async () => ({ id: 'contact-1' }) }, notificationJob: { createMany: async ({ data }) => { jobs.push(...data); } }, $transaction: async fn => fn(db) };
+  const db = { $queryRaw: async () => [{ locked: 1 }], submissionReceipt: { findUnique: async () => null, create: async ({ data }) => ({ id: 'receipt-1', ...data }) }, businessContact: { create: async ({ data }) => ({ id: 'contact-1', ...data }) }, order: { create: async ({ data }) => { assert.equal(data.businessContactId, 'contact-1'); assert.equal(data.customerType, 'BUSINESS'); assert.equal(data.isTest, false); } }, notificationJob: { createMany: async ({ data }) => { jobs.push(...data); } }, $transaction: async fn => fn(db) };
   const load = loader({ '@/lib/prisma': { prisma: db }, '@/lib/rate-limit': { consumeRateLimit: async () => {} } });
   const response = await load('src/app/api/business-contact/route.ts').POST(request({ idempotencyKey: 'qa-business-key-12345678', termsAccepted: true, termsVersion: '2026-10-11', companyName: 'Test', contactName: 'Test', email: 'test@example.com', inquiryType: '歌ってみたMIX・マスタリング', message: 'Test' }));
   assert.equal(response.status, 201);

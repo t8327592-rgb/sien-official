@@ -13,42 +13,42 @@ type RevenueDataSet = {
 
 type Props = {
   thisMonthOrdersCount: number;
-  createdData: RevenueDataSet;
-  deliveredData: RevenueDataSet;
+  confirmedData: RevenueDataSet;
+  paymentData: RevenueDataSet;
 };
 
 export function RevenueSummaryClient({
   thisMonthOrdersCount,
-  createdData,
-  deliveredData
+  confirmedData,
+  paymentData
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
-  const [mode, setMode] = useState<"created" | "delivered">("created");
+  const [mode, setMode] = useState<"confirmed" | "payment">("confirmed");
 
-  const currentData = mode === "created" ? createdData : deliveredData;
+  const currentData = mode === "confirmed" ? confirmedData : paymentData;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 className="text-sm font-bold text-slate-800 flex flex-wrap items-center gap-2">
           <TrendingUp className="w-4 h-4 text-slate-400" />
-          売上サマリー
+          売上・入金サマリー
         </h2>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* ベース切り替えトグル */}
           <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button
-              aria-pressed={mode === "created"} onClick={() => setMode("created")}
-              className={`min-h-11 px-3 py-2 text-xs font-bold rounded-md transition-colors ${mode === "created" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              aria-pressed={mode === "confirmed"} onClick={() => setMode("confirmed")}
+              className={`min-h-11 px-3 py-2 text-xs font-bold rounded-md transition-colors ${mode === "confirmed" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              受注ベース
+              確定売上
             </button>
             <button
-              aria-pressed={mode === "delivered"} onClick={() => setMode("delivered")}
-              className={`min-h-11 px-3 py-2 text-xs font-bold rounded-md transition-colors ${mode === "delivered" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              aria-pressed={mode === "payment"} onClick={() => setMode("payment")}
+              className={`min-h-11 px-3 py-2 text-xs font-bold rounded-md transition-colors ${mode === "payment" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              納品ベース
+              実入金
             </button>
           </div>
 
@@ -65,7 +65,7 @@ export function RevenueSummaryClient({
         {/* 上部 KPI */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <div className="text-xs font-bold text-slate-500">今月の売上</div>
+            <div className="text-xs font-bold text-slate-500">今月の{mode === "confirmed" ? "確定売上" : "実入金"}</div>
             <div className="text-2xl font-black text-slate-900">
               {isVisible ? `¥${currentData.thisMonthRevenue.toLocaleString()}` : '¥ ***,***'}
             </div>
@@ -81,7 +81,7 @@ export function RevenueSummaryClient({
             <div className="text-lg font-bold text-slate-700">{thisMonthOrdersCount}<span className="text-xs font-normal ml-1">件</span></div>
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500">{mode === "created" ? "今年の受注数" : "今年の完了数"}</div>
+            <div className="text-xs font-bold text-slate-500">今年の計上案件数</div>
             <div className="text-lg font-bold text-slate-700">{currentData.orderCount}<span className="text-xs font-normal ml-1">件</span></div>
           </div>
         </div>

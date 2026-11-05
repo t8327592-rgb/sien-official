@@ -232,8 +232,9 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
             </h2>
           </div>
           <div className="p-5 grid grid-cols-2 gap-4 flex-1">
+            {order.customerType === "BUSINESS" && <div className="col-span-2"><p className="text-[11px] font-bold text-slate-400 mb-1">会社名</p>{renderHybridField('companyName', '会社名')}</div>}
             <div>
-              <p className="text-[11px] font-bold text-slate-400 mb-1">お名前</p>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">{order.customerType === "BUSINESS" ? "ご担当者名" : "お名前"}</p>
               <span className="font-bold text-slate-800">{order.clientName}</span>
             </div>
             <div>
@@ -270,7 +271,7 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">希望する連絡手段</p>
-              <span className="font-bold text-slate-800">{order.contactMethod || <span className="text-slate-400 font-normal">未設定</span>}</span>
+              <span className="font-bold text-slate-800">{order.contactMethod === "EMAIL" ? "メール" : order.contactMethod || <span className="text-slate-400 font-normal">未設定</span>}</span>
             </div>
             <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3 mt-1">
               <div>
@@ -323,7 +324,7 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
               {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>, 'date')}
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 mb-1">合計金額 (円)</p>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">見積・旧金額 (円)</p>
               {renderEditable('price', <span className="font-bold text-slate-800">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}</span>, 'number')}
             </div>
             <div>
@@ -349,7 +350,7 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">
             <span className="text-[11px] font-bold text-slate-400 mt-1">サービス種別</span>
             <span className="font-medium text-slate-800">
-              {order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType === "GUIDE" ? "ボーカルガイド作成" : order.serviceType}
+              {order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType === "GUIDE" ? "ボーカルガイド作成" : order.serviceType === "BUSINESS" ? "法人のお問い合わせ" : order.serviceType}
             </span>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-start border-b border-slate-100 pb-2">

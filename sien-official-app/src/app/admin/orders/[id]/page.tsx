@@ -1,5 +1,7 @@
 import { requireAdminPage } from "@/lib/admin-page-auth";
 import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
+import { OrderFinanceEditor } from "@/components/admin/OrderFinanceEditor";
+import { BusinessOrderDetails } from "@/components/admin/BusinessOrderDetails";
 
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +15,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   // 依頼データを取得
   const order = await prisma.order.findUnique({
     where: { id },
+    include: { businessContact: true, payments: { orderBy: { createdAt: "desc" } } },
   });
 
   if (!order) {
@@ -41,7 +44,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div><h2 className="font-bold text-slate-800">フィードバック用メモ</h2><p className="text-sm text-slate-500 mt-1">名前・楽曲名を引き継いでメモをまとめ、Codexに渡せます。</p></div>
           <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-700">メモを入力・コピー</Link>
         </div>
-        <OrderDetailEditor initialOrder={order} planDetails={planDetails} />
+        {order.businessContact && <BusinessOrderDetails key={`business-${order.businessContact.updatedAt.toISOString()}`} orderId={order.id} companyName={order.companyName} contact={order.businessContact} />}
+        <OrderFinanceEditor key={`finance-${order.id}`} initialOrder={order} />
+        <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} planDetails={planDetails} />
       </div>
 
     </div>

@@ -15,7 +15,7 @@ export default async function AdminLayout({
 }) {
   await requireAdminPage();
   const pendingOrdersCount = await prisma.order.count({
-    where: { status: "PENDING", isArchived: false },
+    where: { status: "PENDING", isArchived: false, isTest: false },
   });
 
   return (
@@ -38,6 +38,7 @@ export default async function AdminLayout({
         </header>
         {/* Content Area */}
         <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden">
+          {process.env.QA_ISOLATED === "1" && <p className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">ローカルプレビュー：架空の確認用データです。本番の依頼・売上は変更されません。</p>}
           {children}
         </div>
       </main>

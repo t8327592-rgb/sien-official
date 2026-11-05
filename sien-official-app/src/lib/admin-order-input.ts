@@ -3,9 +3,10 @@ import { ApiError, emailField } from "@/lib/api-input";
 import { normalizeOrderStatus, ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 import { normalizePaymentMethod, ADMIN_PAYMENT_OPTIONS } from "@/lib/order-payment";
 
-type EditableField = "status" | "price" | "basePrice" | "optionPrice" | "paymentMethod" | "deadline" | "serviceType" | "planId" | "songTitle" | "vocalKey" | "genre" | "lyricsStatus" | "vocalGuideStatus" | "referenceFidelity" | "options" | "message" | "clientName" | "clientEmail" | "twitterId" | "discordId" | "isRepeater" | "isArchived";
+type EditableField = "status" | "price" | "basePrice" | "optionPrice" | "paymentMethod" | "deadline" | "serviceType" | "planId" | "songTitle" | "vocalKey" | "genre" | "lyricsStatus" | "vocalGuideStatus" | "referenceFidelity" | "options" | "message" | "clientName" | "clientEmail" | "twitterId" | "discordId" | "isRepeater" | "isArchived" | "companyName";
 export type AdminOrderUpdate = Partial<Pick<Order, EditableField>>;
 const TEXT_FIELDS = {
+  companyName: ["会社名", 120],
   planId: ["プラン", 300], songTitle: ["曲名", 300], vocalKey: ["歌唱キー", 120],
   genre: ["ジャンル", 300], lyricsStatus: ["作詞", 300], vocalGuideStatus: ["仮歌", 300],
   options: ["オプション", 5000], message: ["メッセージ", 10000], twitterId: ["XのID", 120], discordId: ["DiscordのID", 120],
@@ -32,7 +33,7 @@ export function validateAdminOrderUpdate(body: Record<string, unknown>): AdminOr
     data.status = status;
   }
   if (body.serviceType !== undefined) {
-    if (typeof body.serviceType !== "string" || !["MIX", "ORIGINAL", "GUIDE"].includes(body.serviceType)) invalid("サービス");
+    if (typeof body.serviceType !== "string" || !["MIX", "ORIGINAL", "GUIDE", "BUSINESS"].includes(body.serviceType)) invalid("サービス");
     data.serviceType = body.serviceType;
   }
   if (body.paymentMethod !== undefined) {

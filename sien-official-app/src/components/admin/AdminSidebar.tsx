@@ -19,7 +19,6 @@ export function AdminSidebar({ pendingOrdersCount }: { pendingOrdersCount: numbe
     { href: "/admin", label: "ダッシュボード" },
     { href: "/admin/orders", label: "依頼管理", count: pendingOrdersCount },
     { href: "/admin/finance", label: "売上・経費管理" },
-    { href: "/admin/business", label: "法人お問い合わせ" },
     { href: "/admin/notifications", label: "通知の配送状況" },
     { href: "/admin/news", label: "お知らせ管理" },
     { href: "/admin/blog", label: "ブログ管理" },

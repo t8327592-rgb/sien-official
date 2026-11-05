@@ -1,3 +1,5 @@
+import { validatePostContent } from "@/lib/admin-post-input";
+import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
 import { validateImageSource } from "@/lib/image-input";
 import { invalidatePublicContent } from "@/lib/public-cache";
 import { requireAdminPage } from "@/lib/admin-page-auth";
@@ -14,7 +16,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
 
   // 投稿データを取得
   const post = await prisma.post.findUnique({
-    where: { id },
+    where: { id, type: "NEWS" },
   });
 
   if (!post) {
@@ -33,15 +35,12 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
     const imageUrl = await validateImageSource(formData.get("imageUrl"));
     const published = formData.get("published") === "true";
 
-    if (!title || !content) return;
+    const safeData = validatePostContent({ title, content, type, category, published });
 
     await prisma.post.update({
       where: { id },
       data: {
-        title,
-        content,
-        type,
-        category: category || null,
+        ...safeData,
         imageUrl: imageUrl || null,
         published,
       },
@@ -67,13 +66,11 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">お知らせを編集</h1>
         <form action={deletePost}>
-          <button
-            type="submit"
+          <AdminSubmitButton confirmation="この記事を完全に削除します。元に戻せません。削除しますか？"
             className="text-red-600 hover:text-red-800 font-medium text-sm hover:underline"
-            title="完全に削除する"
           >
             このお知らせを削除
-          </button>
+          </AdminSubmitButton>
         </form>
       </div>
 
@@ -83,7 +80,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
             <div className="col-span-1 md:col-span-2">
               <label htmlFor="page-field-1" className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
               <input id="page-field-1"
-                name="title"
+                name="title" maxLength={300}
                 type="text"
                 required
                 defaultValue={post.title}
@@ -104,7 +101,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
                 <label htmlFor="post-content" className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
               </div>
               <textarea id="post-content"
-                name="content"
+                name="content" maxLength={150000}
                 required
                 rows={12}
                 defaultValue={post.content}
@@ -114,12 +111,11 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
           </div>
 
           <div className="pt-6 border-t flex gap-4">
-            <button
-              type="submit"
+            <AdminSubmitButton
               className="bg-primary text-primary-foreground px-8 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               更新する
-            </button>
+            </AdminSubmitButton>
             <Link
               href="/admin/news"
               className="px-8 py-2 border rounded-md font-medium hover:bg-slate-50 transition-colors inline-block"

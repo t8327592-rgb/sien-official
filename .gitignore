@@ -1,2 +1,5 @@
 .vercel
 .env*
+
+# Private deployment evidence, encrypted backups and customer-data checks.
+/audit/

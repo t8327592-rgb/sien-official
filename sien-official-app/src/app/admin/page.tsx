@@ -1,5 +1,6 @@
 import { requireAdminPage } from "@/lib/admin-page-auth";
-import { accountingParts, accountingDate, REVENUE_ORDER_WHERE, DELIVERED_ORDER_WHERE } from "@/lib/admin-finance";
+import { accountingParts, accountingDate } from "@/lib/admin-finance";
+import { accountingSummary } from "@/lib/order-accounting";
 import { ACTIVE_ORDER_STATUSES, todayInJapan, matchesOrderDue, compareOrderDeadlines } from "@/lib/admin-order-filters";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -16,15 +17,9 @@ export default async function AdminDashboard() {
   // 今月の範囲
   const thisMonthStart = accountingDate(year, month);
 
-  // 今年の範囲
-  const thisYearStart = accountingDate(year, 0);
-
-  // 過去6ヶ月の範囲（グラフ用）
-  const sixMonthsAgo = accountingDate(year, month - 5);
-
   // 未完了のアクティブな全案件を取得し、今日締切・超過・ステータス別に振り分ける
   const activeOrders = await prisma.order.findMany({
-    where: { isArchived: false, status: { in: ACTIVE_ORDER_STATUSES } },
+    where: { isArchived: false, isTest: false, status: { in: ACTIVE_ORDER_STATUSES } },
     orderBy: { updatedAt: "desc" }
   });
 
@@ -37,84 +32,26 @@ export default async function AdminDashboard() {
   const deadlineTodayCount = activeOrders.filter(order => matchesOrderDue(order, "today", today)).length;
   const deadlineOverdueCount = activeOrders.filter(order => matchesOrderDue(order, "overdue", today)).length;
   const failedNotificationsCount = await prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] } } });
-  // データベースへのクエリを並列実行
-  const [
-    thisMonthOrders, // 今月作成された案件
-    thisYearOrdersCreated, // 今年の受注案件（受注ベース）
-    thisYearCompletedOrdersDelivered, // 今年納品された案件（納品ベース）
-    recentOrders, // 最新の案件（履歴用）
-    recentContacts, // 最新のお問い合わせ
-    recentReviews, // 最新のレビュー
-    monthlyOrdersCreated, // 過去6ヶ月の受注案件（受注ベース）
-    monthlyCompletedOrdersDelivered // 過去6ヶ月の完了案件（納品ベース）
-  ] = await Promise.all([
-    prisma.order.findMany({ where: { createdAt: { gte: thisMonthStart } } }),
-    prisma.order.findMany({ where: { ...REVENUE_ORDER_WHERE, createdAt: { gte: thisYearStart } } }),
-    prisma.order.findMany({ where: { ...DELIVERED_ORDER_WHERE, deliveredAt: { gte: thisYearStart } } }),
-    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 5 }), // 進行中・完了問わず最新履歴
-    prisma.businessContact.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
+  const [accountingOrders, recentOrders, recentReviews] = await Promise.all([
+    prisma.order.findMany({ where: { isTest: false }, include: { payments: true } }),
+    prisma.order.findMany({ where: { isTest: false }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
-    prisma.order.findMany({
-      where: {
-        ...REVENUE_ORDER_WHERE,
-        createdAt: { gte: sixMonthsAgo }
-      },
-      select: { price: true, createdAt: true }
-    }),
-    prisma.order.findMany({
-      where: {
-        ...DELIVERED_ORDER_WHERE,
-        deliveredAt: { gte: sixMonthsAgo }
-      },
-      select: { price: true, deliveredAt: true }
-    })
   ]);
-
-  // --- 受注ベースの計算 ---
-  const createdThisMonthRevenue = thisYearOrdersCreated
-    .filter(o => o.createdAt >= thisMonthStart)
-    .reduce((sum, order) => sum + (order.price || 0), 0);
-
-  const createdThisYearRevenue = thisYearOrdersCreated.reduce((sum, order) => sum + (order.price || 0), 0);
-  const createdOrderCount = thisYearOrdersCreated.length;
-
-  const createdMonthlyData = [];
-  for (let i = 5; i >= 0; i--) {
-    const start = accountingDate(year, month - i);
-    const end = accountingDate(year, month - i + 1);
-    const monthName = `${accountingParts(start).month + 1}月`;
-
-    const revenue = monthlyOrdersCreated
-      .filter(o => o.createdAt >= start && o.createdAt < end)
-      .reduce((sum, o) => sum + (o.price || 0), 0);
-
-    createdMonthlyData.push({ month: monthName, revenue });
-  }
-  const createdMaxMonthlyRevenue = Math.max(...createdMonthlyData.map(d => d.revenue), 1);
-
-  // --- 納品ベースの計算 ---
-  const deliveredThisMonthRevenue = thisYearCompletedOrdersDelivered
-    .filter(o => o.deliveredAt && o.deliveredAt >= thisMonthStart)
-    .reduce((sum, order) => sum + (order.price || 0), 0);
-
-  const deliveredThisYearRevenue = thisYearCompletedOrdersDelivered.reduce((sum, order) => sum + (order.price || 0), 0);
-  const deliveredCompletedCount = thisYearCompletedOrdersDelivered.length;
-
-  const deliveredMonthlyData = [];
-  for (let i = 5; i >= 0; i--) {
-    const start = accountingDate(year, month - i);
-    const end = accountingDate(year, month - i + 1);
-    const monthName = `${accountingParts(start).month + 1}月`;
-
-    const revenue = monthlyCompletedOrdersDelivered
-      .filter(o => o.deliveredAt && o.deliveredAt >= start && o.deliveredAt < end)
-      .reduce((sum, o) => sum + (o.price || 0), 0);
-
-    deliveredMonthlyData.push({ month: monthName, revenue });
-  }
-  const deliveredMaxMonthlyRevenue = Math.max(...deliveredMonthlyData.map(d => d.revenue), 1);
-
-
+  const thisMonthOrders = accountingOrders.filter(o => o.createdAt >= thisMonthStart);
+  const thisYearCompletedOrdersDelivered = accountingOrders.filter(o => o.status === "COMPLETED" && o.deliveredAt && accountingParts(o.deliveredAt).year === year);
+  const summary = accountingSummary(accountingOrders, year);
+  const monthly = Array.from({ length: 6 }, (_, i) => {
+    const date = accountingParts(accountingDate(year, month - 5 + i));
+    const m = accountingSummary(accountingOrders, date.year).months[date.month];
+    return m;
+  });
+  const revenueData = (cash: boolean) => ({
+    thisMonthRevenue: cash ? summary.months[month].cash : summary.months[month].revenue,
+    thisYearRevenue: cash ? summary.cash : summary.revenue,
+    orderCount: summary.count,
+    monthlyData: monthly.map(m => ({ month: `${m.month + 1}月`, revenue: cash ? m.cash : m.revenue })),
+    maxMonthlyRevenue: Math.max(...monthly.map(m => cash ? m.cash : m.revenue), 1),
+  });
 
   // アクティビティの生成
   type ActivityItem = {
@@ -142,14 +79,6 @@ export default async function AdminDashboard() {
       description: `${o.clientName}様の案件「${o.songTitle || o.serviceType}」を納品。`,
       date: o.deliveredAt as Date,
       link: `/admin/orders/${o.id}`
-    })),
-    ...recentContacts.map(c => ({
-      id: `contact-${c.id}`,
-      type: 'CONTACT' as const,
-      title: 'お問い合わせ',
-      description: `${c.companyName}様から。`,
-      date: c.createdAt,
-      link: `/admin/business`
     })),
     ...recentReviews.map(r => ({
       id: `rev-${r.id}`,
@@ -215,20 +144,8 @@ export default async function AdminDashboard() {
         {/* ② 売上サマリー (金額マスキング機能付きクライアントコンポーネント) */}
         <RevenueSummaryClient
           thisMonthOrdersCount={thisMonthOrders.length}
-          createdData={{
-            thisMonthRevenue: createdThisMonthRevenue,
-            thisYearRevenue: createdThisYearRevenue,
-            orderCount: createdOrderCount,
-            monthlyData: createdMonthlyData,
-            maxMonthlyRevenue: createdMaxMonthlyRevenue
-          }}
-          deliveredData={{
-            thisMonthRevenue: deliveredThisMonthRevenue,
-            thisYearRevenue: deliveredThisYearRevenue,
-            orderCount: deliveredCompletedCount,
-            monthlyData: deliveredMonthlyData,
-            maxMonthlyRevenue: deliveredMaxMonthlyRevenue
-          }}
+          confirmedData={revenueData(false)}
+          paymentData={revenueData(true)}
         />
       </div>
 
@@ -262,11 +179,11 @@ export default async function AdminDashboard() {
                   <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-3">
                       <Link href={`/admin/orders/${order.id}`} className="block">
-                        <div className="font-bold text-sm text-slate-900 group-hover:text-orange-600 transition-colors truncate">{order.clientName} 様</div>
+                        <div className="font-bold text-sm text-slate-900 group-hover:text-orange-600 transition-colors truncate">{order.companyName || order.clientName} 様</div>
                       </Link>
                     </td>
                     <td className="px-6 py-3">
-                      <div className="text-sm text-slate-700 truncate font-medium">{order.songTitle || "曲名未定"}</div>
+                      <div className="text-sm text-slate-700 truncate font-medium">{order.songTitle || "案件名未定"}</div>
                     </td>
                     <td className="px-6 py-3">
                       <div className="text-xs font-bold text-slate-700 bg-slate-100 inline-block px-2 py-1 rounded">
@@ -315,7 +232,7 @@ export default async function AdminDashboard() {
                           <StatusBadge status={order.status} />
                           <span className="text-[10px] text-slate-400 font-bold">{formatDate(order.createdAt)}</span>
                         </div>
-                        <div className="font-bold text-sm text-slate-900 truncate">{order.clientName} 様</div>
+                        <div className="font-bold text-sm text-slate-900 truncate">{order.companyName || order.clientName} 様</div>
                         <div className="text-xs text-slate-500 truncate">{order.songTitle || order.serviceType}</div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />

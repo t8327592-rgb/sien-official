@@ -9,7 +9,7 @@ export function notificationDetails(record: Order | BusinessContact, quote: Pris
   const details: Detail[] = [];
   const add = (name: string, value: string | null | undefined) => { if (value?.trim()) details.push({ name, value: value.trim() }); };
   let title: string;
-  if ("companyName" in record) {
+  if ("inquiryType" in record) {
     title = "法人お問い合わせ";
     add("会社名", record.companyName); add("担当者名", record.contactName); add("メールアドレス", record.email);
     add("お問い合わせ種別", record.inquiryType); add("ご予算", record.budget); add("希望納期", record.deadline);

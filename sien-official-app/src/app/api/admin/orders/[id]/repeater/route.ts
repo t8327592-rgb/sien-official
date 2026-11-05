@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (!order) throw new ApiError(404, "依頼が見つかりません。");
       // Empty addresses must never group unrelated customers together.
       const where = order.clientEmail?.trim()
-        ? { clientEmail: { equals: order.clientEmail, mode: "insensitive" as const } }
+        ? { clientEmail: { equals: order.clientEmail, mode: "insensitive" as const }, isTest: Boolean(order.isTest) }
         : { id };
       const rows = await tx.order.findMany({ where, select: { id: true } });
       await tx.order.updateMany({ where: { id: { in: rows.map(row => row.id) } }, data: { isRepeater } });

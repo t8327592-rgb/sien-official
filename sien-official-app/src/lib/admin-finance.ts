@@ -19,3 +19,8 @@ export function accountingParts(value: Date | string = new Date()) {
 export function accountingDate(year: number, month: number, day = 1) {
   return new Date(Date.UTC(year, month, day) - JST_OFFSET);
 }
+
+export function accountingDateInput(value: Date | string = new Date()) {
+  const d = accountingParts(value);
+  return `${d.year}-${String(d.month + 1).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
+}

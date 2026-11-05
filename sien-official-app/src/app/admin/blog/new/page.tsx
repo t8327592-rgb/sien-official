@@ -1,3 +1,5 @@
+import { validatePostContent } from "@/lib/admin-post-input";
+import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
 import { validateImageSource } from "@/lib/image-input";
 import { invalidatePublicContent } from "@/lib/public-cache";
 import { requireAdminPage } from "@/lib/admin-page-auth";
@@ -21,14 +23,11 @@ export default async function NewPostPage() {
     const imageUrl = await validateImageSource(formData.get("imageUrl"));
     const published = formData.get("published") === "true";
 
-    if (!title || !content) return;
+    const safeData = validatePostContent({ title, content, type, category, published });
 
     await prisma.post.create({
       data: {
-        title,
-        content,
-        type,
-        category: category || null,
+        ...safeData,
         imageUrl: imageUrl || null,
         published,
       },
@@ -50,7 +49,7 @@ export default async function NewPostPage() {
             <div className="col-span-1 md:col-span-2">
               <label htmlFor="page-field-1" className="block text-sm font-medium mb-1">タイトル <span className="text-red-500">*</span></label>
               <input id="page-field-1"
-                name="title"
+                name="title" maxLength={300}
                 type="text"
                 required
                 placeholder="例: 夏季休業のお知らせ"
@@ -59,9 +58,9 @@ export default async function NewPostPage() {
             </div>
 
             <div>
-              <label htmlFor="page-field-2" className="block text-sm font-medium mb-1">カテゴリー (ブログ用)</label>
+              <label htmlFor="page-field-2" className="block text-sm font-medium mb-1">カテゴリー</label>
               <input id="page-field-2"
-                name="category"
+                name="category" maxLength={200}
                 type="text"
                 placeholder="例: 音楽制作, 日常, チュートリアル"
                 className="w-full p-2 border rounded-md"
@@ -69,7 +68,7 @@ export default async function NewPostPage() {
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium mb-1">サムネイル画像 (ブログ・実績用)</label>
+              <label className="block text-sm font-medium mb-1">サムネイル画像</label>
               <ImageUploader />
               <p className="text-xs text-slate-500 mt-2">※画像を選択すると自動で圧縮されて保存されます。設定しない場合はデフォルトのアイコンが表示されます。</p>
             </div>
@@ -85,12 +84,9 @@ export default async function NewPostPage() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-1">
                 <label htmlFor="post-content" className="block text-sm font-medium">本文 (Markdown対応) <span className="text-red-500">*</span></label>
-                <span className="text-xs text-muted-foreground bg-orange-50 text-orange-600 px-2 py-1 rounded">
-                  ※AI記事生成アシストは準備中です
-                </span>
               </div>
               <textarea id="post-content"
-                name="content"
+                name="content" maxLength={150000}
                 required
                 rows={12}
                 placeholder="本文を入力してください..."
@@ -100,12 +96,11 @@ export default async function NewPostPage() {
           </div>
 
           <div className="pt-6 border-t flex gap-4">
-            <button
-              type="submit"
+            <AdminSubmitButton
               className="bg-primary text-primary-foreground px-8 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors"
             >
               保存する
-            </button>
+            </AdminSubmitButton>
             <Link
               href="/admin/blog"
               className="px-8 py-2 border rounded-md font-medium hover:bg-slate-50 transition-colors inline-block"
