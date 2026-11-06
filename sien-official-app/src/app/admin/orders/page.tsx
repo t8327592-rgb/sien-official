@@ -23,7 +23,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <h1 className="text-3xl font-bold text-slate-900">ご依頼管理</h1>
       </div>
 
-      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer, params.view])} view={params.view === "all" ? "all" : "progress"} initialOrders={orders} plans={plans} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
+      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer])} initialOrders={orders} plans={plans} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
     </div>
   );
 }

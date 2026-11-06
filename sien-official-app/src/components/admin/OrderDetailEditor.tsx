@@ -324,7 +324,7 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
               {renderEditable('deadline', <span className="font-bold text-slate-800">{order.deadline || <span className="text-slate-400 font-normal">未設定</span>}</span>, 'date')}
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 mb-1">見積・旧金額 (円)</p>
+              <p className="text-[11px] font-bold text-slate-400 mb-1">見積もり (円)</p>
               {renderEditable('price', <span className="font-bold text-slate-800">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}</span>, 'number')}
             </div>
             <div>

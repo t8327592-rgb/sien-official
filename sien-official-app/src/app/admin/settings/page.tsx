@@ -1,5 +1,5 @@
 import { requireAdminPage } from "@/lib/admin-page-auth";
-import { Calendar, Shield, Database, Info, Moon, Download } from "lucide-react";
+import { Calendar, Shield, Database, Info, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSiteSetting } from "@/lib/data/site-setting";
 import { SettingsClient } from "./SettingsClient";
@@ -122,25 +122,6 @@ export default async function AdminSettingsPage() {
             <div className="flex justify-between py-2">
               <span className="text-slate-500">データベース</span>
               <span className="font-medium">自動接続診断は未実装</span>
-            </div>
-          </div>
-        </section>
-
-        {/* 個人設定 */}
-        <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-pink-100 text-pink-600 rounded-lg">
-              <Moon className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold">個人設定</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-bold text-sm">ダークモード</p>
-                <p className="text-xs text-slate-500">管理画面のテーマ</p>
-              </div>
-              <Button variant="outline" size="sm" disabled className="opacity-50">切替 (準備中)</Button>
             </div>
           </div>
         </section>

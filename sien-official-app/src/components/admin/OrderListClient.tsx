@@ -14,13 +14,11 @@ import { parseAdminMoney, patchAdminOrder, syncAdminDeadline, setClientRepeater 
 // orderの型定義（簡易版）
 type Order = OrderRecord;
 
-type MainTab = "ALL" | "IN_PROGRESS" | "COMPLETED" | "CANCELED";
-
-export function OrderListClient({ initialOrders, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide", view = "progress" }: { initialOrders: Order[], plans?: Plan[], archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string, view?: string }) {
+export function OrderListClient({ initialOrders, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide" }: { initialOrders: Order[], plans?: Plan[], archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string }) {
   const router = useRouter();
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [activeTab, setActiveTab] = useState<MainTab>(archived || tests === "only" || view === "all" ? "ALL" : initialFilters.status === "COMPLETED" ? "COMPLETED" : initialFilters.status === "CANCELED" ? "CANCELED" : "IN_PROGRESS");
+  const activeTab = initialFilters.status === "COMPLETED" ? "COMPLETED" : initialFilters.status === "CANCELED" ? "CANCELED" : "IN_PROGRESS";
   const [lastArchived, setLastArchived] = useState<Order | null>(null);
   const [sortOrder, setSortOrder] = useState<OrderFilters["sort"]>(initialFilters.sort);
   const [serviceFilter, setServiceFilter] = useState<string>(initialFilters.service);
@@ -153,17 +151,16 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
   const isInProgress = (status: string) => ["PENDING", "ESTIMATING", "WAITING_PAYMENT", "WORKING"].includes(status);
   const isCanceled = (status: string) => status === "CANCELED" || status === "CANCELLED";
 
-  const changeFilters = (update: Partial<OrderFilters>, extra: { customer?: string; tests?: string; view?: string } = {}) => {
+  const changeFilters = (update: Partial<OrderFilters>, extra: { customer?: string; tests?: string } = {}) => {
     const url = new URL(orderFilterUrl({ ...initialFilters, service: serviceFilter, q: searchQuery, sort: sortOrder, ...update }, archived), window.location.origin);
     if ((extra.customer ?? customer) !== "ALL") url.searchParams.set("customer", extra.customer ?? customer);
     if ((extra.tests ?? tests) !== "hide") url.searchParams.set("tests", extra.tests ?? tests);
-    if ((extra.view ?? view) === "all") url.searchParams.set("view", "all");
     router.replace(url.pathname + url.search, { scroll: false });
   };
 
   // ベースとなるフィルタリング (サービス・検索)
   const baseFilteredOrders = orders
-    .filter(order => matchesOrderStatus(order.status, initialFilters.status) && matchesOrderDue(order, initialFilters.due, today))
+    .filter(order => matchesOrderDue(order, initialFilters.due, today))
     .filter((order) => serviceFilter === "ALL" || order.serviceType === serviceFilter)
     .filter((order) => {
       if (!searchQuery) return true;
@@ -210,12 +207,11 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
 
   // 最終的に表示するリスト
   const displayOrders = baseFilteredOrders
+    .filter(order => matchesOrderStatus(order.status, initialFilters.status))
     .filter((order) => {
-      if (activeTab === "ALL") return true;
       if (activeTab === "IN_PROGRESS") return isInProgress(order.status);
       if (activeTab === "COMPLETED") return order.status === "COMPLETED";
-      if (activeTab === "CANCELED") return isCanceled(order.status);
-      return false;
+      return isCanceled(order.status);
     })
     .sort((a, b) => {
       if (sortOrder === "deadline") return compareOrderDeadlines(a, b);
@@ -301,10 +297,10 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
       </div>
       {/* メインタブとサマリー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <nav className="flex gap-4 overflow-x-auto border-b border-slate-200 px-1 w-full sm:w-auto" aria-label="依頼ステータス">
-          <button onClick={() => { setActiveTab("ALL"); changeFilters({ status: "ALL", due: "ALL" }, { view: "all" }); }} className={`whitespace-nowrap pb-3 border-b-2 text-sm font-bold ${activeTab === "ALL" ? "border-orange-500 text-orange-700" : "border-transparent text-slate-500"}`}>すべて（{baseFilteredOrders.length}）</button>
+        <nav className="flex flex-wrap gap-x-4 border-b border-slate-200 px-1 w-full sm:w-auto" aria-label="依頼ステータス">
           <button
-            onClick={() => { setActiveTab("IN_PROGRESS"); changeFilters({ status: "ALL", due: "ALL" }, { view: "progress" }); }}
+            aria-pressed={activeTab === "IN_PROGRESS"}
+            onClick={() => changeFilters({ status: "ALL", due: "ALL" })}
             className={`whitespace-nowrap pb-3 px-1 border-b-2 font-bold text-sm transition-colors duration-200 ${
               activeTab === "IN_PROGRESS"
                 ? "border-orange-500 text-orange-600"
@@ -314,17 +310,19 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
             進行中（{inProgressCount}）
           </button>
           <button
-            onClick={() => { setActiveTab("COMPLETED"); changeFilters({ status: "COMPLETED", due: "ALL" }, { view: "progress" }); }}
+            aria-pressed={activeTab === "COMPLETED"}
+            onClick={() => changeFilters({ status: "COMPLETED", due: "ALL" })}
             className={`whitespace-nowrap pb-3 px-1 border-b-2 font-bold text-sm transition-colors duration-200 ${
               activeTab === "COMPLETED"
                 ? "border-green-500 text-green-600"
                 : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
             }`}
           >
-            納品済（{completedCount}）
+            納品済み（{completedCount}）
           </button>
           <button
-            onClick={() => { setActiveTab("CANCELED"); changeFilters({ status: "CANCELED", due: "ALL" }, { view: "progress" }); }}
+            aria-pressed={activeTab === "CANCELED"}
+            onClick={() => changeFilters({ status: "CANCELED", due: "ALL" })}
             className={`whitespace-nowrap pb-3 px-1 border-b-2 font-bold text-sm transition-colors duration-200 ${
               activeTab === "CANCELED"
                 ? "border-slate-800 text-slate-900"
@@ -352,10 +350,10 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
       </div>
 
       {/* リスト表示 */}
-      <div className="bg-slate-50 md:bg-white md:rounded-xl md:shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0 p-4 md:p-0">
+      <div className="bg-slate-50 md:bg-white md:rounded-xl md:shadow-sm border-t border-b md:border border-slate-200 overflow-visible animate-in fade-in duration-300 -mx-4 md:mx-0 p-4 xl:p-0">
 
-        {/* スマホ用カード表示 (md:hidden) */}
-        <div className="md:hidden flex flex-col gap-3">
+        {/* 一覧表に十分な幅がない画面ではカードで表示 */}
+        <div className="xl:hidden flex flex-col gap-3">
           {displayOrders.length === 0 ? (
             <div className="p-8 text-center text-sm text-slate-500 bg-white rounded-xl border border-slate-200 shadow-sm">
               該当する依頼データはありません。
@@ -417,8 +415,9 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                 <div className="mb-2">
                   <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}</div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-700 text-sm"><Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.companyName || order.clientName}</Link><span className="ml-2 text-xs text-slate-500">{order.customerType === "BUSINESS" ? "法人" : "個人"}{order.isTest && " · テスト"}</span></span>
+                    <span className="font-medium text-slate-700 text-sm wrap-anywhere"><Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.companyName || order.clientName}</Link><span className="ml-2 text-xs text-slate-500">{order.customerType === "BUSINESS" ? "法人" : "個人"}{order.isTest && " · テスト"}</span></span>
                   </div>
+                  {order.clientEmail && <p className="mt-0.5 text-xs text-slate-500 wrap-anywhere">{order.clientEmail}</p>}
                 </div>
 
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
@@ -433,8 +432,8 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     </button>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-bold">プラン名</span>
-                    <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-600 font-medium">
+                    <span className="mr-2 shrink-0 text-slate-500 font-bold">プラン名</span>
+                    <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-600 font-medium text-right wrap-anywhere">
                       {order.planId || (order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType === "GUIDE" ? "ボーカルガイド" : "法人のお問い合わせ")}
                     </span>
                   </div>
@@ -465,7 +464,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-bold">見積・旧金額</span>
+                    <span className="text-slate-500 font-bold">見積もり</span>
                     <div role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => startEditing(order.id, 'price', order.price, e)} className="cursor-pointer hover:bg-slate-50 px-2 py-1 -mr-2 rounded transition-colors text-right">
                       {editingField?.orderId === order.id && editingField?.field === 'price' ? (
                         <><input aria-label="合計金額" disabled={isSaving}
@@ -483,7 +482,6 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500">確定：{order.confirmedPrice == null ? "未確定" : `¥${order.confirmedPrice.toLocaleString()}`}<Link href={`/admin/orders/${order.id}`} className="ml-3 underline">入金を確認</Link></p>
                   {(archived || activeTab === "CANCELED") && (
                     <div className="flex justify-end mt-4 pt-3 border-t border-slate-100">
                       <button
@@ -501,20 +499,19 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
           )}
         </div>
 
-        {/* PC用テーブル表示 (hidden md:block) */}
-        <div className="hidden md:block overflow-x-auto overflow-y-visible pb-20">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
+        <div className="hidden xl:block">
+          <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
-                <th className="py-3 px-4 pl-5">ステータス</th>
-                <th className="py-3 px-4">ご依頼日</th>
-                <th className="py-3 px-4">顧客種別</th>
+                <th className="w-28 py-3 px-4 pl-5">ステータス</th>
+                <th className="w-24 py-3 px-4">ご依頼日</th>
+                <th className="w-28 py-3 px-4">顧客種別</th>
                 <th className="py-3 px-4">曲名</th>
                 <th className="py-3 px-4">クライアント名</th>
                 <th className="py-3 px-4">プラン名</th>
-                <th className="py-3 px-4">納期</th>
-                <th className="py-3 px-4 pr-5 text-right">見積・旧金額</th>
-                {(archived || activeTab === "CANCELED") && <th className="py-3 px-4 w-10"></th>}
+                <th className="w-40 py-3 px-4">納期</th>
+                <th className="w-36 py-3 px-4 text-right">見積もり</th>
+                {(archived || activeTab === "CANCELED") && <th className="w-11 py-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -585,16 +582,15 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                         )}
                       </button>
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800 max-w-[200px] truncate" title={order.songTitle ?? undefined}>
+                    <td className="py-3 px-4 font-medium text-slate-800 truncate" title={order.songTitle ?? undefined}>
                       <Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.songTitle || "未設定"}</Link>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900"><Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.companyName || order.clientName}</Link><span className="ml-2 text-xs text-slate-500">{order.customerType === "BUSINESS" ? "法人" : "個人"}{order.isTest && " · テスト"}</span></span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{order.clientEmail}</div>
+                      <Link href={`/admin/orders/${order.id}`} title={order.companyName || order.clientName} className="block truncate font-bold text-slate-900 underline underline-offset-4">{order.companyName || order.clientName}</Link>
+                      <div className="text-xs text-slate-500">{order.customerType === "BUSINESS" ? "法人" : "個人"}{order.isTest && " · テスト"}</div>
+                      <div className="mt-0.5 truncate text-[10px] text-slate-400" title={order.clientEmail ?? undefined}>{order.clientEmail}</div>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 text-xs font-medium">
+                    <td className="py-3 px-4 text-slate-600 text-xs font-medium wrap-anywhere">
                       {order.planId || (order.serviceType === "MIX" ? "MIX・マスタリング" : order.serviceType === "ORIGINAL" ? "オリジナル楽曲制作" : order.serviceType === "GUIDE" ? "ボーカルガイド" : "法人のお問い合わせ")}
                     </td>
                     <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 px-4 text-slate-700 text-xs cursor-text" onClick={(e) => startEditing(order.id, 'deadline', order.deadline, e)}>
@@ -620,7 +616,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                         <span className="hover:bg-slate-100 p-1 rounded transition-colors -ml-1 border border-transparent hover:border-slate-200 border-dashed">{order.deadline || <span className="text-slate-400">未定</span>}</span>
                       )}
                     </td>
-                    <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 px-4 pr-5 font-bold text-slate-900 text-right cursor-text" onClick={(e) => startEditing(order.id, 'price', order.price, e)}>
+                    <td role="button" tabIndex={0} aria-label="納期・金額を編集" onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.currentTarget.click(); } }} className="py-3 pl-2 pr-4 font-bold text-slate-900 text-right cursor-text whitespace-nowrap" onClick={(e) => startEditing(order.id, 'price', order.price, e)}>
                       {editingField?.orderId === order.id && editingField?.field === 'price' ? (
                         <><input aria-label="合計金額" disabled={isSaving}
                           autoFocus
@@ -632,11 +628,11 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right"
                          />{editActions()}</>
                       ) : (
-<div>                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span><p className="mt-1 text-[10px] font-normal text-slate-500">確定：{order.confirmedPrice == null ? "未確定" : `¥${order.confirmedPrice.toLocaleString()}`}</p></div>
+                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span>
                       )}
                     </td>
                     {(archived || activeTab === "CANCELED") && (
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 text-center">
                         <button
                           disabled={isSaving} onClick={(e) => void handleArchive(order.id, e)}
                           className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"

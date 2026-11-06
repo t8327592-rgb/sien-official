@@ -45,8 +45,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-700">メモを入力・コピー</Link>
         </div>
         {order.businessContact && <BusinessOrderDetails key={`business-${order.businessContact.updatedAt.toISOString()}`} orderId={order.id} companyName={order.companyName} contact={order.businessContact} />}
-        <OrderFinanceEditor key={`finance-${order.id}`} initialOrder={order} />
         <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} planDetails={planDetails} />
+        <OrderFinanceEditor key={`finance-${order.id}`} initialOrder={order} />
       </div>
 
     </div>
