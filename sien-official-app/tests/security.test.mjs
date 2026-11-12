@@ -597,6 +597,18 @@ test('archive undo restores the saved record without deleting it', async () => {
   } finally { if(previousWindow===undefined)delete global.window;else global.window=previousWindow; }
 });
 
+test('archived default lists every status and respects explicit status filters while normal default stays in progress', () => {
+  const orders = ['PENDING', 'WORKING', 'COMPLETED', 'CANCELLED'].map((status, i) => ({ id: `scope-${i}`, status, serviceType: 'MIX', clientName: `QA-${status}`, clientEmail: `scope-${i}@example.invalid`, createdAt: new Date(), price: 0, deadline: null, isArchived: true }));
+  const defaults = { status: 'ALL', due: 'ALL', service: 'ALL', q: '', sort: 'desc' };
+  const nodes = (archived, status = 'ALL') => clientHarness('src/components/admin/OrderListClient.tsx', 'OrderListClient', { initialOrders: orders, archived, initialFilters: { ...defaults, status } }).render();
+  const listedClients = tree => [...new Set(tree.filter(n => n.type === 'a' || n.type?.name === 'Link' || n.props.href?.startsWith('/admin/orders/scope-')).map(n => n.props.children).filter(text => typeof text === 'string' && text.startsWith('QA-')))];
+  assert.deepEqual(listedClients(nodes(true)).sort(), orders.map(o => o.clientName).sort());
+  assert.deepEqual(listedClients(nodes(true, 'COMPLETED')), ['QA-COMPLETED']);
+  assert.deepEqual(listedClients(nodes(true, 'CANCELED')), ['QA-CANCELLED']);
+  assert.deepEqual(listedClients(nodes(true, 'PENDING')), ['QA-PENDING']);
+  assert.deepEqual(listedClients(nodes(false)).sort(), ['QA-PENDING', 'QA-WORKING']);
+});
+
 test('order list keeps edited input on save failure, saves once, and supports explicit cancellation', async () => {
   let calls=0,release;const errors=[];
   const order={id:'qa',status:'WORKING',serviceType:'MIX',clientName:'QA',clientEmail:'qa@example.invalid',createdAt:new Date(),updatedAt:new Date(),price:0,deadline:null};

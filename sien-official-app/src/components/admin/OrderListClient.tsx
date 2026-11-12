@@ -18,7 +18,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
   const router = useRouter();
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const activeTab = initialFilters.status === "COMPLETED" ? "COMPLETED" : initialFilters.status === "CANCELED" ? "CANCELED" : "IN_PROGRESS";
+  const activeTab = archived && initialFilters.status === "ALL" ? "ALL" : initialFilters.status === "COMPLETED" ? "COMPLETED" : initialFilters.status === "CANCELED" ? "CANCELED" : "IN_PROGRESS";
   const [lastArchived, setLastArchived] = useState<Order | null>(null);
   const [sortOrder, setSortOrder] = useState<OrderFilters["sort"]>(initialFilters.sort);
   const [serviceFilter, setServiceFilter] = useState<string>(initialFilters.service);
@@ -209,6 +209,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
   const displayOrders = baseFilteredOrders
     .filter(order => matchesOrderStatus(order.status, initialFilters.status))
     .filter((order) => {
+      if (activeTab === "ALL") return true;
       if (activeTab === "IN_PROGRESS") return isInProgress(order.status);
       if (activeTab === "COMPLETED") return order.status === "COMPLETED";
       return isCanceled(order.status);
@@ -299,15 +300,15 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <nav className="flex flex-wrap gap-x-4 border-b border-slate-200 px-1 w-full sm:w-auto" aria-label="依頼ステータス">
           <button
-            aria-pressed={activeTab === "IN_PROGRESS"}
+            aria-pressed={activeTab === (archived ? "ALL" : "IN_PROGRESS")}
             onClick={() => changeFilters({ status: "ALL", due: "ALL" })}
             className={`whitespace-nowrap pb-3 px-1 border-b-2 font-bold text-sm transition-colors duration-200 ${
-              activeTab === "IN_PROGRESS"
+              activeTab === (archived ? "ALL" : "IN_PROGRESS")
                 ? "border-orange-500 text-orange-600"
                 : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
             }`}
           >
-            進行中（{inProgressCount}）
+            {archived ? `すべて（${baseFilteredOrders.length}）` : `進行中（${inProgressCount}）`}
           </button>
           <button
             aria-pressed={activeTab === "COMPLETED"}
@@ -486,6 +487,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     <div className="flex justify-end mt-4 pt-3 border-t border-slate-100">
                       <button
                         disabled={isSaving} onClick={(e) => void handleArchive(order.id, e)}
+                        aria-label={archived ? "依頼を復元" : "依頼をアーカイブ"}
                         className="flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

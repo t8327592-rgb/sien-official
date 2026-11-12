@@ -50,6 +50,58 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+// PXstudio remains separate from Order / PaymentRecord / Expense.
+model PxEntry {
+  id            String   @id @default(cuid())
+  sentOn        String   @db.VarChar(10)
+  songTitle     String
+  category      String
+  clientName    String
+  gross         Int
+  fee           Int
+  withholding   Int
+  net           Int
+  paymentStatus String
+  fingerprint   String
+  rawCells      Json
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  changes       PxImportChange[]
+
+  @@index([sentOn])
+  @@index([fingerprint])
+}
+
+model PxImport {
+  id           String   @id @default(cuid())
+  fileHash     String   @unique
+  fileName     String
+  rawCsv       String
+  rowCount     Int
+  added        Int
+  updated      Int
+  skipped      Int
+  warningCount Int
+  importedAt   DateTime @default(now())
+  changes      PxImportChange[]
+}
+
+model PxImportChange {
+  id        String   @id @default(cuid())
+  importId  String
+  import    PxImport @relation(fields: [importId], references: [id], onDelete: Restrict)
+  rowNumber Int
+  action    String
+  entryId   String?
+  entry     PxEntry? @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  before    Json?
+  after     Json
+
+  @@unique([importId, rowNumber])
+  @@index([entryId])
+}
+
 // 認証・管理者用モデル
 model User {
   id            String    @id @default(cuid())
