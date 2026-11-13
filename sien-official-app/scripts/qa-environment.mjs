@@ -10,12 +10,15 @@ import { businessOrderData } from '../src/lib/business-order.ts';
 
 // In-memory test data only. Never loads, copies, or resets the live database.
 const app = path.resolve(import.meta.dirname, '..');
-const databaseUrl = 'postgresql://qa:qa@127.0.0.1:55432/qa?sslmode=disable&connection_limit=1&statement_cache_size=0&pgbouncer=true';
+const sales = process.env.QA_SALES === '1';
+const dbPort = sales ? 55442 : 55432, appPort = sales ? 3004 : 3002, smtpPort = sales ? 2527 : 2526, capturePort = sales ? 55443 : 55433;
+const base = `http://127.0.0.1:${appPort}`;
+const databaseUrl = `postgresql://qa:qa@127.0.0.1:${dbPort}/qa?sslmode=disable&connection_limit=1&statement_cache_size=0&pgbouncer=true`;
 const schema = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'diff', '--from-empty', '--to-schema-datamodel', 'prisma/schema.prisma', '--script'], { cwd: app, encoding: 'utf8' });
 if (schema.status !== 0) throw Error(schema.stderr || 'Could not generate isolated schema');
 const db = await PGlite.create();
 await db.exec(schema.stdout);
-const server = new PGLiteSocketServer({ db, port: 55432, host: '127.0.0.1', maxConnections: 10 });
+const server = new PGLiteSocketServer({ db, port: dbPort, host: '127.0.0.1', maxConnections: 10 });
 await server.start();
 const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 await prisma.siteSetting.create({ data: { id: 'default', orderStatus: 'AVAILABLE', announcement: 'QA隔離環境・実際の申込は受け付けません', contactEmail: 'qa@example.invalid', youtubeUrl: 'https://www.youtube.com/@sien_mc09' } });
@@ -58,6 +61,7 @@ await prisma.paymentRecord.createMany({ data: [
   { orderId: 'qa-order-november', requestKey: 'qa-nov-payment-00001', amount: 10000, paidAt: new Date('2026-11-05T00:00:00+09:00'), memo: '前金' },
 ] });
 await prisma.expense.create({ data: { title: 'プレビュー用プラグイン購入', amount: 3000, category: 'ソフトウェア', date: new Date('2026-10-10T00:00:00+09:00') } });
+if (sales) await (await import('./qa-sales-fixtures.mjs')).seedSales(prisma);
 await prisma.$disconnect();
 await db.exec("DEALLOCATE ALL");
 
@@ -72,7 +76,7 @@ const captureServer = createHttpServer(async (request, response) => {
   captures.webhook.push(text);
   response.writeHead(204); response.end();
 });
-captureServer.listen(55433, '127.0.0.1');
+captureServer.listen(capturePort, '127.0.0.1');
 const smtp = createTcpServer(socket => {
   socket.write('220 localhost QA SMTP\r\n');
   let buffer = '', data = false, message = [];
@@ -91,17 +95,17 @@ const smtp = createTcpServer(socket => {
     }
   });
 });
-smtp.listen(2526, '127.0.0.1');
+smtp.listen(smtpPort, '127.0.0.1');
 const env = { ...process.env, QA_ISOLATED: "1", POSTGRES_PRISMA_URL: databaseUrl, POSTGRES_URL_NON_POOLING: databaseUrl,
-  ADMIN_USERNAME: 'qa-admin', ADMIN_PASSWORD: 'qa-only-password', NEXTAUTH_SECRET: 'qa-only-secret-never-for-production-0123456789', NEXTAUTH_URL: 'http://127.0.0.1:3002', NEXT_PUBLIC_SITE_URL: 'http://127.0.0.1:3002',
-  SMTP_HOST: '127.0.0.1', SMTP_PORT: '2526', SMTP_USER: '', SMTP_PASS: '', SMTP_FROM: 'qa@example.invalid', ADMIN_NOTIFICATION_EMAIL: 'qa-admin@example.invalid',
-  DISCORD_WEBHOOK_URL: 'http://127.0.0.1:55433/webhook', CRON_SECRET: 'qa-only-cron-secret-0123456789-abcdefgh', GOOGLE_GENERATIVE_AI_API_KEY: '', OPENAI_API_KEY: '', NEXT_PUBLIC_GA_ID: '', TRUSTED_CLIENT_IP_HEADER: '',
+  ADMIN_USERNAME: 'qa-admin', ADMIN_PASSWORD: 'qa-only-password', NEXTAUTH_SECRET: 'qa-only-secret-never-for-production-0123456789', NEXTAUTH_URL: base, NEXT_PUBLIC_SITE_URL: base,
+  SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtpPort), SMTP_USER: '', SMTP_PASS: '', SMTP_FROM: 'qa@example.invalid', ADMIN_NOTIFICATION_EMAIL: 'qa-admin@example.invalid',
+  DISCORD_WEBHOOK_URL: `http://127.0.0.1:${capturePort}/webhook`, CRON_SECRET: 'qa-only-cron-secret-0123456789-abcdefgh', GOOGLE_GENERATIVE_AI_API_KEY: '', OPENAI_API_KEY: '', NEXT_PUBLIC_GA_ID: '', TRUSTED_CLIENT_IP_HEADER: '',
   GOOGLE_SERVICE_ACCOUNT_EMAIL: '', GOOGLE_PRIVATE_KEY: '', GOOGLE_CALENDAR_ID: '',
 };
-const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', '3002'], { cwd: app, env, stdio: ['ignore', 'pipe', 'pipe'] });
-const logPath = path.resolve(app, '../audit/qa-server.log');
+const child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', String(appPort)], { cwd: app, env, stdio: ['ignore', 'pipe', 'pipe'] });
+const logPath = path.resolve(app, sales ? '../audit/qa-sales-server.log' : '../audit/qa-server.log');
 const log = fs.createWriteStream(logPath);
-child.stdout.on('data', chunk => { log.write(chunk); if (chunk.toString().includes('Ready')) console.log('QA environment ready: http://127.0.0.1:3002 (memory-only PostgreSQL, captured notifications)'); });
+child.stdout.on('data', chunk => { log.write(chunk); if (chunk.toString().includes('Ready')) console.log(`QA environment ready: ${base} (memory-only PostgreSQL, captured notifications)`); });
 child.stderr.on('data', chunk => log.write(chunk));
 let stopping = false;
 async function stop() { if (stopping) return; stopping = true; child.kill(); smtp.close(); captureServer.close(); await server.stop(); await db.close(); log.end(); process.exit(0); }

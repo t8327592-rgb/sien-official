@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings=0",
     "postinstall": "node scripts/patch-braces.mjs && prisma generate",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/security.test.mjs tests/pxstudio.test.mjs",
+    "test": "node --test tests/security.test.mjs tests/pxstudio.test.mjs tests/sales-dashboard.test.mjs",
     "retention:report": "node scripts/retention-report.mjs",
     "db:audit:check": "node scripts/audit-migrations.mjs",
     "db:audit:apply": "node scripts/audit-migrations.mjs --apply"

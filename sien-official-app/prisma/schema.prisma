@@ -50,6 +50,47 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+// Supplemental dashboard metadata only. Source financial records are never rewritten.
+// IDs are validated transactionally; no cascading writes to legacy source tables.
+model SalesReview {
+  id          String   @id @default(cuid())
+  mode        String
+  directId    String
+  pxEntryId   String
+  status      String
+  amount      Int      @default(0)
+  fee         Int      @default(0)
+  withholding Int      @default(0)
+  sourceHash  String
+  reason      String
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@unique([mode, directId, pxEntryId])
+  @@index([pxEntryId])
+}
+
+model SalesPxAccounting {
+  pxEntryId  String   @id
+  revenueOn  String?  @db.VarChar(10)
+  sourceHash String
+  reason     String
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SalesReviewAudit {
+  id         String   @id @default(cuid())
+  entityKind String
+  entityKey  String
+  before     Json?
+  after      Json
+  reason     String
+  createdAt  DateTime @default(now())
+  @@index([entityKind, entityKey, createdAt])
+}
+
 // PXstudio remains separate from Order / PaymentRecord / Expense.
 model PxEntry {
   id            String   @id @default(cuid())
