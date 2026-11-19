@@ -75,14 +75,14 @@ export default async function AutumnSalePage() {
           <div className={styles.heroStage}>
             <div className={styles.heroCopy}>
               <span className={styles.campaignBadge}><Sparkles size={16} aria-hidden="true" /> {autumnSale.name}</span>
-              <h1 id="sale-title">秋の<span>MIXセール</span></h1>
+              <h1 id="sale-title"><small>ブラックフライデー</small><span>MIXセール</span></h1>
               <p className={styles.heroLabel}>全プラン・全オプション対象<br />お見積もり総額から</p>
               <p className={styles.discount}>{autumnSale.discount}<span>% OFF</span></p>
               <p className={styles.heroPromise}>録音前でも、お申し込みOK。</p>
               <a className={styles.primary} href={autumnSale.orderPath}>{cta} <ArrowRight size={18} aria-hidden="true" /></a>
             </div>
             <div className={styles.heroArt} aria-hidden="true">
-              <span className={styles.artEdition}>SIEN OFFICIAL <span> / </span> AUTUMN 2026</span>
+              <span className={styles.artEdition}>SIEN OFFICIAL <span> / </span> BLACK FRIDAY 2026</span>
               <div className={styles.recordDisc}>
                 <div className={styles.recordLabel}><Mic2 /><span>VOCAL MIX</span></div>
               </div>
@@ -105,7 +105,7 @@ export default async function AutumnSalePage() {
       <div className={styles.wrap}>
         <section className={`${styles.section} ${styles.benefits}`} aria-labelledby="features">
           <p className={styles.kicker}>01 / SALE BENEFITS</p>
-          <h2 id="features">秋のMIXセールの特長</h2>
+          <h2 id="features">{autumnSale.name}の特長</h2>
           <ol className={styles.features}>{features.map(([Icon, title, copy]) => (
             <li key={title}><span className={styles.featureIcon}><Icon size={22} aria-hidden="true" /></span><h3>{title}</h3><p>{copy}</p></li>
           ))}</ol>

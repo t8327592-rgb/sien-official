@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
     const sale = isAutumnMixSale(serviceType, receivedAt);
     if (body.autumnSaleVersion !== undefined && (!sale || body.autumnSaleVersion !== salePolicyVersion)) {
-      throw new ApiError(409, "秋のMIXセールの受付条件が変わりました。ページを再読み込みし、料金を確認してください。");
+      throw new ApiError(409, `${autumnSale.name}の受付条件が変わりました。ページを再読み込みし、料金を確認してください。`);
     }
     const selectedPlanId = textField(body, "planId", true, 150);
     const ids = body.optionIds;

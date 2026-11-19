@@ -857,8 +857,8 @@ test('campaign pricing applies only within its valid period and target plan', ()
   assert.equal(currentPlanCampaign('plan-1', [{ ...current, isActive: false }], now), undefined);
 });
 test('autumn sale only discounts MIX within the JST window and the former form cannot accept new posts', async () => {
-  const start = Date.parse('2026-11-07T00:00:00+09:00');
-  const end = Date.parse('2026-11-17T00:00:00+09:00');
+  const start = Date.parse('2026-11-21T00:00:00+09:00');
+  const end = Date.parse('2026-12-01T00:00:00+09:00');
   const load = loader({
     '@/lib/autumn-sale': { saleClock: () => ({ now: end }) },
     '@/lib/submission': { submissionIdentity: () => ({}), existingSubmission: async () => null },

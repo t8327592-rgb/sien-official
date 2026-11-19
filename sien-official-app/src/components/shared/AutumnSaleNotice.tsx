@@ -4,11 +4,11 @@ import { audioDeadline, autumnSale } from "@/config/autumn-sale";
 
 export function AutumnSaleBanner() {
   return (
-    <aside aria-label="秋のMIXセール" className="mb-6 rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-5 shadow-sm sm:p-6">
+    <aside aria-label={autumnSale.name} className="mb-6 rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-900">
-            <Sparkles size={15} aria-hidden="true" />秋のMIXセール開催中
+            <Sparkles size={15} aria-hidden="true" />{autumnSale.name}開催中
           </p>
           <p className="mt-2 text-sm font-bold text-slate-700">通常のお見積もり総額から</p>
           <p className="text-4xl font-extrabold leading-tight tracking-tight text-orange-800">{autumnSale.discount}<span className="text-2xl">% OFF</span></p>
@@ -36,7 +36,7 @@ export function AutumnSaleNewsLink({ phase }: { phase: "upcoming" | "open" | "cl
     <Link href={autumnSale.path} className="group flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-orange-50 px-5 py-4 hover:bg-orange-100">
       <time dateTime={autumnSale.announcementDay} className="shrink-0 text-sm font-bold text-slate-600">{autumnSale.announcementDay.replaceAll("-", "/")}</time>
       <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-orange-800">{status}</span>
-      <span className="min-w-0 flex-1 basis-52 font-bold text-slate-900 group-hover:text-orange-800">{autumnSale.firstDay.slice(0, 4)}年 秋のMIXセール{phase === "closed" ? "" : `（${autumnSale.discount}%OFF）`}</span>
+      <span className="min-w-0 flex-1 basis-52 font-bold text-slate-900 group-hover:text-orange-800">{autumnSale.firstDay.slice(0, 4)}年 {autumnSale.name}{phase === "closed" ? "" : `（${autumnSale.discount}%OFF）`}</span>
       <ArrowRight size={17} className="ml-auto shrink-0 text-orange-800" aria-hidden="true" />
     </Link>
   );

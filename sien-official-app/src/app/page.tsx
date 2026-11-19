@@ -32,7 +32,7 @@ export default async function Home() {
     ...(showAutumnPromo ? [{
       href: autumnSale.path,
       label: autumnPhase === "open" ? "開催中・見積もり総額から" : "開催予告・見積もり総額から",
-      title: "秋のMIXセール",
+      title: autumnSale.name,
       accent: `${autumnSale.discount}%OFF`,
       featured: true,
     }] : []),

@@ -50,6 +50,7 @@
   color: var(--accent); font-size: .77rem; font-weight: 700; letter-spacing: .045em;
 }
 .heroCopy h1 { margin-top: .8rem; font-size: clamp(2rem, 4.5vw, 3.85rem); font-weight: 800; letter-spacing: -.045em; line-height: 1.2; }
+.heroCopy h1 small { display: block; margin-bottom: .3rem; font-size: .51em; letter-spacing: -.03em; }
 .heroCopy h1 span, .discount {
   color: #c2410c; background: linear-gradient(105deg, #ea580c 16%, #b45309 83%);
   background-clip: text; -webkit-text-fill-color: transparent;

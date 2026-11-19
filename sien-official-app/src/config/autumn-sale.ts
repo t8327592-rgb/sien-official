@@ -1,13 +1,13 @@
 export const autumnSale = {
-  name: "2026 AUTUMN MIX SALE",
+  name: "ブラックフライデーMIXセール",
   path: "/autumn-sale",
   orderPath: "/order?service=MIX",
-  enabled: false,
+  enabled: true,
   discount: 20,
-  announcementDay: "2026-11-06",
-  firstDay: "2026-11-07",
-  lastDay: "2026-11-16",
-  audioDueDay: "2026-11-29",
+  announcementDay: "2026-11-20",
+  firstDay: "2026-11-21",
+  lastDay: "2026-11-30",
+  audioDueDay: "2026-12-06",
 } as const;
 
 const japanTime = { timeZone: "Asia/Tokyo" } as const;

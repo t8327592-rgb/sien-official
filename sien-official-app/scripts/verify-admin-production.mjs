@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { autumnSale } from '../src/config/autumn-sale.ts';
 
 // Read-only checks of the existing production site. Credentials stay in memory.
 const base = 'https://www.sien-official.com';
@@ -25,8 +26,14 @@ try {
   const publicRoutes = ['/', '/mix', '/original', '/order', '/news', '/policy/privacy'];
   for (const route of publicRoutes) await page(route);
   const sale = await call('/autumn-sale');
-  assert.ok(sale.status === 404 || (await sale.text()).includes('NEXT_HTTP_ERROR_FALLBACK;404'), 'Postponed sale became public');
-  results.push({ route: '/autumn-sale', verified: true, result: 'NOT_FOUND' });
+  const saleBody = await sale.text();
+  if (autumnSale.enabled) {
+    assert.equal(sale.status, 200);
+    assert.ok(saleBody.includes(autumnSale.name), 'Sale name is missing');
+  } else {
+    assert.ok(sale.status === 404 || saleBody.includes('NEXT_HTTP_ERROR_FALLBACK;404'), 'Postponed sale became public');
+  }
+  results.push({ route: '/autumn-sale', verified: true, result: autumnSale.enabled ? 'PUBLIC' : 'NOT_FOUND' });
   const blocked = await call('/api/admin/finance', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
   assert.equal(blocked.status, 401, 'Anonymous admin write was accepted');
   assert.ok(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD, 'Production admin credentials are not configured locally');

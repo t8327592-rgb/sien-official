@@ -52,7 +52,7 @@ export function CampaignList({ initialCampaigns, plans }: { initialCampaigns: Ca
 
   return (
     <div className="space-y-6">
-      <p className="rounded-lg border bg-white p-4 text-sm text-slate-600">ここでは対象プランごとの固定価格キャンペーンを管理します。秋のMIXセールの公開・保留設定は、この画面からは変更されません。</p>
+      <p className="rounded-lg border bg-white p-4 text-sm text-slate-600">ここでは対象プランごとの固定価格キャンペーンを管理します。MIXセールの公開・保留設定は、この画面からは変更されません。</p>
       <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
         <h2 className="text-lg font-bold text-orange-600">
           <button type="button" aria-expanded={isAdding} className="w-full flex justify-between items-center text-left" onClick={() => setIsAdding(!isAdding)}>＋ 新規キャンペーン追加</button>

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { PrismaClient } from '@prisma/client';
+import { autumnSale } from '../src/config/autumn-sale.ts';
 const base = 'http://127.0.0.1:3002';
 const prisma = new PrismaClient({ datasources: { db: { url: 'postgresql://qa:qa@127.0.0.1:55432/qa?sslmode=disable&connection_limit=1&statement_cache_size=0&pgbouncer=true' } } });
 const cookies = new Map();
@@ -59,7 +60,13 @@ try {
   console.log('PASS review ordering persistence, stale conflict and rollback after a later row fails');
   const sale = await call('/autumn-sale');
   // Next can stream its shell before notFound(), retaining a 200 transport status.
-  assert.ok(sale.status === 404 || (await sale.text()).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
-  console.log('PASS postponed autumn sale remains unavailable');
+  const saleBody = await sale.text();
+  if (autumnSale.enabled) {
+    assert.equal(sale.status, 200);
+    assert.ok(saleBody.includes(autumnSale.name));
+  } else {
+    assert.ok(sale.status === 404 || saleBody.includes('NEXT_HTTP_ERROR_FALLBACK;404'));
+  }
+  console.log('PASS MIX sale publication matches campaign configuration');
   console.log('QA_ADMIN_AUDIT_PASSED');
 } finally { await prisma.$disconnect(); }
