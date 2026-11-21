@@ -3,6 +3,7 @@ import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import { notificationFilters, notificationPageUrl, NOTIFICATION_KINDS, NOTIFICATION_STATUSES, canRetryNotification } from "@/lib/admin-notifications";
 import { NotificationRetryButton } from "@/components/admin/NotificationRetryButton";
+import { disabledClientEmailKinds } from "@/lib/notification-policy";
 import deploymentConfig from "../../../../vercel.json";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   }
   const [total, failedCount] = await Promise.all([
     filters.error ? Promise.resolve(0) : prisma.notificationJob.count({ where: filters.where }),
-    prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] }, kind: { notIn: ["ORDER_RECEIPT_EMAIL", "BUSINESS_RECEIPT_EMAIL"] } } }),
+    prisma.notificationJob.count({ where: { status: { in: ["FAILED", "EXHAUSTED"] }, kind: { notIn: disabledClientEmailKinds } } }),
   ]);
   const pageSize = 25, lastPage = Math.max(1, Math.ceil(total / pageSize)), page = Math.min(filters.page, lastPage);
   const jobs = filters.error ? [] : await prisma.notificationJob.findMany({ where: filters.where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize });
@@ -36,6 +37,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   ]);
   return <section className="space-y-6">
     <h1 className="text-2xl font-bold">受付通知の配送状況</h1>
+    <p className="text-sm text-slate-600">お客様への自動返信メールは、セールのお申し込みを含め送信しません。</p>
     <p className="text-sm text-slate-600">依頼の保存と通知予約は同時に行います。10回失敗すると自動再試行を止めます。「送信処理完了」は配送サービスへの引き渡しで、受信箱への到達保証ではありません。</p>
     <div className="rounded-lg border bg-white p-4 text-sm space-y-2">
       <p>定期処理の認証設定：{process.env.CRON_SECRET ? "設定あり・公開環境の稼働未確認" : "未設定"}</p>
@@ -44,7 +46,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     </div>
     <Link href="/admin/notifications?status=failed" className="inline-block rounded-lg border border-red-200 bg-red-50 text-red-800 p-3 font-bold">失敗・再試行上限：{failedCount}件</Link>
     <form action="/admin/notifications" method="get" className="flex flex-wrap gap-3 items-end rounded-xl border bg-white p-4">
-      <label className="space-y-1 min-w-0"><span className="block text-sm">状態</span><select name="status" defaultValue={filters.status} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option><option value="failed">失敗・再試行上限</option><option value="pending">送信待ち・処理中</option><option value="DELIVERED">送信処理完了</option><option value="EXHAUSTED">再試行上限のみ</option><option value="SKIPPED">送信停止（旧自動返信）</option></select></label>
+      <label className="space-y-1 min-w-0"><span className="block text-sm">状態</span><select name="status" defaultValue={filters.status} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option><option value="failed">失敗・再試行上限</option><option value="pending">送信待ち・処理中</option><option value="DELIVERED">送信処理完了</option><option value="EXHAUSTED">再試行上限のみ</option><option value="SKIPPED">送信停止（お客様への自動返信）</option></select></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">通知種別</span><select name="kind" defaultValue={filters.kind} className="border rounded-lg p-2 max-w-full"><option value="ALL">すべて</option>{Object.entries(NOTIFICATION_KINDS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">受付日・開始</span><input type="date" name="from" defaultValue={filters.from} className="border rounded-lg p-2 max-w-full" /></label>
       <label className="space-y-1 min-w-0"><span className="block text-sm">受付日・終了</span><input type="date" name="to" defaultValue={filters.to} className="border rounded-lg p-2 max-w-full" /></label>

@@ -672,7 +672,7 @@ test('notification filters retain page parameters and reject invalid date ranges
   const filters=notificationFilters({status:'failed',kind:'ORDER_RECEIPT_EMAIL',from:'2026-10-01',to:'2026-10-11',q:'QA-001',page:'2'});
   assert.deepEqual(filters.where.status.in,['FAILED','EXHAUSTED']);assert.equal(filters.where.createdAt.gte.toISOString(),'2026-09-30T15:00:00.000Z');assert.equal(filters.where.createdAt.lt.toISOString(),'2026-10-11T15:00:00.000Z');
   assert.match(notificationPageUrl(filters,3),/q=QA-001&page=3/);
-  assert.deepEqual(notificationFilters({status:'failed'}).where.kind.notIn,['ORDER_RECEIPT_EMAIL','BUSINESS_RECEIPT_EMAIL']);
+  assert.deepEqual(notificationFilters({status:'failed'}).where.kind.notIn,['ORDER_RECEIPT_EMAIL','BUSINESS_RECEIPT_EMAIL','ORDER_AUTUMN_SALE_CONFIRMATION']);
   assert.equal(filters.where.kind,'ORDER_RECEIPT_EMAIL');
   assert.ok(notificationFilters({from:'2026-02-30'}).error);assert.ok(notificationFilters({from:'2026/1/1'}).error);assert.ok(notificationFilters({from:'2026-10-11',to:'2026-10-01'}).error);
   for(const status of ['PENDING','PROCESSING','DELIVERED'])assert.equal(canRetryNotification({status,lockedUntil:null}),false);
@@ -730,13 +730,13 @@ test('plan selection preserves the chosen service and handles obsolete IDs and z
   assert.equal(resolveOrderSelection(plans, undefined, 'ORIGINAL').planId, 'original');
   assert.match(resolveOrderSelection(plans, 'retired').selectionNotice, /利用できません/);
 });
-function orderHarness({ unavailable = false, options = [], missingPlan = false } = {}) {
-  const saved = [];
+function orderHarness({ unavailable = false, options = [], missingPlan = false, now = Date.parse('2026-11-20T00:00:00+09:00') } = {}) {
+  const saved = [], queued = [];
   const db = {
     $transaction: async fn => fn(db),
     $queryRaw: async () => [{ locked: 1 }],
     submissionReceipt: { findUnique: async () => null, create: async ({ data }) => ({ id: 'receipt-1', ...data }) },
-    notificationJob: { createMany: async () => ({ count: 2 }) },
+    notificationJob: { createMany: async ({data}) => { queued.push(...data); return { count: data.length }; } },
     campaign: { findMany: async () => [] },
     siteSetting: { findUnique: async () => ({ orderStatus: unavailable ? 'UNAVAILABLE' : 'AVAILABLE' }) },
     plan: { findFirst: async () => missingPlan ? null : plan },
@@ -746,9 +746,18 @@ function orderHarness({ unavailable = false, options = [], missingPlan = false }
   const load = loader({
     '@/lib/prisma': { prisma: db }, '@/lib/rate-limit': { consumeRateLimit: async () => {} },
     '@/lib/repeater': { checkIsRepeater: async () => false, updateAllClientOrdersToRepeater: async () => {} },
+    '@/lib/autumn-sale': { saleClock: () => ({now}), saleCampaignSnapshot: {name:'QAセール',discount:20,audioDueDay:'2026-12-06',paymentAfterAudioReview:true} },
   });
-  return { handler: load('src/app/api/orders/route.ts').POST, saved };
+  return { handler: load('src/app/api/orders/route.ts').POST, saved, queued };
 }
+
+test('sale orders retain the discount and queue only administrator notifications', async () => {
+  const {handler,saved,queued}=orderHarness({now:Date.parse('2026-11-22T12:00:00+09:00')});
+  assert.equal((await handler(request(validOrder))).status,201);
+  assert.equal(saved[0].price,8000);
+  assert.ok(queued.some(job=>job.kind==='ORDER_ADMIN_EMAIL'));
+  assert.ok(queued.every(job=>['ORDER_ADMIN_EMAIL','ORDER_DISCORD'].includes(job.kind)));
+});
 
 test('anonymous requests cannot reach any administrative API or AI operation', async () => {
   function files(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? files(path.join(dir, e.name)) : [path.join(dir, e.name)]); }
@@ -974,17 +983,21 @@ test('Discord long content stays within embed limits and includes an unabridged 
   for(const value of [record.companyName,record.contactName,record.email,record.inquiryType,record.budget,record.deadline]) assert.ok(fullText.includes(value));
 });
 
-test('notifications queue only admin channels and old receipt jobs never send, even on retry', async () => {
+test('notifications queue only admin channels and customer emails never send, including queued sale confirmations', async () => {
   const previous=process.env.DISCORD_WEBHOOK_URL;process.env.DISCORD_WEBHOOK_URL='https://discord.com/api/webhooks/qa/test';
   try {
-    const queued=[],updates=[],mails=[];let pending=true;
-    const job={id:'old-job',kind:'ORDER_RECEIPT_EMAIL',entityId:'qa',status:'FAILED',attempts:1,updatedAt:new Date(),lockedUntil:null};
-    const db={notificationJob:{createMany:async({data})=>queued.push(...data),findFirst:async()=>pending?job:null,updateMany:async()=>({count:1}),update:async({data})=>{updates.push(data);pending=false;}}};
+    const queued=[],updates=[],mails=[];
+    const kinds=['ORDER_RECEIPT_EMAIL','BUSINESS_RECEIPT_EMAIL','ORDER_AUTUMN_SALE_CONFIRMATION'];
+    const jobs=kinds.flatMap(kind=>['PENDING','FAILED','PROCESSING'].map(status=>({id:`${kind}-${status}`,kind,entityId:'qa',status,attempts:1,updatedAt:new Date(),lockedUntil:new Date(0)})));
+    let index=0;
+    const db={notificationJob:{createMany:async({data})=>queued.push(...data),findFirst:async()=>jobs[index]??null,updateMany:async()=>({count:1}),update:async({data})=>{updates.push(data);index++;}}};
     const {queueNotifications,processPendingNotifications}=loader({'@/lib/prisma':{prisma:db},'@/lib/mail':{sendMail:async data=>mails.push(data)}})('src/lib/notifications.ts');
     await queueNotifications(db,'ORDER','qa');await queueNotifications(db,'BUSINESS','qb');
     assert.deepEqual(queued.map(j=>j.kind),['ORDER_ADMIN_EMAIL','ORDER_DISCORD','BUSINESS_ADMIN_EMAIL','BUSINESS_DISCORD']);
-    assert.deepEqual(await processPendingNotifications(),{delivered:0,failed:0});assert.equal(mails.length,0);assert.equal(updates[0].status,'SKIPPED');assert.equal(updates[0].sentAt,null);
-    assert.equal(loader()('src/lib/admin-notifications.ts').canRetryNotification(job),false);
+    assert.deepEqual(await processPendingNotifications(),{delivered:0,failed:0});assert.equal(mails.length,0);assert.equal(updates.length,jobs.length);
+    for(const update of updates){assert.equal(update.status,'SKIPPED');assert.equal(update.sentAt,null);}
+    const {canRetryNotification}=loader()('src/lib/admin-notifications.ts');
+    for(const kind of kinds)for(const status of ['FAILED','EXHAUSTED'])assert.equal(canRetryNotification({kind,status,lockedUntil:null}),false);
   } finally {if(previous===undefined)delete process.env.DISCORD_WEBHOOK_URL;else process.env.DISCORD_WEBHOOK_URL=previous;}
 });
 

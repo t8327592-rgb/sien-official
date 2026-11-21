@@ -1,6 +1,6 @@
 import { validateConsent, validateOrderFields, enumField, validateOptionQuantities } from "@/lib/order-validation";
 import { submissionIdentity, existingSubmission, acceptSubmission, submissionResponse } from "@/lib/submission";
-import { processPendingNotifications, queueAutumnSaleNotifications } from "@/lib/notifications";
+import { processPendingNotifications } from "@/lib/notifications";
 import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readJson, textField, emailField, ApiError, apiErrorResponse } from "@/lib/api-input";
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
       },
       });
       return record;
-    }, consent, sale ? queueAutumnSaleNotifications : undefined);
+    }, consent);
     after(async () => { await processPendingNotifications(3); });
 
     return NextResponse.json(submissionResponse(receipt), { status: 201 });
