@@ -983,6 +983,25 @@ test('Discord long content stays within embed limits and includes an unabridged 
   for(const value of [record.companyName,record.contactName,record.email,record.inquiryType,record.budget,record.deadline]) assert.ok(fullText.includes(value));
 });
 
+test('admin email preserves full order details and the quoted prices while escaping customer HTML', () => {
+  const {adminEmailNotification,notificationDetails}=loader()('src/lib/notification-content.ts');
+  const record={createdAt:new Date('2026-11-21T15:00:00Z'),clientName:'<img src=x onerror=alert(1)>',clientEmail:'customer@example.invalid',contactMethod:'メール',twitterId:'@qa',discordId:'qa',serviceType:'MIX',planId:'旧プラン',isRepeater:true,songTitle:'A & B',options:'旧選択',vocalKey:'-3',referenceUrl:'javascript:alert(1)',referenceFidelity:'2',materialsUrl:'https://example.invalid/audio?x=1&y=2',paymentMethod:'銀行振込',deadline:'2026-12-20',message:'<script>alert(1)</script>\n'+'長文😀'.repeat(2000),price:999,basePrice:999,optionPrice:999};
+  const quote={plan:{name:'受付時のプラン'},price:0,basePrice:0,optionPrice:0,options:[{name:'カットアップ',priceText:'1,000円',quantity:2}],autumnSale:{name:'セール',discount:20,normalTotal:10000,audioDueDay:'2026-12-06'}};
+  const {text,html}=adminEmailNotification(record,quote,'https://example.invalid/admin/orders/qa');
+  for(const {value}of notificationDetails(record,quote).details)assert.ok(text.includes(value));
+  assert.ok(text.includes(record.message));assert.match(text,/0円（税込）/);assert.match(text,/×2単位/);assert.match(text,/10,000円（税込）/);assert.match(text,/2026-12-06 23:59/);assert.ok(text.includes('2026/11/22'));
+  assert.match(html,/&lt;script&gt;/);assert.doesNotMatch(html,/<script|<img|href="javascript:/i);assert.match(html,/href="https:\/\/example.invalid\/audio\?x=1&amp;y=2"/);assert.match(html,/<br>/);
+  assert.match(text,/音源確認済みとは限りません/);assert.match(text,/正式なお見積もり/);
+});
+
+test('admin email includes the full corporate inquiry without truncation', () => {
+  const {adminEmailNotification}=loader()('src/lib/notification-content.ts');
+  const record={companyName:'QA & 会社',contactName:'担当者',email:'corporate@example.invalid',inquiryType:'お見積り',budget:'10万円',deadline:'来月',message:'依頼内容\n'.repeat(1000)};
+  const {text,html}=adminEmailNotification(record,null,'https://example.invalid/admin/business/qa');
+  for(const value of Object.values(record))assert.ok(text.includes(value));
+  assert.match(html,/QA &amp; 会社/);assert.match(html,/法人お問い合わせ/);
+});
+
 test('notifications queue only admin channels and customer emails never send, including queued sale confirmations', async () => {
   const previous=process.env.DISCORD_WEBHOOK_URL;process.env.DISCORD_WEBHOOK_URL='https://discord.com/api/webhooks/qa/test';
   try {
@@ -1016,6 +1035,7 @@ test('Discord worker sends long-form multipart data with mentions disabled, and 
     }})('src/lib/notifications.ts');
     assert.deepEqual(await processPendingNotifications(),{delivered:2,failed:0});assert.deepEqual(statuses,['DELIVERED','DELIVERED']);
     assert.equal(mailed.length,1);assert.equal(mailed[0].to,'owner@example.invalid');assert.doesNotMatch(mailed[0].text,/受付番号/);
+    assert.ok(mailed[0].text.includes(record.message));assert.ok(mailed[0].html.includes(record.message.replaceAll('\n','<br>')));
   } finally {for(const[key,value]of previous){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
 

@@ -1,7 +1,7 @@
 import type { Prisma, NotificationJob } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mail";
-import { discordNotification } from "@/lib/notification-content";
+import { adminEmailNotification, discordNotification } from "@/lib/notification-content";
 import { isClientEmailNotification } from "@/lib/notification-policy";
 
 export async function queueNotifications(tx: Prisma.TransactionClient, entity: "ORDER" | "BUSINESS", entityId: string) {
@@ -36,8 +36,8 @@ async function deliver(job: NotificationJob) {
   if (!job.kind.endsWith("_ADMIN_EMAIL")) throw new Error("UNKNOWN_NOTIFICATION_KIND");
   const to = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER;
   if (!to) throw new Error("ADMIN_EMAIL_NOT_CONFIGURED");
-  const text = `新しい受付があります。\n内容は管理画面で確認してください。\n${adminUrl}`;
-  await sendMail({ to, subject: "【Sien-Official】新しい受付があります", text, messageId: `<notification-${job.id}@sien-official.com>` });
+  const { text, html } = adminEmailNotification(record, receipt?.quote ?? null, adminUrl);
+  await sendMail({ to, subject: "【Sien-Official】新しい受付があります", text, html, messageId: `<notification-${job.id}@sien-official.com>` });
 }
 
 export async function processPendingNotifications(limit = 10, budgetMs = 20000, jobId?: string) {
