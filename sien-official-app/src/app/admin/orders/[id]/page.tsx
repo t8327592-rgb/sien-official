@@ -41,6 +41,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-5">
+          <div><h2 className="font-bold text-slate-800">クライアント向け見積書</h2><p className="mt-1 text-sm text-slate-500">料金を編集してPDFを作成できます。保存しても確定売上・入金には反映されません。</p></div>
+          <div className="flex flex-wrap gap-3"><Link href={`/admin/estimates/new?orders=${id}`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white">見積書を作成</Link><Link href={`/admin/estimates?order=${id}`} className="rounded-lg border px-4 py-2.5 text-sm">この依頼の見積書</Link></div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-5">
           <div><h2 className="font-bold text-slate-800">フィードバック用メモ</h2><p className="text-sm text-slate-500 mt-1">名前・楽曲名を引き継いでメモをまとめ、Codexに渡せます。</p></div>
           <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-700">メモを入力・コピー</Link>
         </div>

@@ -17,6 +17,7 @@
 /.next/
 /.next-qa/
 /.next-sales-qa/
+/.next-estimates-qa/
 /out/
 
 # production

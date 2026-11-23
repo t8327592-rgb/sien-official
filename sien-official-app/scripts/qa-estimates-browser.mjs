@@ -1,0 +1,76 @@
+// Uses an installed Playwright and Chrome. Targets the loopback QA app only.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const requirePackage = createRequire(import.meta.url);
+const { chromium } = requirePackage(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const output = path.resolve(import.meta.dirname, '../../tmp/estimates-qa');
+const session = JSON.parse(fs.readFileSync(path.join(output, 'session.json'), 'utf8'));
+const base = 'http://127.0.0.1:3006';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+try {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] });
+  await context.addCookies(session.cookies);
+  const page = await context.newPage(), errors = [];
+  process.on('uncaughtExceptionMonitor', () => { fs.writeFileSync(path.join(output, 'browser-failure.json'), JSON.stringify({ url: page.url(), errors })); });
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(base + '/admin/orders');
+  await page.getByRole('heading', { name: 'ご依頼管理' }).waitFor();
+  await page.getByRole('checkbox', { name: 'チョコレーションを見積書に選択' }).check();
+  await page.getByRole('checkbox', { name: '別の曲を見積書に選択' }).click();
+  await page.getByText('同じ氏名・メール・会社名・顧客区分の依頼だけ選択できます').waitFor();
+  assert.equal(await page.getByRole('checkbox', { name: '別の曲を見積書に選択' }).isChecked(), false);
+  await page.getByRole('button', { name: '表示中の同じクライアントを選択' }).click();
+  await page.getByText('見積書用に11件選択中').waitFor();
+  await page.screenshot({ path: path.join(output, 'desktop-selection.png') });
+  await page.getByRole('button', { name: 'まとめて見積書を作成' }).click();
+  await page.getByRole('heading', { name: '見積書の編集' }).waitFor();
+  assert.match(await page.getByLabel('見積内容プレビュー').innerText(), /104,000円/);
+  await page.getByLabel('備考・特記事項', { exact: true }).fill('ブラウザで編集した備考。二重計上しません。');
+  await page.route('**/api/admin/estimates', route => route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'QA保存エラー' }) }));
+  await page.getByRole('button', { name: '見積書を保存', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'QA保存エラー' }).waitFor();
+  assert.equal(await page.getByLabel('備考・特記事項', { exact: true }).inputValue(), 'ブラウザで編集した備考。二重計上しません。');
+  await page.unroute('**/api/admin/estimates');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '保存してPDFをダウンロード', exact: true }).click();
+  const download = await downloadPromise; await download.saveAs(path.join(output, 'browser-download.pdf'));
+  await page.waitForURL(/\/admin\/estimates\/(?!new)[^/?]+$/);
+  await page.getByRole('button', { name: '案内文をコピー', exact: true }).click();
+  assert.match(await page.evaluate(() => navigator.clipboard.readText()), /104,000円/);
+  const firstSavedUrl = page.url();
+  await page.reload();
+  await page.getByRole('heading', { name: '見積書の編集' }).waitFor();
+  assert.equal(await page.getByLabel('備考・特記事項', { exact: true }).inputValue(), 'ブラウザで編集した備考。二重計上しません。');
+  await page.getByLabel('単価（税込・円）', { exact: true }).first().fill('12000');
+  assert.match(await page.getByLabel('見積内容プレビュー').innerText(), /105,600円/);
+  await page.getByRole('button', { name: '改訂版を保存', exact: true }).click();
+  await page.waitForURL(url => url.href !== firstSavedUrl);
+  await page.reload();
+  await page.getByRole('navigation', { name: '見積書の改訂履歴' }).getByRole('link', { name: '第2版（最新版）' }).waitFor();
+  const preview = page.getByLabel('見積内容プレビュー');
+  await preview.scrollIntoViewIfNeeded(); await preview.screenshot({ path: path.join(output, 'desktop-preview.png') });
+  await page.getByRole('link', { name: '複製して新規作成' }).click();
+  await page.waitForURL(/\/admin\/estimates\/new\?copy=/);
+  await page.getByRole('heading', { name: '見積書の編集' }).waitFor();
+  assert.match(await page.getByLabel('見積書番号', { exact: true }).inputValue(), /^EST-/);
+  await page.getByText('11件の依頼 / 第1版（未保存）', { exact: true }).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(base + '/admin/orders');
+  await page.getByRole('heading', { name: 'ご依頼管理' }).waitFor();
+  await page.getByRole('checkbox', { name: 'VOiCEを見積書に選択' }).check();
+  await page.getByRole('button', { name: 'まとめて見積書を作成' }).click();
+  await page.getByRole('heading', { name: '見積書の編集' }).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Mobile editor must not overflow horizontally');
+  await page.screenshot({ path: path.join(output, 'mobile-editor.png') });
+  await page.getByLabel('見積内容プレビュー').screenshot({ path: path.join(output, 'mobile-preview.png') });
+  assert.deepEqual(errors, []);
+  console.log(JSON.stringify({ result: 'PASS', checks: ['desktop and mobile selection', 'mixed-client UI guard', '11-song autofill', 'failed-save input retention', 'save and PDF download', 'message clipboard', 'reload persistence', 'edit and revision history', 'duplicate', 'mobile no horizontal overflow', 'no browser runtime errors'] }, null, 2));
+} catch (error) {
+  for (const context of browser.contexts()) for (const page of context.pages()) {
+    await page.screenshot({ path: path.join(output, 'browser-failure.png') });
+    fs.writeFileSync(path.join(output, 'browser-failure.html'), await page.content());
+  }
+  throw error;
+} finally { await browser.close(); }

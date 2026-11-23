@@ -2,9 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/admin/estimates/**/*": ["./public/fonts/ZenKakuGothicNew-Regular.ttf", "./public/logo.png"],
+  },
   experimental: { serverActions: { bodySizeLimit: "2mb" } },
   distDir: process.env.QA_ISOLATED === "1"
-    ? process.env.QA_SALES === "1" ? ".next-sales-qa" : process.env.QA_AUTUMN_SALE_AFTER === "1" ? ".next-qa/after-sale" : ".next-qa"
+    ? process.env.QA_ESTIMATES === "1" ? ".next-estimates-qa" : process.env.QA_SALES === "1" ? ".next-sales-qa" : process.env.QA_AUTUMN_SALE_AFTER === "1" ? ".next-qa/after-sale" : ".next-qa"
     : ".next",
   async headers() {
     const development = process.env.NODE_ENV === "development";

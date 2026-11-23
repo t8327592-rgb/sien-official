@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { Search, ArrowUpDown, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { parseAdminMoney, patchAdminOrder, syncAdminDeadline, setClientRepeater } from "@/lib/admin-order-client";
+import { sameEstimateClient } from "@/lib/estimates";
 
 // orderの型定義（簡易版）
 type Order = OrderRecord;
@@ -18,6 +19,15 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
   const router = useRouter();
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectedOrders = orders.filter(order => selectedIds.includes(order.id));
+  const toggleEstimate = (order: Order) => {
+    if (selectedIds.includes(order.id)) { setSelectedIds(previous => previous.filter(id => id !== order.id)); return; }
+    if (selectedOrders.length >= 100) { toast.error("一括見積は100件まで選択できます"); return; }
+    if (!sameEstimateClient([...selectedOrders, order])) { toast.error("同じ氏名・メール・会社名・顧客区分の依頼だけ選択できます"); return; }
+    setSelectedIds(previous => [...previous, order.id]);
+  };
+  const estimateCheckbox = (order: Order) => <label className="inline-flex items-center gap-2 p-2 text-xs text-slate-600" onClick={event => event.stopPropagation()}><input type="checkbox" className="size-4" aria-label={`${order.songTitle || "楽曲名未設定"}を見積書に選択`} checked={selectedIds.includes(order.id)} onChange={() => toggleEstimate(order)} /><span className="xl:sr-only">見積書に選択</span></label>;
   const activeTab = archived && initialFilters.status === "ALL" ? "ALL" : initialFilters.status === "COMPLETED" ? "COMPLETED" : initialFilters.status === "CANCELED" ? "CANCELED" : "IN_PROGRESS";
   const [lastArchived, setLastArchived] = useState<Order | null>(null);
   const [sortOrder, setSortOrder] = useState<OrderFilters["sort"]>(initialFilters.sort);
@@ -224,9 +234,19 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
   return (
     <div className="space-y-4">
       <nav aria-label="依頼の保管状態" className="flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/estimates" className="underline">保存済みの見積書</Link>
         <Link href="/admin/orders" aria-current={!archived ? "page" : undefined} className={!archived ? "font-bold text-orange-700 underline" : "underline"}>通常の依頼</Link>
         <Link href="/admin/orders?archive=1" aria-current={archived ? "page" : undefined} className={archived ? "font-bold text-orange-700 underline" : "underline"}>アーカイブ一覧</Link>
       </nav>
+      <div className="space-y-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold">見積書用に{selectedOrders.length}件選択中</span>
+          <button className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50" disabled={!selectedOrders.length} onClick={() => router.push(`/admin/estimates/new?${new URLSearchParams({ orders: selectedOrders.map(order => order.id).join(",") })}`)}>まとめて見積書を作成</button>
+          <button className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-50" disabled={!selectedOrders.length} onClick={() => setSelectedIds([])}>選択を解除</button>
+          {selectedOrders.length > 0 && <button className="rounded-lg border bg-white px-3 py-2 text-sm" onClick={() => setSelectedIds([...new Set([...selectedOrders, ...displayOrders.filter(order => sameEstimateClient([selectedOrders[0], order]))].map(order => order.id))].slice(0, 100))}>表示中の同じクライアントを選択</button>}
+        </div>
+        <p className="text-xs text-slate-600">各依頼のチェック欄で選択できます。同じクライアントの依頼だけをまとめます。</p>
+        {selectedOrders.length > 0 && <p className="break-words text-xs">{selectedOrders[0].clientName}：{selectedOrders.map(order => order.songTitle || "楽曲名未設定").join(" / ")}</p>}
+      </div>
       {archived && <p className="text-sm text-slate-600">アーカイブ済みの依頼です。「復元」で通常の一覧へ戻せます。売上集計からは除外されません。</p>}
       {lastArchived && <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border bg-white p-3 text-sm"><span>依頼をアーカイブしました。</span><button disabled={isSaving} onClick={() => void undoArchive()} className="underline font-bold text-orange-700 p-2">アーカイブを取り消す</button></div>}
       {/* 上部フィルター (サービス種別 ＋ 検索 ＋ ソート) */}
@@ -367,6 +387,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                 className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer group text-sm relative"
               >
                 <div className="flex justify-between items-start mb-3">
+                  {estimateCheckbox(order)}
                   <div className="relative overflow-visible">
                     <div
                       onClick={(e) => {
@@ -505,6 +526,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
           <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
+                <th className="w-12"><span className="sr-only">見積書に選択</span></th>
                 <th className="w-28 py-3 px-4 pl-5">ステータス</th>
                 <th className="w-24 py-3 px-4">ご依頼日</th>
                 <th className="w-28 py-3 px-4">顧客種別</th>
@@ -519,7 +541,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
             <tbody className="divide-y divide-slate-100">
               {displayOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={(archived || activeTab === "CANCELED") ? 9 : 8} className="p-8 text-center text-sm text-slate-500">
+                  <td colSpan={(archived || activeTab === "CANCELED") ? 10 : 9} className="p-8 text-center text-sm text-slate-500">
                     該当する依頼データはありません。
                   </td>
                 </tr>
@@ -530,6 +552,7 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                     onClick={() => router.push(`/admin/orders/${order.id}`)}
                     className="hover:bg-orange-50/50 transition-colors cursor-pointer group text-sm relative"
                   >
+                    <td className="px-1">{estimateCheckbox(order)}</td>
                     <td className="py-3 px-4 pl-5 relative overflow-visible">
                       <div
                         onClick={(e) => {

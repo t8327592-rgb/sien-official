@@ -157,6 +157,7 @@ model User {
 
 // 依頼管理・金額管理用モデル
 model Order {
+  estimateLinks     EstimateOrder[]
   customerType      String   @default("PERSONAL")
   companyName       String?
   businessContactId String?  @unique
@@ -198,6 +199,32 @@ model Order {
   isArchived        Boolean  @default(false) // 論理削除（アーカイブ）フラグ
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+// Immutable estimate snapshots. No connection to confirmed revenue or payments.
+model Estimate {
+  id          String   @id @default(cuid())
+  seriesId    String
+  revision    Int
+  previousId  String?
+  requestKey  String   @unique
+  payloadHash String
+  content     Json
+  createdAt   DateTime @default(now())
+  orders      EstimateOrder[]
+
+  @@unique([seriesId, revision])
+  @@index([createdAt])
+}
+
+model EstimateOrder {
+  estimateId String
+  orderId    String
+  estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Restrict)
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@id([estimateId, orderId])
+  @@index([orderId])
 }
 
 // 入金・返金は追記式。誤登録は削除せず取消理由を残す。

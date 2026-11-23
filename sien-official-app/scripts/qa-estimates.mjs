@@ -1,0 +1,90 @@
+// Run against scripts/qa-estimates-env.mjs only. Fixed loopback targets; no dotenv.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
+import { load } from '../tests/helpers/load-ts.mjs';
+import { estimateFixtures } from '../tests/fixtures/estimates.mjs';
+const root = path.resolve(import.meta.dirname, '..'), base = 'http://127.0.0.1:3006';
+const { createEstimateDraft } = load(path.join(root, 'src/lib/estimate-draft.ts'));
+const { estimateTotals } = load(path.join(root, 'src/lib/estimates.ts'));
+const db = new PrismaClient({ datasources: { db: { url: 'postgresql://qa:qa@127.0.0.1:55452/qa?sslmode=disable&connection_limit=1&statement_cache_size=0&pgbouncer=true' } } });
+const cookies = new Map(), output = path.join(root, '../tmp/estimates-qa'); fs.mkdirSync(output, { recursive: true });
+async function call(url, options = {}) {
+  const response = await fetch(base + url, { ...options, redirect: 'manual', headers: { Origin: base, Cookie: [...cookies].map(([k,v]) => `${k}=${v}`).join('; '), ...options.headers } });
+  for (const c of response.headers.getSetCookie()) { const pair = c.split(';')[0], i = pair.indexOf('='); cookies.set(pair.slice(0, i), pair.slice(i + 1)); }
+  return response;
+}
+const post = (url, body, origin = base) => call(url, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const snapshot = async () => JSON.stringify(await Promise.all([
+  db.order.findMany({ orderBy: { id: 'asc' } }), db.paymentRecord.findMany({ orderBy: { id: 'asc' } }), db.businessContact.findMany(), db.expense.findMany(), db.submissionReceipt.findMany({ orderBy: { id: 'asc' } }),
+]));
+try {
+  assert.match((await db.siteSetting.findUniqueOrThrow({ where: { id: 'default' } })).announcement, /QA隔離環境/);
+  const fixtures = estimateFixtures(), orderIds = fixtures.orders.map(order => order.id);
+  const content = createEstimateDraft(fixtures.orders, fixtures.plans, fixtures.receipts, `EST-QA-${randomUUID().slice(0,8)}`).content;
+  content.notes = 'ストロボラストには後奏のカットアップ加工料金2,000円（割引後1,600円）が含まれています。';
+  content.paymentGuide = '可能でしたら、11月30日（月）までにお支払いいただけますと幸いです。';
+  const body = { content, orderIds, requestKey: randomUUID(), previousId: null };
+  assert.equal((await post('/api/admin/estimates', body)).status, 401);
+  assert.equal((await post('/api/admin/estimates/preview', body)).status, 401);
+  assert.equal((await call('/api/admin/estimates/unknown/pdf')).status, 401);
+  assert.equal((await call('/admin/estimates')).status, 307);
+  assert.equal((await call('/admin/estimates/new?orders=' + orderIds.join(','))).status, 307);
+  const csrf = await (await call('/api/auth/csrf')).json();
+  await call('/api/auth/callback/credentials', { method: 'POST', body: new URLSearchParams({ csrfToken: csrf.csrfToken, username: 'qa-admin', password: 'qa-only-password', callbackUrl: base + '/admin', json: 'true' }) });
+  const before = await snapshot();
+  assert.equal((await post('/api/admin/estimates', body, 'https://evil.invalid')).status, 401);
+  assert.equal((await post('/api/admin/estimates', { ...body, orderIds: [orderIds[0], 'qa-estimate-other'] })).status, 400);
+  const mixedContent = structuredClone(content); mixedContent.lines = [content.lines[0], { ...content.lines[0], id: 'other-base', orderId: 'qa-estimate-other' }]; mixedContent.discount.lineIds = [];
+  assert.equal((await post('/api/admin/estimates', { ...body, content: mixedContent, orderIds: [orderIds[0], 'qa-estimate-other'] })).status, 400);
+  assert.equal((await post('/api/admin/estimates', { ...body, orderIds: ['does-not-exist'] })).status, 400);
+  const newHtml = await (await call('/admin/estimates/new?orders=' + orderIds.join(','))).text();
+  assert.match(newHtml, /104,000円/); assert.match(newHtml, /案内文をコピー/);
+  const mixedHtml = await (await call(`/admin/estimates/new?orders=${orderIds[0]},qa-estimate-other`)).text();
+  assert.match(mixedHtml, /同じクライアント/);
+  const previewCount = await db.estimate.count();
+  const preview = await post('/api/admin/estimates/preview', { ...body, revision: 1 }); assert.equal(preview.status, 200);
+  fs.writeFileSync(path.join(output, 'preview.pdf'), Buffer.from(await preview.arrayBuffer()));
+  assert.equal(await db.estimate.count(), previewCount);
+  const savedResponse = await post('/api/admin/estimates', body); assert.equal(savedResponse.status, 200);
+  const saved = await savedResponse.json(); assert.equal(saved.revision, 1);
+  assert.equal((await (await post('/api/admin/estimates', body)).json()).id, saved.id, 'Idempotent retry');
+  assert.equal((await post('/api/admin/estimates', { ...body, content: { ...content, notes: 'different' } })).status, 409);
+  const pdf = await call(`/api/admin/estimates/${saved.id}/pdf`); assert.equal(pdf.status, 200); assert.match(pdf.headers.get('cache-control'), /private, no-store/);
+  assert.match(pdf.headers.get('content-disposition'), /filename\*=UTF-8/);
+  fs.writeFileSync(path.join(output, 'estimate-11-songs.pdf'), Buffer.from(await pdf.arrayBuffer()));
+  const stored = await db.estimate.findUniqueOrThrow({ where: { id: saved.id } }); assert.equal(estimateTotals(stored.content).total, 104000);
+  await db.plan.update({ where: { id: 'estimate-normal' }, data: { price: 999999 } });
+  const revisedContent = structuredClone(content); revisedContent.lines[0].unitPrice = 12000;
+  const revisedResponse = await post('/api/admin/estimates', { ...body, content: revisedContent, requestKey: randomUUID(), previousId: saved.id }); assert.equal(revisedResponse.status, 200);
+  const revised = await revisedResponse.json(); assert.equal(revised.revision, 2);
+  assert.deepEqual((await db.estimate.findUniqueOrThrow({ where: { id: saved.id } })).content, stored.content);
+  const historyHtml = (await (await call(`/admin/estimates/${saved.id}`)).text()).replace(/<!--.*?-->/g, ''); assert.match(historyHtml, /新版があります/); assert.match(historyHtml, /第2版/);
+  assert.equal((await post('/api/admin/estimates', { ...body, requestKey: randomUUID(), previousId: saved.id })).status, 409);
+  const racers = await Promise.all([1,2].map(() => post('/api/admin/estimates', { ...body, content: revisedContent, requestKey: randomUUID(), previousId: revised.id })));
+  assert.deepEqual(racers.map(response => response.status).sort(), [200,409]);
+  const copy = { ...structuredClone(content), number: 'EST-COPY-QA' };
+  const copied = await (await post('/api/admin/estimates', { ...body, content: copy, requestKey: randomUUID() })).json();
+  assert.equal(copied.revision, 1); assert.notEqual((await db.estimate.findUniqueOrThrow({ where: { id: copied.id } })).seriesId, stored.seriesId);
+  assert.equal(await snapshot(), before, 'No source order, payment, receipt, expense or business changes');
+  const again = await call(`/api/admin/estimates/${saved.id}/pdf`); assert.equal(again.status, 200);
+  fs.writeFileSync(path.join(output, 'estimate-original-redownload.pdf'), Buffer.from(await again.arrayBuffer()));
+  const large = structuredClone(content); large.discount.lineIds = [];
+  large.lines = Array.from({ length: 100 }, (_, index) => ({ ...content.lines[0], id: `many-${index}`, songTitle: `${index+1}. 長い楽曲名の日本語表示と自動改ページの確認`.repeat(3), unitPrice: 10000 }));
+  const many = await post('/api/admin/estimates/preview', { content: large, orderIds: [orderIds[0]], revision: 1 }); assert.equal(many.status, 200);
+  fs.writeFileSync(path.join(output, 'estimate-100-songs.pdf'), Buffer.from(await many.arrayBuffer()));
+  const single = { ...structuredClone(content), lines: [content.lines[0]], notes: '', discount: { ...content.discount, value: 0, lineIds: [] } };
+  const one = await post('/api/admin/estimates/preview', { content: single, orderIds: [orderIds[0]], revision: 1 }); assert.equal(one.status, 200);
+  fs.writeFileSync(path.join(output, 'estimate-single.pdf'), Buffer.from(await one.arrayBuffer()));
+  const longNotes = structuredClone(single);
+  longNotes.clientName = content.clientName + '長い宛名'.repeat(30);
+  longNotes.number = 'EST-LONG-NOTES-' + '1234567890'.repeat(6);
+  longNotes.lines[0].note = '明細ごとの長い特記事項です。\n'.repeat(30);
+  longNotes.notes = '長い備考の改ページを確認します。\n'.repeat(100) + '備考の最後まで表示';
+  const longPdf = await post('/api/admin/estimates/preview', { content: longNotes, orderIds: [orderIds[0]], revision: 1 }); assert.equal(longPdf.status, 200);
+  fs.writeFileSync(path.join(output, 'estimate-long-notes.pdf'), Buffer.from(await longPdf.arrayBuffer()));
+  fs.writeFileSync(path.join(output, 'session.json'), JSON.stringify({ cookies: [...cookies].map(([name, value]) => ({ name, value, domain: '127.0.0.1', path: '/' })), estimateId: saved.id, latestId: revised.id, orderIds }));
+  console.log(JSON.stringify({ result: 'PASS', totals: estimateTotals(content), checks: ['admin and origin protection', 'mixed-client rejection', 'draft autofill', 'preview without save', 'persistence and idempotency', 'immutable revisions', 'concurrent revision conflict', 'duplicate independent series', 'plan changes preserve snapshots', 'redownload', '11-song / single / 100-song PDFs', 'source finance unchanged'], output }, null, 2));
+} finally { await db.$disconnect(); }
