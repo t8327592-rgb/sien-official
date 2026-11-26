@@ -2,6 +2,7 @@ import { requireAdminPage } from "@/lib/admin-page-auth";
 import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
 import { OrderFinanceEditor } from "@/components/admin/OrderFinanceEditor";
 import { BusinessOrderDetails } from "@/components/admin/BusinessOrderDetails";
+import { loadOrderSales } from "@/lib/admin-order-sales";
 
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
@@ -22,13 +23,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  // プラン情報を取得
-  let planDetails = null;
-  if (order.planId) {
-    planDetails = await prisma.plan.findFirst({
-      where: { category: order.serviceType, OR: [{ id: order.planId }, { name: order.planId }] }
-    });
-  }
+  const sales = await loadOrderSales([id]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
@@ -49,7 +44,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-700">メモを入力・コピー</Link>
         </div>
         {order.businessContact && <BusinessOrderDetails key={`business-${order.businessContact.updatedAt.toISOString()}`} orderId={order.id} companyName={order.companyName} contact={order.businessContact} />}
-        <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} planDetails={planDetails} />
+        <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} sale={sales[id]} />
         <OrderFinanceEditor key={`finance-${order.id}`} initialOrder={order} />
       </div>
 

@@ -2,7 +2,8 @@
 import type { OrderRecord } from "@/lib/admin-types";
 import { ADMIN_PAYMENT_OPTIONS, normalizePaymentMethod } from "@/lib/order-payment";
 import { ORDER_STATUS_LABELS as STATUS_LABELS, ORDER_STATUS_COLORS as STATUS_COLORS, ORDER_STATUS_OPTIONS, normalizeOrderStatus } from "@/lib/order-status";
-import type { Plan } from "@prisma/client";
+import type { OrderSale } from "@/lib/admin-order-sales";
+import { OrderSaleNote } from "@/components/admin/OrderSaleNote";
 
 import { useState, useRef } from "react";
 import { parseAdminMoney, patchAdminOrder, syncAdminDeadline } from "@/lib/admin-order-client";
@@ -12,7 +13,7 @@ import { toast } from "react-hot-toast";
 type Order = OrderRecord;
 type TextField = { [K in keyof Order]: Order[K] extends string | null ? K : never }[keyof Order]; // 簡易的な型定義
 
-export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planDetails: Plan | null }) {
+export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order; sale?: OrderSale }) {
   const [order, setOrder] = useState<Order>(initialOrder);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -326,6 +327,7 @@ export function OrderDetailEditor({ initialOrder }: { initialOrder: Order, planD
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">見積もり (円)</p>
               {renderEditable('price', <span className="font-bold text-slate-800">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未設定</span>}</span>, 'number')}
+              <OrderSaleNote sale={sale} price={order.price} />
             </div>
             <div>
               <p className="text-[11px] font-bold text-slate-400 mb-1">基本料金 (内訳用)</p>

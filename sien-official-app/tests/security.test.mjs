@@ -564,6 +564,27 @@ function clientHarness(file, name, props, mocks = {}) {
   return {render};
 }
 
+test('order prices identify applied sale discounts from the receipt, including after an estimate edit', async () => {
+  const receipt = {
+    entityId: 'sale',
+    quote: { price: 4000, autumnSale: { name: 'ブラックフライデーMIXセール', discount: 20, normalTotal: 5000 } },
+  };
+  const load = loader({ '@/lib/prisma': { prisma: { submissionReceipt: { findMany: async ({ where }) => {
+    assert.equal(where.entityType, 'ORDER');
+    assert.equal(Array.from(where.entityId.in).join(','), 'sale,regular');
+    return [receipt, { entityId: 'regular', quote: { price: 4000 } }];
+  } } } } });
+  const sales = await load('src/lib/admin-order-sales.ts').loadOrderSales(['sale', 'regular']);
+  const { OrderSaleNote } = load('src/components/admin/OrderSaleNote.tsx');
+  const { renderToStaticMarkup } = nativeRequire('react-dom/server');
+  const note = (id, price) => renderToStaticMarkup(OrderSaleNote({ sale: sales[id], price }));
+  assert.match(note('sale', 4000), /20% OFF適用済み/);
+  assert.match(note('sale', 4000), /通常 ¥5,000/);
+  assert.match(note('sale', 4500), /受付時 20% OFF適用済み/);
+  assert.match(note('sale', 4500), /通常 ¥5,000 → ¥4,000/);
+  assert.equal(note('regular', 4000), '');
+});
+
 test('archived orders include all statuses and restore only after a successful save', async () => {
   const errors=[]; let fail=true;
   const order={id:'archived',status:'COMPLETED',serviceType:'MIX',clientName:'QA',clientEmail:'qa@example.invalid',createdAt:new Date(),price:0,deadline:null,isArchived:true};

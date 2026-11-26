@@ -2,6 +2,7 @@ import { requireAdminPage } from "@/lib/admin-page-auth";
 import { prisma } from "@/lib/prisma";
 import { OrderListClient } from "@/components/admin/OrderListClient";
 import { parseOrderFilters, todayInJapan } from "@/lib/admin-order-filters";
+import { loadOrderSales } from "@/lib/admin-order-sales";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     orderBy: { createdAt: "desc" },
   });
 
-  const plans = await prisma.plan.findMany();
+  const sales = await loadOrderSales(orders.map(order => order.id));
 
   return (
     <div className="space-y-6">
@@ -23,7 +24,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <h1 className="text-3xl font-bold text-slate-900">ご依頼管理</h1>
       </div>
 
-      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer])} initialOrders={orders} plans={plans} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
+      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer])} initialOrders={orders} sales={sales} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
     </div>
   );
 }

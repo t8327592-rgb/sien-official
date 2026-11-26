@@ -3,7 +3,8 @@ import Link from "next/link";
 import { type OrderFilters, parseOrderFilters, orderFilterUrl, matchesOrderDue, matchesOrderStatus, compareOrderDeadlines, todayInJapan } from "@/lib/admin-order-filters";
 import { ORDER_STATUS_LABELS as STATUS_LABELS, ORDER_STATUS_OPTIONS as STATUS_OPTIONS } from "@/lib/order-status";
 import type { OrderRecord } from "@/lib/admin-types";
-import type { Plan } from "@prisma/client";
+import type { OrderSale } from "@/lib/admin-order-sales";
+import { OrderSaleNote } from "@/components/admin/OrderSaleNote";
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ import { sameEstimateClient } from "@/lib/estimates";
 // orderの型定義（簡易版）
 type Order = OrderRecord;
 
-export function OrderListClient({ initialOrders, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide" }: { initialOrders: Order[], plans?: Plan[], archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string }) {
+export function OrderListClient({ initialOrders, sales = {}, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide" }: { initialOrders: Order[], sales?: Partial<Record<string, OrderSale>>, archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string }) {
   const router = useRouter();
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
@@ -499,7 +500,10 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-right font-bold w-24"
                          />{editActions()}</>
                       ) : (
-                        <span className="text-slate-900 font-bold text-sm underline decoration-slate-300 decoration-dashed underline-offset-4">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未見積もり</span>}</span>
+                        <>
+                          <span className="text-slate-900 font-bold text-sm underline decoration-slate-300 decoration-dashed underline-offset-4">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal">未見積もり</span>}</span>
+                          <OrderSaleNote sale={sales[order.id]} price={order.price} />
+                        </>
                       )}
                     </div>
                   </div>
@@ -653,7 +657,10 @@ export function OrderListClient({ initialOrders, archived = false, initialFilter
                           className="border border-slate-300 rounded px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-24 text-right"
                          />{editActions()}</>
                       ) : (
-                        <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span>
+                        <>
+                          <span className="hover:bg-slate-100 p-1 rounded transition-colors -mr-1 border border-transparent hover:border-slate-200 border-dashed">{order.price !== null ? `¥${order.price.toLocaleString()}` : <span className="text-slate-400 font-normal text-xs">未見積もり</span>}</span>
+                          <OrderSaleNote sale={sales[order.id]} price={order.price} />
+                        </>
                       )}
                     </td>
                     {(archived || activeTab === "CANCELED") && (
