@@ -40,5 +40,6 @@ export async function acceptSubmission(identity: ReturnType<typeof submissionIde
 }
 
 export function submissionResponse(receipt: SubmissionReceipt) {
-  return { success: true, [receipt.entityType === "ORDER" ? "orderId" : "contactId"]: receipt.entityId };
+  const tracks = receipt.entityType === "ORDER" && receipt.quote && typeof receipt.quote === "object" && !Array.isArray(receipt.quote) ? receipt.quote.tracks : null;
+  return { success: true, [receipt.entityType === "ORDER" ? "orderId" : "contactId"]: receipt.entityId, ...(Array.isArray(tracks) ? { trackCount: tracks.length } : {}) };
 }

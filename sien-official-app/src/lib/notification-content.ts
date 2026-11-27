@@ -3,6 +3,7 @@ import type { BusinessContact, Order, Prisma } from "@prisma/client";
 type Detail = { name: string; value: string };
 const object = (value: Prisma.JsonValue | null | undefined) => value && typeof value === "object" && !Array.isArray(value) ? value : null;
 const yen = (value: Prisma.JsonValue | null | undefined) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? `${value.toLocaleString("ja-JP")}円（税込）` : "内容確認後にご案内";
+const text = (value: Prisma.JsonValue | undefined) => typeof value === "string" ? value : "";
 
 export function notificationDetails(record: Order | BusinessContact, quote: Prisma.JsonValue | null) {
   const snapshot = object(quote);
@@ -18,8 +19,22 @@ export function notificationDetails(record: Order | BusinessContact, quote: Pris
     title = consultation ? "無料相談・お見積もり" : "制作依頼";
     const service = record.serviceType === "MIX" ? "ボーカルMIX" : record.serviceType === "GUIDE" ? "ボーカルガイド" : "オリジナル楽曲制作";
     const plan = object(snapshot?.plan);
+    const tracks = Array.isArray(snapshot?.tracks) ? snapshot.tracks : [];
     add("依頼者名", record.clientName); add("依頼種別", `${title} / ${service}`); add("メールアドレス", record.clientEmail);
     add("希望する連絡手段", record.contactMethod); add("X ID", record.twitterId); add("Discord ID", record.discordId);
+    if (tracks.length) {
+      add("依頼と楽曲数", `依頼1件・楽曲${tracks.length}曲`);
+      add("受付時点の概算金額", yen(snapshot?.price)); add("支払い方法", record.paymentMethod);
+      tracks.forEach((item, index) => {
+        const track = object(item);
+        if (!track) return;
+        const detail = object(track.details);
+        const rows = [["曲名", text(track.songTitle)], ["プラン", text(track.planName)], ["概算", yen(track.price)], ["オプション", text(track.options)], ["希望納期", text(detail?.deadline)], ["歌唱キー", text(detail?.vocalKey)], ["活動用途", text(detail?.activityPurpose)], ["ジャンル", text(detail?.genre)], ["作詞", text(detail?.lyricsStatus)], ["仮歌", text(detail?.vocalGuideStatus)], ["素材URL", text(track.materialsUrl)], ["参考URL", text(track.referenceUrl)], ["参考曲との近さ", text(track.referenceUrl) ? text(detail?.referenceFidelity) : ""], ["ご要望", text(detail?.note)]];
+        add(`${index + 1}曲目`, rows.filter(([, value]) => value).map(([label, value]) => `${label}：${value}`).join("\n"));
+      });
+      add("備考・ご要望", record.message);
+      return { title, details };
+    }
     add("曲名", record.songTitle); add("プラン", typeof plan?.name === "string" ? plan.name : record.planId);
     add("受付時点の概算金額", consultation ? "無料相談（制作契約・料金は発生しません）" : yen(snapshot ? snapshot.price : record.price));
     if (!consultation) {

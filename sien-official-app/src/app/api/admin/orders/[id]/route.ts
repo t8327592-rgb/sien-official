@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { readJson, ApiError, apiErrorResponse } from "@/lib/api-input";
 import { validateAdminOrderUpdate, reconcileAdminOrderPrice } from "@/lib/admin-order-input";
 import { adjustmentAmount, readRevenueAdjustment, revenueAtDelivery } from "@/lib/order-revenue";
+import { completeTrackOrder } from "@/lib/admin-track-delivery";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,7 +45,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (price !== currentOrder.price || (update.options !== undefined && update.options !== currentOrder.options) || (update.serviceType !== undefined && update.serviceType !== currentOrder.serviceType)) {
       dataToUpdate.financeVersion = { increment: 1 };
     }
-    if (status === "COMPLETED" && currentOrder.status !== "COMPLETED") {
+    const completeGroup = !!currentOrder.trackCount && status === "COMPLETED" && currentOrder.status !== "COMPLETED";
+    if (status === "COMPLETED" && currentOrder.status !== "COMPLETED" && !completeGroup) {
       const deliveredAt = currentOrder.deliveredAt ?? new Date();
       if (!currentOrder.deliveredAt) dataToUpdate.deliveredAt = deliveredAt;
       const revenue = revenueAtDelivery({ ...currentOrder, price }, deliveredAt);
@@ -53,6 +55,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const updatedOrder = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${`order-finance:${id}`}, 0))`;
+      if (currentOrder.trackCount && status && status !== "COMPLETED" && status !== "CANCELED" && ["COMPLETED", "CANCELED", "CANCELLED"].includes(currentOrder.status)) {
+        const unfinished = await tx.orderTrack.count({ where: { orderId: id, status: { not: "COMPLETED" } } });
+        if (!unfinished) throw new ApiError(409, currentOrder.status === "COMPLETED" ? "作業中に戻すには、依頼詳細で該当する曲の進捗を変更してください。" : "全曲が納品済みのため、依頼を納品済みに戻してから曲の進捗を変更してください。");
+      }
+      if (completeGroup) {
+        const now = new Date();
+        await tx.orderTrack.updateMany({ where: { orderId: id, OR: [{ status: { not: "COMPLETED" } }, { deliveredAt: null }] }, data: { status: "COMPLETED", deliveredAt: now, version: { increment: 1 } } });
+        const result = await tx.orderTrack.aggregate({ where: { orderId: id }, _max: { deliveredAt: true }, _count: true });
+        if (result._count !== currentOrder.trackCount || !result._max.deliveredAt) throw new ApiError(409, "楽曲の登録内容を確認してください。");
+        Object.assign(dataToUpdate, completeTrackOrder(currentOrder, result._max.deliveredAt, price));
+      }
       const updated = await tx.order.updateMany({
         where: { id, updatedAt: currentOrder.updatedAt, financeVersion: currentOrder.financeVersion },
         data: dataToUpdate,
@@ -78,8 +91,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${`order-finance:${id}`}, 0))`;
-      const record = await tx.order.findUnique({ where: { id }, select: { businessContactId: true, confirmedPrice: true, _count: { select: { payments: true } } } });
-      if (record && (record.businessContactId || record.confirmedPrice !== null || record._count.payments)) throw new ApiError(409, "金額・法人の履歴を保管するため削除できません。アーカイブをご利用ください。");
+      const record = await tx.order.findUnique({ where: { id }, select: { businessContactId: true, confirmedPrice: true, trackCount: true, _count: { select: { payments: true } } } });
+      if (record && (record.businessContactId || record.confirmedPrice !== null || record.trackCount || record._count.payments)) throw new ApiError(409, "依頼の履歴を保管するため削除できません。アーカイブをご利用ください。");
       await tx.order.delete({ where: { id } });
     });
 

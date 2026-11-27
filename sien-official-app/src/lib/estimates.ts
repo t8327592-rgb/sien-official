@@ -80,6 +80,6 @@ export function validateEstimate(value: unknown): EstimateContent {
   return content;
 }
 export function estimateMessage(content: EstimateContent) {
-  const totals = estimateTotals(content), count = new Set(content.lines.filter(line => line.kind === "BASE").map(line => line.orderId)).size;
+  const totals = estimateTotals(content), count = new Set(content.lines.filter(line => line.kind === "BASE").map(line => line.id.startsWith(`${line.orderId}-track-`) ? line.id : line.orderId)).size;
   return `${content.clientName.replace(/様$/, "")}様\n\nお世話になっております！\nこの度もご依頼いただき、誠にありがとうございます！\n\nご依頼いただいた全${count}曲のお見積書を作成いたしましたので、お送りいたします！\n\n${totals.discount ? `${content.discount.name || "割引"}${content.discount.mode === "PERCENT" ? `（${content.discount.value}%OFF）` : ""}を適用し、` : ""}合計${yen(totals.total)}（税込）となります。\n\n${content.paymentGuide ? content.paymentGuide + "\n\n" : ""}お手数ですが、ご確認いただけますと幸いです！\n引き続きよろしくお願いいたします！`;
 }

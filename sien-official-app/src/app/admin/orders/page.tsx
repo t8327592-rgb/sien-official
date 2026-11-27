@@ -11,11 +11,17 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const params = await searchParams;
   const archived = params.archive === "1";
   const filters = parseOrderFilters(params);
-  const orders = await prisma.order.findMany({
+  const records = await prisma.order.findMany({
     where: { isArchived: archived, ...(params.tests === "only" ? { isTest: true } : params.tests === "all" ? {} : { isTest: false }), ...(params.customer === "BUSINESS" || params.customer === "PERSONAL" ? { customerType: params.customer } : {}) },
     orderBy: { createdAt: "desc" },
+    include: { tracks: { select: { songTitle: true } } },
   });
 
+  const trackTitles: Record<string, string[]> = {};
+  const orders = records.map(({ tracks, ...order }) => {
+    if (tracks.length) trackTitles[order.id] = tracks.map(track => track.songTitle);
+    return order;
+  });
   const sales = await loadOrderSales(orders.map(order => order.id));
 
   return (
@@ -24,7 +30,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <h1 className="text-3xl font-bold text-slate-900">ご依頼管理</h1>
       </div>
 
-      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer])} initialOrders={orders} sales={sales} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
+      <OrderListClient key={JSON.stringify([archived, filters, params.tests, params.customer])} initialOrders={orders} trackTitles={trackTitles} sales={sales} archived={archived} initialFilters={filters} customer={typeof params.customer === "string" ? params.customer : "ALL"} tests={typeof params.tests === "string" ? params.tests : "hide"} today={todayInJapan()} />
     </div>
   );
 }

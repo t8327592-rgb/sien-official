@@ -158,6 +158,9 @@ model User {
 // 依頼管理・金額管理用モデル
 model Order {
   estimateLinks     EstimateOrder[]
+  tracks            OrderTrack[]
+  trackCount        Int      @default(0)
+  autoTrackRevenue  Boolean  @default(false)
   customerType      String   @default("PERSONAL")
   companyName       String?
   businessContactId String?  @unique
@@ -201,6 +204,26 @@ model Order {
   isArchived        Boolean  @default(false) // 論理削除（アーカイブ）フラグ
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model OrderTrack {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  position          Int
+  songTitle         String
+  planName          String
+  options           String
+  materialsUrl      String
+  referenceUrl      String
+  details           Json
+  price             Int?
+  status            String   @default("PENDING")
+  deliveryUrl       String?
+  deliveredAt       DateTime?
+  version           Int      @default(0)
+
+  @@unique([orderId, position])
 }
 
 // Immutable estimate snapshots. No connection to confirmed revenue or payments.

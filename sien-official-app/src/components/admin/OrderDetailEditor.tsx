@@ -57,6 +57,7 @@ export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order;
   const saveEdit = async () => {
     if (!editingField || savingRef.current) return;
     const field = editingField;
+    if (field === "status" && editValue === "COMPLETED" && order.trackCount > 1 && order.status !== "COMPLETED" && !window.confirm(`全${order.trackCount}曲を納品済みにしますか？`)) return;
     savingRef.current = true;
     setIsSaving(true);
     try {
@@ -79,6 +80,7 @@ export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order;
 
   const handleBulkSave = async () => {
     if (savingRef.current) return;
+    if (bulkEditData.status === "COMPLETED" && order.trackCount > 1 && order.status !== "COMPLETED" && !window.confirm(`全${order.trackCount}曲を納品済みにしますか？`)) return;
     savingRef.current = true;
     setIsSaving(true);
     try {

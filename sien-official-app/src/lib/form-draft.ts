@@ -6,7 +6,7 @@ const TTL = 2 * 60 * 60 * 1000;
 const EVENT = "sien-form-draft";
 
 function matchesShape(value: unknown, template: unknown): boolean {
-  if (Array.isArray(template)) return Array.isArray(value) && value.length <= 100 && value.every(item => typeof item === "string");
+  if (Array.isArray(template)) return Array.isArray(value) && value.length <= 100 && value.every(item => template.length ? matchesShape(item, template[0]) : typeof item === "string");
   if (template && typeof template === "object") {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;
     const entries = Object.entries(template);
@@ -23,17 +23,18 @@ function subscribe(callback: () => void) {
   return () => { window.removeEventListener(EVENT, callback); window.removeEventListener("storage", callback); };
 }
 
-export function useFormDraft<T extends object>(scope: string, value: T, dirty: boolean, enabled = true) {
+export function useFormDraft<T extends object>(scope: string, value: T, dirty: boolean, enabled = true, options?: { template: T; defaults: Partial<T>; maxChars: number }) {
   const key = `sien-draft-v1-${scope}`;
   const serialized = JSON.stringify(value);
+  const maxChars = options?.maxChars ?? 32000;
   const getSnapshot = useCallback(() => {
     try {
       const raw = sessionStorage.getItem(key);
-      if (!raw || raw.length > 32000) return null;
+      if (!raw || raw.length > maxChars) return null;
       const parsed = JSON.parse(raw);
       return typeof parsed.expiresAt === "number" && parsed.expiresAt > Date.now() ? raw : null;
     } catch { return null; }
-  }, [key]);
+  }, [key, maxChars]);
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => null);
   useEffect(() => {
     if (!enabled || !dirty) return;
@@ -53,7 +54,11 @@ export function useFormDraft<T extends object>(scope: string, value: T, dirty: b
   useEffect(() => { if (!enabled) clear(); }, [enabled, clear]);
   const restore = (): T | null => {
     if (!snapshot) return null;
-    try { const saved: unknown = JSON.parse(snapshot).value; return matchesShape(saved, value) ? saved as T : null; } catch { return null; }
+    try {
+      const saved: unknown = JSON.parse(snapshot).value;
+      const restored = options && saved && typeof saved === "object" && !Array.isArray(saved) ? { ...options.defaults, ...saved } : saved;
+      return matchesShape(restored, options?.template ?? value) ? restored as T : null;
+    } catch { return null; }
   };
   return { available: !!snapshot && !dirty, restore, clear };
 }

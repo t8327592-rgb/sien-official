@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const confirmedPrice = financeMoney(body.confirmedPrice, true);
         const revenueAt = financeDate(body.revenueAt, true);
         if (confirmedPrice === null && revenueAt !== null) throw new ApiError(400, "売上計上日には確定金額が必要です。");
-        await tx.order.update({ where: { id }, data: { confirmedPrice, revenueAt, confirmedAt: confirmedPrice === null ? null : new Date() } });
+        await tx.order.update({ where: { id }, data: { confirmedPrice, revenueAt, confirmedAt: confirmedPrice === null ? null : new Date(), autoTrackRevenue: false } });
       } else if (body.action === "adjust") {
         if (order.financeVersion !== expectedVersion) conflict();
         const optionIds = body.optionIds;
@@ -76,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const revenue = !revenueOnHold && order.status === "COMPLETED" && order.deliveredAt
           ? revenueAtDelivery({ ...order, revenueOnHold }, order.deliveredAt)
           : null;
-        await tx.order.update({ where: { id }, data: { revenueOnHold, ...(revenue ? { ...revenue, confirmedAt: order.confirmedAt ?? new Date() } : {}) } });
+        await tx.order.update({ where: { id }, data: { revenueOnHold, ...(revenue ? { ...revenue, autoTrackRevenue: order.trackCount > 0, confirmedAt: order.confirmedAt ?? new Date() } : {}) } });
       } else if (body.action === "classify") {
         if (order.financeVersion !== expectedVersion) conflict();
         if (typeof body.isTest !== "boolean") throw new ApiError(400, "テスト区分を確認してください。");

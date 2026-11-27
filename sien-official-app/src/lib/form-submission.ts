@@ -21,7 +21,8 @@ export async function submitForm(url: string, body: object) {
     }
     const entityId = url === "/api/business-contact" ? record?.contactId : record?.orderId;
     if (record?.success !== true || typeof entityId !== "string" || !entityId.trim()) throw new FormSubmissionError(UNCERTAIN_RESULT);
-    return { entityId };
+    const trackCount = record.trackCount;
+    return { entityId, ...(typeof trackCount === "number" && Number.isSafeInteger(trackCount) && trackCount > 1 ? { trackCount } : {}) };
   } catch (error) {
     if (error instanceof FormSubmissionError) throw error;
     throw new FormSubmissionError(UNCERTAIN_RESULT);

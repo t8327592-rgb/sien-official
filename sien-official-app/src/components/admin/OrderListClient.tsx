@@ -16,7 +16,7 @@ import { sameEstimateClient } from "@/lib/estimates";
 // orderの型定義（簡易版）
 type Order = OrderRecord;
 
-export function OrderListClient({ initialOrders, sales = {}, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide" }: { initialOrders: Order[], sales?: Partial<Record<string, OrderSale>>, archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string }) {
+export function OrderListClient({ initialOrders, trackTitles = {}, sales = {}, archived = false, initialFilters = parseOrderFilters({}), today = todayInJapan(), customer = "ALL", tests = "hide" }: { initialOrders: Order[], trackTitles?: Record<string, string[]>, sales?: Partial<Record<string, OrderSale>>, archived?: boolean, initialFilters?: OrderFilters, today?: string, customer?: string, tests?: string }) {
   const router = useRouter();
 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
@@ -61,6 +61,8 @@ export function OrderListClient({ initialOrders, sales = {}, archived = false, i
   const handleStatusChange = async (orderId: string, newStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (savingRef.current) return;
+    const group = orders.find(order => order.id === orderId);
+    if (newStatus === "COMPLETED" && group?.trackCount && group.status !== "COMPLETED" && !window.confirm(`全${group.trackCount}曲を納品済みにしますか？`)) return;
     savingRef.current = true;
     setIsSaving(true);
     try {
@@ -180,6 +182,7 @@ export function OrderListClient({ initialOrders, sales = {}, archived = false, i
         (order.companyName && order.companyName.toLowerCase().includes(lowerQuery)) ||
         (order.clientName && order.clientName.toLowerCase().includes(lowerQuery)) ||
         (order.songTitle && order.songTitle.toLowerCase().includes(lowerQuery)) ||
+        trackTitles[order.id]?.some(title => title.toLowerCase().includes(lowerQuery)) ||
         (order.clientEmail && order.clientEmail.toLowerCase().includes(lowerQuery))
       );
     });
@@ -436,7 +439,7 @@ export function OrderListClient({ initialOrders, sales = {}, archived = false, i
                 </div>
 
                 <div className="mb-2">
-                  <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}</div>
+                  <div className="font-bold text-slate-900 line-clamp-1 mb-0.5 text-base">{order.songTitle || <span className="text-slate-400 font-normal">曲名未設定</span>}{order.trackCount > 1 && <span className="ml-2 text-sm text-orange-800">全{order.trackCount}曲</span>}</div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-slate-700 text-sm wrap-anywhere"><Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.companyName || order.clientName}</Link><span className="ml-2 text-xs text-slate-500">{order.customerType === "BUSINESS" ? "法人" : "個人"}{order.isTest && " · テスト"}</span></span>
                   </div>
@@ -612,7 +615,7 @@ export function OrderListClient({ initialOrders, sales = {}, archived = false, i
                       </button>
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-800 truncate" title={order.songTitle ?? undefined}>
-                      <Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.songTitle || "未設定"}</Link>
+                      <Link href={`/admin/orders/${order.id}`} className="underline underline-offset-4">{order.songTitle || "未設定"}{order.trackCount > 1 && `（全${order.trackCount}曲）`}</Link>
                     </td>
                     <td className="py-3 px-4">
                       <Link href={`/admin/orders/${order.id}`} title={order.companyName || order.clientName} className="block truncate font-bold text-slate-900 underline underline-offset-4">{order.companyName || order.clientName}</Link>

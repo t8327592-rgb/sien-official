@@ -3,11 +3,24 @@ import { calculateOrderPrice, priceFromText } from "./order-pricing";
 import { autumnSale, isAutumnMixSale } from "../config/autumn-sale";
 import { japanDay, type EstimateContent, type EstimateLine } from "./estimates";
 
-type ReceiptQuote = { plan?: { name?: string; price?: number | null }; options?: { id: string; name: string; priceText: string; quantity?: number }[]; hasConsultation?: boolean; autumnSale?: { name: string; discount: number; normalTotal?: number | null } };
+type TrackQuote = { position: number; songTitle: string; planName: string; options: string; price: number | null; basePrice: number; optionPrice: number };
+type ReceiptQuote = { plan?: { name?: string; price?: number | null }; options?: { id: string; name: string; priceText: string; quantity?: number }[]; hasConsultation?: boolean; autumnSale?: { name: string; discount: number; normalTotal?: number | null }; tracks?: TrackQuote[] };
 export function createEstimateDraft(orders: Order[], plans: Plan[], receipts: Pick<SubmissionReceipt, "entityId" | "quote">[], number: string, now = new Date()) {
   const lines: EstimateLine[] = [], saleLines: string[] = [], warnings: string[] = [];
   for (const order of orders) {
     const snapshot = receipts.find(receipt => receipt.entityId === order.id)?.quote as ReceiptQuote | undefined;
+    if (snapshot?.tracks?.length) {
+      for (const track of snapshot.tracks) {
+        const id = `${order.id}-track-${track.position}`;
+        const note = snapshot.autumnSale ? `${snapshot.autumnSale.name}適用後の受付金額` : "";
+        lines.push({ id: `${id}-base`, orderId: order.id, kind: "BASE", songTitle: track.songTitle, name: track.planName.slice(0, 150), quantity: 1, unitPrice: track.basePrice, note });
+        if (track.options || track.optionPrice) lines.push({ id: `${id}-options`, orderId: order.id, kind: "OPTION", songTitle: track.songTitle, name: "オプション料金", quantity: 1, unitPrice: track.optionPrice, note: track.options.slice(0, 500) });
+        if (track.price === null) warnings.push(`${track.songTitle}：相談料金を確認し、単価を確定してください。`);
+      }
+      const totals = snapshot.tracks.reduce((sum, track) => sum + track.basePrice + track.optionPrice, 0);
+      if (order.price !== null && order.price !== totals) warnings.push(`${order.songTitle || "複数曲の依頼"}：現在の依頼見積額と受付時の明細に差があります。明細を確認してください。`);
+      continue;
+    }
     const plan = plans.find(plan => (plan.id === order.planId || plan.name === order.planId) && plan.category === order.serviceType);
     const baseId = `${order.id}-base`, songTitle = order.songTitle || "楽曲名未設定";
     let basePrice = order.basePrice ?? (order.price !== null ? Math.max(0, order.price - (order.optionPrice ?? 0)) : plan?.price ?? 0);

@@ -66,7 +66,7 @@ export function OrderFinanceEditor({ initialOrder, availableOptions }: { initial
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {[["見積もり", order.price], ["確定金額", order.confirmedPrice], ["実入金（返金差引）", cash], [remaining !== null && remaining < 0 ? "超過入金" : "未収額", remaining === null ? null : Math.abs(remaining)]].map(([label, value]) => <div key={String(label)} className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-lg font-bold text-slate-900">{typeof value === "number" ? yen(value) : "未設定"}</p></div>)}
     </div>
-    {order.revenueOnHold ? <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">売上計上を保留中です。納品済みにしても売上には入りません。</p> : <p className="text-sm text-slate-600">{order.isTest ? "テスト案件のため自動計上されません。" : order.revenueAt ? `売上計上日 ${dateInput(order.revenueAt)}` : "保存済みの金額がある依頼は、納品済みにすると納品日で自動計上します。"}</p>}
+    {order.revenueOnHold ? <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">売上計上を保留中です。納品済みにしても売上には入りません。</p> : <p className="text-sm text-slate-600">{order.isTest ? "テスト案件のため自動計上されません。" : order.revenueAt ? `売上計上日 ${dateInput(order.revenueAt)}` : order.trackCount > 1 ? "全曲の納品が完了した日に、依頼全体の金額を自動計上します。" : "保存済みの金額がある依頼は、納品済みにすると納品日で自動計上します。"}</p>}
     <details className="border-t pt-3">
       <summary className="cursor-pointer py-2 font-bold text-slate-800">追加料金を設定する{adjustmentAmount(savedAdjustment) > 0 && ` · +${yen(adjustmentAmount(savedAdjustment))}`}</summary>
       <form className="mt-3 space-y-4" onSubmit={async e => { e.preventDefault(); try { await save({ action: "adjust", optionIds, extra: parseAdminMoney(extra) ?? 0 }); } catch (error) { setNotice((error as Error).message); } }}>

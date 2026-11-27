@@ -842,6 +842,41 @@ test('order ignores forged prices and labels, preserving the authoritative price
   assert.equal(Object.hasOwn(result, 'estimate'), false);
 });
 
+test('six tracks share one order and receipt, including per-track prices and administrator notifications', async () => {
+  const { handler, saved, queued } = orderHarness();
+  const extras = Array.from({ length: 5 }, (_, index) => ({
+    planId: validOrder.planId, optionIds: [], songTitle: `曲 ${index + 2}`, vocalKey: validOrder.vocalKey, materialsUrl: `https://example.invalid/song-${index + 2}`,
+  }));
+  assert.equal((await handler(request({ ...validOrder, extraTracks: [{ ...extras[0], price: 1 }] }))).status, 400);
+  assert.equal((await handler(request({ ...validOrder, extraTracks: [{ ...extras[0], materialsUrl: 'javascript:alert(1)' }] }))).status, 400);
+  assert.equal(saved.length, 0);
+  const response = await handler(request({ ...validOrder, extraTracks: extras }));
+  assert.equal(response.status, 201);
+  assert.deepEqual(await response.json(), { success: true, orderId: 'order-1', trackCount: 6 });
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].trackCount, 6);
+  assert.equal(saved[0].price, 60000);
+  assert.equal(saved[0].tracks.create[5].songTitle, '曲 6');
+  assert.equal(saved[0].tracks.create[5].price, 10000);
+  assert.equal(queued.length, 2);
+});
+
+test('track completion books the order only after the last delivery and reopening clears only automatic accounting', () => {
+  const { updateOrderFromTracks } = loader()('src/lib/admin-track-delivery.ts');
+  const order = { status: 'WORKING', trackCount: 2, price: 18000, confirmedPrice: null, revenueAt: null };
+  const first = { status: 'COMPLETED', deliveredAt: new Date('2026-11-29T01:00:00Z') };
+  const second = { status: 'COMPLETED', deliveredAt: new Date('2026-11-30T16:00:00Z') };
+  const pending = { status: 'PENDING', deliveredAt: null };
+  assert.equal(updateOrderFromTracks(order, [first, pending]).revenueAt, undefined);
+  const completed = updateOrderFromTracks(order, [first, second]);
+  assert.equal(completed.status, 'COMPLETED');
+  assert.equal(completed.confirmedPrice, 18000);
+  assert.equal(completed.revenueAt.toISOString(), '2026-11-30T15:00:00.000Z');
+  assert.equal(updateOrderFromTracks({ ...order, revenueOnHold: true }, [first, second]).revenueAt, undefined);
+  assert.equal(updateOrderFromTracks({ ...order, ...completed }, [first, pending]).revenueAt, null);
+  assert.equal(updateOrderFromTracks({ ...order, ...completed, autoTrackRevenue: false }, [first, pending]).revenueAt, undefined);
+});
+
 test('closed reception rejects previously opened forms before saving', async () => {
   const { handler, saved } = orderHarness({ unavailable: true });
   assert.equal((await handler(request(validOrder))).status, 409);

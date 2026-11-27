@@ -21,6 +21,8 @@ import { formatYen } from "@/lib/public-format";
 import { resolveOrderSelection, type OrderService } from "@/lib/order-selection";
 import type { getSiteSetting } from "@/lib/data/site-setting";
 import { VOCAL_GUIDES, isHumanVocalGuide, type VocalGuide } from "@/lib/vocal-guide";
+import { emptyTrackFields, isPackagePlan, MAX_ORDER_TRACKS, type TrackDraft } from "@/lib/order-tracks";
+import { AdditionalTrackFields } from "./AdditionalTrackFields";
 
 interface Plan {
   id: string;
@@ -86,18 +88,28 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   });
   const [cutSeconds, setCutSeconds] = useState<Record<string, number>>({});
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [extraTracks, setExtraTracks] = useState<TrackDraft[]>([]);
+  const [receivedTracks, setReceivedTracks] = useState(1);
+  const newTrackFocus = useRef("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
   const [errorMessage, setErrorMessage] = useState("");
 
-  const draft = useFormDraft("order", { formData, selectedOptions, cutSeconds, idempotencyKey: submissionId }, !!(formData.clientName || formData.clientEmail || formData.message || selectedOptions.length), status !== "success");
+  const draftValue = { formData, selectedOptions, cutSeconds, idempotencyKey: submissionId, extraTracks };
+  const draft = useFormDraft("order", draftValue, !!(formData.clientName || formData.clientEmail || formData.message || formData.songTitle || selectedOptions.length || extraTracks.length), status !== "success", {
+    defaults: { extraTracks: [] }, maxChars: 112000,
+    template: { ...draftValue, extraTracks: [{ ...emptyTrackFields, key: "", planId: "", optionIds: [], cutSeconds: {} }] },
+  });
   function restoreDraft() {
     const saved = draft.restore();
     if (!saved) return;
     const selection = resolveOrderSelection(initialPlans, saved.formData.planId, saved.formData.serviceType);
-    setFormData({ ...saved.formData, serviceType: selection.serviceType, planId: selection.planId });
+    const plans = initialPlans.filter(plan => plan.category === selection.serviceType && !isPackagePlan(plan.name));
+    const savedTracks = saved.extraTracks.slice(0, MAX_ORDER_TRACKS - 1);
+    setFormData({ ...saved.formData, serviceType: selection.serviceType, planId: savedTracks.length && !plans.some(plan => plan.id === selection.planId) ? plans[0]?.id ?? "" : selection.planId });
     setSelectedOptions(saved.selectedOptions.filter(id => initialOptions.some(option => option.id === id && [selection.serviceType, "COMMON"].includes(option.category))));
     setCutSeconds(saved.cutSeconds);
+    setExtraTracks(savedTracks.map(track => ({ ...track, key: crypto.randomUUID(), planId: plans.some(plan => plan.id === track.planId) ? track.planId : plans[0]?.id ?? "", optionIds: track.optionIds.filter(id => initialOptions.some(option => option.id === id && [selection.serviceType, "COMMON"].includes(option.category))) })));
     submissionKey.current = saved.idempotencyKey; setSubmissionId(saved.idempotencyKey);
     setTermsAccepted(false);
   }
@@ -115,13 +127,39 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
   }
 
   function selectService(serviceType: OrderService) {
-    setFormData(prev => ({ ...prev, serviceType, planId: initialPlans.find(plan => plan.category === serviceType)?.id ?? "", activityPurpose: serviceType === "ORIGINAL" ? "YouTubeオリジナル曲" : "歌ってみた投稿", vocalGuideStatus: "不要" }));
+    const planId = initialPlans.find(plan => plan.category === serviceType && (!extraTracks.length || !isPackagePlan(plan.name)))?.id ?? "";
+    setFormData(prev => ({ ...prev, serviceType, planId, activityPurpose: serviceType === "ORIGINAL" ? "YouTubeオリジナル曲" : "歌ってみた投稿", vocalGuideStatus: "不要" }));
     setSelectedOptions([]);
+    setExtraTracks(tracks => tracks.map(track => ({ ...track, planId, optionIds: [], cutSeconds: {}, vocalGuideStatus: "不要" })));
   }
 
-  const optionQuantities = Object.fromEntries(initialOptions.filter(option => selectedOptions.includes(option.id) && option.name.includes("カットアップ")).map(option => [option.id, Math.ceil((cutSeconds[option.id] || 10) / 10)]));
+  const quantitiesFor = (ids: string[], seconds: Record<string, number>) => Object.fromEntries(initialOptions.filter(option => ids.includes(option.id) && option.name.includes("カットアップ")).map(option => [option.id, Math.ceil((seconds[option.id] || 10) / 10)]));
+  const optionQuantities = quantitiesFor(selectedOptions, cutSeconds);
   const estimate = calculateOrderPrice(selectedPlanObj ?? { price: null }, initialOptions.filter(o => selectedOptions.includes(o.id)), optionQuantities);
   const sale = autumnSaleActive && formData.serviceType === "MIX";
+  const extraEstimates = extraTracks.map(track => calculateOrderPrice(filteredPlans.find(plan => plan.id === track.planId) ?? { price: null }, initialOptions.filter(option => track.optionIds.includes(option.id)), quantitiesFor(track.optionIds, track.cutSeconds)));
+  const allEstimates = [estimate, ...extraEstimates];
+  const normalTotal = allEstimates.reduce((total, item) => total + item.total, 0);
+  const displayTotal = sale ? allEstimates.reduce((total, item) => total + salePrice(item.total), 0) : normalTotal;
+  const hasConsultation = allEstimates.some(item => item.hasConsultation);
+  const packageSelected = !!selectedPlanObj && isPackagePlan(selectedPlanObj.name);
+  function addTrack() {
+    const previous = extraTracks.at(-1);
+    const key = crypto.randomUUID();
+    newTrackFocus.current = key;
+    setExtraTracks(tracks => [...tracks, {
+      ...emptyTrackFields, key,
+      planId: previous?.planId ?? formData.planId, optionIds: previous?.optionIds ?? selectedOptions, cutSeconds: previous?.cutSeconds ?? cutSeconds,
+      vocalGuideStatus: previous?.vocalGuideStatus ?? formData.vocalGuideStatus, vocalKey: previous?.vocalKey ?? formData.vocalKey,
+      activityPurpose: previous?.activityPurpose ?? formData.activityPurpose,
+    }]);
+  }
+
+  useEffect(() => {
+    if (!newTrackFocus.current) return;
+    document.getElementById(`${newTrackFocus.current}-title`)?.focus();
+    newTrackFocus.current = "";
+  }, [extraTracks]);
 
   // 見積りのプラン名＋オプション名の結合
   const planName = selectedPlanObj?.name || "";
@@ -150,12 +188,17 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
       planId: formData.planId,
       optionIds: selectedOptions,
       optionQuantities,
+      ...(extraTracks.length ? { extraTracks: extraTracks.map(track => ({
+        ...Object.fromEntries((Object.keys(emptyTrackFields) as (keyof typeof emptyTrackFields)[]).map(field => [field, track[field]])),
+        planId: track.planId, optionIds: track.optionIds, optionQuantities: quantitiesFor(track.optionIds, track.cutSeconds),
+      })) } : {}),
       ...(sale ? { autumnSaleVersion: salePolicyVersion } : {}),
       lyricsStatus: finalLyricsStatus
     };
 
     try {
-      await submitForm("/api/orders", submissionData);
+      const receipt = await submitForm("/api/orders", submissionData);
+      setReceivedTracks(receipt.trackCount ?? 1);
       setStatus("success");
     } catch (cause) {
       setErrorMessage(cause instanceof Error ? cause.message : "通信エラーが発生しました。入力内容は保持されています。");
@@ -186,6 +229,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
           </h1>
           <div className="text-slate-600 mb-10 leading-relaxed text-sm sm:text-base bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-100">
             <p className="mb-4 font-bold text-slate-800 text-center">送信が完了いたしました。</p>
+            <p className="mb-3 font-bold text-slate-900">依頼1件{packageSelected ? "・セットプラン" : `・楽曲${receivedTracks}曲`}</p>
             <p className="text-center text-balance">
               <span className="inline-block">内容を確認のうえ、</span>
               <span className="inline-block">入力いただいたご連絡先へ</span>
@@ -311,7 +355,7 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                   {filteredPlans.map(plan => (
                     <label htmlFor={"orderformclient-field-4-" + plan.id} key={plan.id} className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex justify-between items-center ${formData.planId === plan.id ? 'border-orange-500 bg-white shadow-sm' : 'border-slate-200 bg-white hover:border-orange-500/50 text-slate-600'}`}>
                       <div className="flex items-center gap-3">
-                        <input {...validation.field("orderformclient-field-4-" + plan.id)} id={"orderformclient-field-4-" + plan.id} type="radio" name="plan" checked={formData.planId === plan.id} onChange={() => setFormData({...formData, planId: plan.id})} className="w-5 h-5 text-orange-700 focus:ring-orange-500" />{validation.message("orderformclient-field-4-" + plan.id)}
+                        <input {...validation.field("orderformclient-field-4-" + plan.id)} id={"orderformclient-field-4-" + plan.id} type="radio" name="plan" disabled={extraTracks.length > 0 && isPackagePlan(plan.name)} checked={formData.planId === plan.id} onChange={() => setFormData({...formData, planId: plan.id})} className="w-5 h-5 text-orange-700 focus:ring-orange-500" />{validation.message("orderformclient-field-4-" + plan.id)}
                         <span className={`font-bold text-sm sm:text-base ${formData.planId === plan.id ? 'text-slate-900' : ''}`}>{plan.name}</span>
                       </div>
                     </label>
@@ -551,7 +595,6 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
             </h2>
             <div className="space-y-2">
               <label htmlFor="orderformclient-field-21" className="block text-sm font-bold text-brand-text">ご要望・ご質問・特記事項など {optionalMark}</label>
-              {sale && <p className="text-sm text-slate-600">複数曲をご希望の場合は、曲数や分かっている曲名をこちらにご記入ください。</p>}
               <textarea {...validation.field("orderformclient-field-21")} id="orderformclient-field-21"
                 rows={6}
                 className={`${inputStyle} resize-none`}
@@ -577,9 +620,26 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
                   歌詞・参考資料・音源の共有URL {optionalMark}
                   <HelpTooltip text={formData.serviceType === "MIX" ? "ボーカルデータ（WAV推奨）とカラオケ音源をまとめて共有してください。準備中の場合は後から提出できます。" : "歌詞・参考曲・楽譜など、制作に必要な資料の共有URLを記入してください。準備中の場合は後から提出できます。"} />
                 </label>
-                <input {...validation.field("orderformclient-field-22")} id="orderformclient-field-22" type="url" className={inputStyle} placeholder="Gigafile便、Google DriveなどのURL" value={formData.materialsUrl} onChange={e => setFormData({...formData, materialsUrl: e.target.value})} />{validation.message("orderformclient-field-22")}
+                <input {...validation.field("orderformclient-field-22")} id="orderformclient-field-22" type="url" maxLength={2000} className={inputStyle} placeholder="Gigafile便、Google DriveなどのURL" value={formData.materialsUrl} onChange={e => setFormData({...formData, materialsUrl: e.target.value})} />{validation.message("orderformclient-field-22")}
               </div>
             </section>
+
+          <section className={orderSectionClass} aria-label="複数曲のご依頼">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-bold text-slate-900">複数曲のご依頼</h2>
+              <span aria-live="polite" className="text-sm font-bold text-orange-800">依頼1件{packageSelected ? "・セットプラン" : `・楽曲${extraTracks.length + 1}曲`}</span>
+            </div>
+            <div className="mt-4 space-y-5">
+              {extraTracks.map((track, index) => <AdditionalTrackFields key={track.key} track={track} position={index + 2} plans={filteredPlans}
+                options={initialOptions.filter(option => [formData.serviceType, "COMMON"].includes(option.category))} original={isOriginal} sale={sale}
+                price={extraEstimates[index].hasConsultation ? null : sale ? salePrice(extraEstimates[index].total) : extraEstimates[index].total}
+                onChange={patch => setExtraTracks(tracks => tracks.map(item => item.key === track.key ? { ...item, ...patch } : item))}
+                onRemove={() => setExtraTracks(tracks => tracks.filter(item => item.key !== track.key))} />)}
+              <button type="button" onClick={addTrack} disabled={packageSelected || extraTracks.length >= MAX_ORDER_TRACKS - 1} className="rounded-xl border border-orange-400 px-4 py-3 text-sm font-bold text-orange-800 hover:bg-orange-50 disabled:opacity-50">＋ 曲を追加</button>
+              {packageSelected && <p className="text-sm text-slate-600">セットプランは単独でお申し込みください。曲ごとに登録する場合は、1曲ごとのプランを選んでください。</p>}
+              {extraTracks.length >= MAX_ORDER_TRACKS - 1 && <p className="text-sm text-slate-600">1回のご依頼で最大{MAX_ORDER_TRACKS}曲まで追加できます。</p>}
+            </div>
+          </section>
 
           {/* 07 お支払い方法 */}
           <section className={orderSectionClass}>
@@ -602,17 +662,17 @@ export default function OrderFormClient({ initialPlans, initialOptions = [], sit
 
             <div className="text-center relative z-10 w-full">
               <p className="text-orange-700 text-sm font-bold mb-2 tracking-widest uppercase">{sale ? `セール適用後のお見積り概算（${autumnSale.discount}%OFF）` : "現在のお見積り概算"}</p>
-              {sale && <p className="text-sm text-slate-600">通常概算 ¥{estimate.total.toLocaleString()}（税込）</p>}
+              {sale && <p className="text-sm text-slate-600">通常概算 ¥{normalTotal.toLocaleString()}（税込）</p>}
               <div className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
-                ¥{(sale ? salePrice(estimate.total) : estimate.total).toLocaleString()}
+                ¥{displayTotal.toLocaleString()}
                 <span className="text-base font-normal text-slate-500 ml-2">税込</span>
               </div>
 
               <div className="mt-4 text-sm font-bold text-orange-700 bg-white/50 inline-block px-4 py-2 rounded-full border border-orange-200">
-                {detailText}
+                {extraTracks.length > 0 ? `依頼1件・楽曲${extraTracks.length + 1}曲` : detailText}
               </div>
 
-              {estimate.hasConsultation && (
+              {hasConsultation && (
                 <p className="text-sm text-brand-amber mt-3 flex items-center justify-center gap-1.5 font-medium">
                   <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   要相談の項目が含まれています。

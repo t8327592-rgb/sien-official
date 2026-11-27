@@ -1,6 +1,7 @@
 import { requireAdminPage } from "@/lib/admin-page-auth";
 import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
 import { OrderFinanceEditor } from "@/components/admin/OrderFinanceEditor";
+import { OrderTracksEditor } from "@/components/admin/OrderTracksEditor";
 import { BusinessOrderDetails } from "@/components/admin/BusinessOrderDetails";
 import { loadOrderSales } from "@/lib/admin-order-sales";
 import { fixedRevenueOptions } from "@/lib/order-revenue";
@@ -15,14 +16,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { id } = await params;
 
   // 依頼データを取得
-  const order = await prisma.order.findUnique({
+  const record = await prisma.order.findUnique({
     where: { id },
-    include: { businessContact: true, payments: { orderBy: { createdAt: "desc" } } },
+    include: { businessContact: true, payments: { orderBy: { createdAt: "desc" } }, tracks: { orderBy: { position: "asc" } } },
   });
 
-  if (!order) {
+  if (!record) {
     notFound();
   }
+  const { tracks, ...order } = record;
 
   const [sales, options] = await Promise.all([
     loadOrderSales([id]),
@@ -48,7 +50,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Link href={`/admin/orders/${id}/feedback`} className="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-orange-700">メモを入力・コピー</Link>
         </div>
         {order.businessContact && <BusinessOrderDetails key={`business-${order.businessContact.updatedAt.toISOString()}`} orderId={order.id} companyName={order.companyName} contact={order.businessContact} />}
-        <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} sale={sales[id]} />
+        {tracks.length > 0 && <OrderTracksEditor orderId={order.id} orderStatus={order.status} tracks={tracks} />}
+        <OrderDetailEditor key={`detail-${order.id}-${order.trackCount ? order.status : ""}`} initialOrder={order} sale={sales[id]} />
         <OrderFinanceEditor key={JSON.stringify([order.id, order.status, order.price, order.options, order.serviceType])} initialOrder={order} availableOptions={fixedRevenueOptions(order, options)} />
       </div>
 
