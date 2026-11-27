@@ -2,6 +2,7 @@ import { isAdminRequest } from "@/lib/admin-api-auth";
 import { prisma } from "@/lib/prisma";
 import { ApiError, apiErrorResponse, readJson } from "@/lib/api-input";
 import { financeDate, financeMoney, financeText, financeVersion } from "@/lib/order-finance-input";
+import { adjustmentAmount, fixedRevenueOptions, priceWithAdjustment, readRevenueAdjustment, revenueAtDelivery } from "@/lib/order-revenue";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,10 +42,41 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         await tx.paymentRecord.update({ where: { id: paymentId }, data: { voidedAt: new Date(), voidReason: reason } });
       } else if (body.action === "confirm") {
         if (order.financeVersion !== expectedVersion) conflict();
+        if (order.revenueOnHold) throw new ApiError(409, "計上保留を解除してから変更してください。");
         const confirmedPrice = financeMoney(body.confirmedPrice, true);
         const revenueAt = financeDate(body.revenueAt, true);
         if (confirmedPrice === null && revenueAt !== null) throw new ApiError(400, "売上計上日には確定金額が必要です。");
         await tx.order.update({ where: { id }, data: { confirmedPrice, revenueAt, confirmedAt: confirmedPrice === null ? null : new Date() } });
+      } else if (body.action === "adjust") {
+        if (order.financeVersion !== expectedVersion) conflict();
+        const optionIds = body.optionIds;
+        if (!Array.isArray(optionIds) || optionIds.length > 30 || optionIds.some(id => typeof id !== "string" || !id || id.length > 150) || new Set(optionIds).size !== optionIds.length) {
+          throw new ApiError(400, "追加オプションを選び直してください。");
+        }
+        const previous = readRevenueAdjustment(order.revenueAdjustment);
+        const existing = new Map(previous.options.map(option => [option.id, option]));
+        const newIds = optionIds.filter(id => !existing.has(id));
+        const records = newIds.length ? await tx.option.findMany({ where: { id: { in: newIds }, isActive: true, category: { in: [order.serviceType, "COMMON"] } } }) : [];
+        const added = new Map(fixedRevenueOptions(order, records).map(option => [option.id, option]));
+        const options = optionIds.map(id => {
+          const option = existing.get(id) ?? added.get(id);
+          if (!option) throw new ApiError(400, "追加オプションが変更されています。再読み込みしてください。");
+          return option;
+        });
+        const adjustment = { extra: financeMoney(body.extra)!, options };
+        financeMoney(adjustmentAmount(adjustment));
+        if (order.price !== null) financeMoney(order.price + adjustmentAmount(adjustment));
+        const total = financeMoney(priceWithAdjustment(order, adjustment), true);
+        await tx.order.update({ where: { id }, data: { revenueAdjustment: adjustment, ...(order.confirmedPrice !== null ? { confirmedPrice: total } : {}) } });
+      } else if (body.action === "hold") {
+        if (order.financeVersion !== expectedVersion) conflict();
+        const revenueOnHold = body.revenueOnHold;
+        if (typeof revenueOnHold !== "boolean") throw new ApiError(400, "売上の保留状態を確認してください。");
+        if (order.revenueOnHold === revenueOnHold) return order;
+        const revenue = !revenueOnHold && order.status === "COMPLETED" && order.deliveredAt
+          ? revenueAtDelivery({ ...order, revenueOnHold }, order.deliveredAt)
+          : null;
+        await tx.order.update({ where: { id }, data: { revenueOnHold, ...(revenue ? { ...revenue, confirmedAt: order.confirmedAt ?? new Date() } : {}) } });
       } else if (body.action === "classify") {
         if (order.financeVersion !== expectedVersion) conflict();
         if (typeof body.isTest !== "boolean") throw new ApiError(400, "テスト区分を確認してください。");

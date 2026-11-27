@@ -5,6 +5,8 @@ import type { Order, PaymentRecord } from "@prisma/client";
 import type { BrowserRecord } from "@/lib/admin-types";
 import { activePayments, settledAmount, signedCash } from "@/lib/order-accounting";
 import { accountingParts } from "@/lib/admin-finance";
+import { parseAdminMoney } from "@/lib/admin-order-client";
+import { adjustmentAmount, priceWithAdjustment, readRevenueAdjustment, type RevenueOption } from "@/lib/order-revenue";
 
 type FinanceOrder = BrowserRecord<Order> & { payments: BrowserRecord<PaymentRecord>[] };
 const dateInput = (date: Date | string | null) => {
@@ -16,11 +18,13 @@ const yen = (n: number) => `¥${n.toLocaleString()}`;
 const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base";
 const button = "rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50";
 
-export function OrderFinanceEditor({ initialOrder }: { initialOrder: FinanceOrder }) {
+export function OrderFinanceEditor({ initialOrder, availableOptions }: { initialOrder: FinanceOrder; availableOptions: RevenueOption[] }) {
   const router = useRouter();
   const [order, setOrder] = useState(initialOrder);
   const [confirmed, setConfirmed] = useState(initialOrder.confirmedPrice?.toString() ?? "");
   const [revenueAt, setRevenueAt] = useState(dateInput(initialOrder.revenueAt));
+  const [extra, setExtra] = useState(() => readRevenueAdjustment(initialOrder.revenueAdjustment).extra.toString().replace(/^0$/, ""));
+  const [optionIds, setOptionIds] = useState(() => readRevenueAdjustment(initialOrder.revenueAdjustment).options.map(option => option.id));
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [notice, setNotice] = useState("");
@@ -40,7 +44,11 @@ export function OrderFinanceEditor({ initialOrder }: { initialOrder: FinanceOrde
       const response = await fetch(`/api/admin/orders/${order.id}/finance`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, version: order.financeVersion }) });
       const result = await response.json();
       if (!response.ok || !result.success) throw Error(result.error || "保存できませんでした。");
-      setOrder(result.order); setNotice("保存しました。"); router.refresh(); return true;
+      const updated: FinanceOrder = result.order;
+      setOrder(updated);
+      setConfirmed(updated.confirmedPrice?.toString() ?? "");
+      setRevenueAt(dateInput(updated.revenueAt));
+      setNotice("保存しました。"); router.refresh(); return true;
     } catch (error) { setNotice(error instanceof Error ? error.message : "通信に失敗しました。記録を確認してから再送してください。"); return false; }
     finally { busyRef.current = false; setBusy(false); }
   };
@@ -48,18 +56,42 @@ export function OrderFinanceEditor({ initialOrder }: { initialOrder: FinanceOrde
   const cash = payments.reduce((s, p) => s + signedCash(p), 0);
   const settled = payments.reduce((s, p) => s + settledAmount(p), 0);
   const remaining = order.confirmedPrice === null ? null : order.confirmedPrice - settled;
+  const savedAdjustment = readRevenueAdjustment(order.revenueAdjustment);
+  const options = [...new Map([...availableOptions, ...savedAdjustment.options].map(option => [option.id, option])).values()];
+  const preview = { extra: Number(extra) || 0, options: options.filter(option => optionIds.includes(option.id)) };
+  const adjustedPrice = priceWithAdjustment(order, preview);
 
   return <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="finance-heading">
     <div className="flex flex-wrap justify-between gap-3 items-start"><div><h2 id="finance-heading" className="text-xl font-bold text-slate-900">確定金額・入金</h2><p className="mt-1 text-sm text-slate-500">見積と確定金額、実際に受け取った金額を分けて管理します。</p></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${order.isTest ? "bg-purple-100 text-purple-800" : "bg-slate-100 text-slate-600"}`}>{order.isTest ? "テスト・集計対象外" : "通常の案件"}</span></div>
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {[["見積もり", order.price], ["確定金額", order.confirmedPrice], ["実入金（返金差引）", cash], [remaining !== null && remaining < 0 ? "超過入金" : "未収額", remaining === null ? null : Math.abs(remaining)]].map(([label, value]) => <div key={String(label)} className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-lg font-bold text-slate-900">{typeof value === "number" ? yen(value) : "未設定"}</p></div>)}
     </div>
-    <form onSubmit={async e => { e.preventDefault(); try { await save({ action: "confirm", confirmedPrice: money(confirmed, true), revenueAt: revenueAt || null }); } catch (error) { setNotice((error as Error).message); } }} className="grid sm:grid-cols-2 gap-4">
+    {order.revenueOnHold ? <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">売上計上を保留中です。納品済みにしても売上には入りません。</p> : <p className="text-sm text-slate-600">{order.isTest ? "テスト案件のため自動計上されません。" : order.revenueAt ? `売上計上日 ${dateInput(order.revenueAt)}` : "保存済みの金額がある依頼は、納品済みにすると納品日で自動計上します。"}</p>}
+    <details className="border-t pt-3">
+      <summary className="cursor-pointer py-2 font-bold text-slate-800">追加料金を設定する{adjustmentAmount(savedAdjustment) > 0 && ` · +${yen(adjustmentAmount(savedAdjustment))}`}</summary>
+      <form className="mt-3 space-y-4" onSubmit={async e => { e.preventDefault(); try { await save({ action: "adjust", optionIds, extra: parseAdminMoney(extra) ?? 0 }); } catch (error) { setNotice((error as Error).message); } }}>
+        {options.length > 0 && <fieldset className="space-y-2"><legend className="pb-2 text-sm font-bold text-slate-700">追加オプション</legend>
+          {options.map(option => <label key={option.id} className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm"><input type="checkbox" checked={optionIds.includes(option.id)} onChange={e => setOptionIds(e.target.checked ? [...optionIds, option.id] : optionIds.filter(id => id !== option.id))} />{option.name} <span className="ml-auto shrink-0">+{yen(option.amount)}</span></label>)}
+        </fieldset>}
+        <label className="block max-w-xs text-sm font-bold text-slate-700">追加額（円）<input className={`${input} mt-1`} inputMode="numeric" value={extra} onChange={e => setExtra(e.target.value)} placeholder="例 3000" /></label>
+        <p aria-live="polite" className="text-sm text-slate-600">追加料金 {yen(adjustmentAmount(preview))} ／ 反映後の合計 {adjustedPrice === null ? "基本料金未確定" : yen(adjustedPrice)}</p>
+        <button disabled={busy} className={button}>追加料金を保存</button>
+      </form>
+    </details>
+    <details className="border-t pt-3">
+      <summary className="cursor-pointer py-2 font-bold text-slate-800">確定金額・計上日の修正と保留</summary>
+      <form onSubmit={async e => { e.preventDefault(); try { await save({ action: "confirm", confirmedPrice: money(confirmed, true), revenueAt: revenueAt || null }); } catch (error) { setNotice((error as Error).message); } }} className="mt-3 grid sm:grid-cols-2 gap-4">
+      <fieldset disabled={busy || order.revenueOnHold} className="grid gap-4 sm:col-span-2 sm:grid-cols-2 disabled:opacity-50">
       <label className="text-sm font-bold text-slate-700">確定金額（税込・円）<input className={`${input} mt-1`} inputMode="numeric" value={confirmed} onChange={e => setConfirmed(e.target.value)} placeholder="未確定の場合は空欄" /></label>
       <label className="text-sm font-bold text-slate-700">売上計上日<input className={`${input} mt-1`} type="date" value={revenueAt} onChange={e => setRevenueAt(e.target.value)} /></label>
-      <p className="sm:col-span-2 text-xs leading-relaxed text-slate-500">売上は「確定金額＋売上計上日」で集計します。計上日が未入力の案件・キャンセル・テストは売上と平均案件単価から除外します。入金日や申込日からは推測しません。</p>
-      <div className="sm:col-span-2"><button disabled={busy} className={button}>確定金額・計上日を保存</button></div>
-    </form>
+      <div className="sm:col-span-2"><button className={button}>確定金額・計上日を保存</button></div>
+      </fieldset>
+      </form>
+      <button type="button" disabled={busy} className="mt-4 rounded-lg border px-3 py-2 text-sm text-amber-900 disabled:opacity-50" onClick={() => {
+        const prompt = order.revenueOnHold ? "重複の確認は完了しましたか？ 納品済みの案件は売上に反映される場合があります。" : "この案件を売上集計から保留しますか？";
+        if (window.confirm(prompt)) void save({ action: "hold", revenueOnHold: !order.revenueOnHold });
+      }}>{order.revenueOnHold ? "計上保留を解除する" : "売上計上を保留する"}</button>
+    </details>
     <details className="border-t pt-4" open={undefined}>
       <summary className="cursor-pointer py-2 font-bold text-slate-800">入金・返金を登録する</summary>
       <form onSubmit={async e => { e.preventDefault(); try {

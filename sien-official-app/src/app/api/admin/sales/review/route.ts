@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       }
       if (b.mode !== "CASH" && b.mode !== "REVENUE") throw new ApiError(400, "集計基準を確認してください。");
       const mode: SalesMode = b.mode;
-      const direct = data.direct.find(d => d.id === directId && (mode === "CASH" ? d.kind === "RECEIPT" : d.kind === "SALE" && d.amount !== null && !!d.date));
+      const direct = data.direct.find(d => d.id === directId && (mode === "CASH" ? d.kind === "RECEIPT" : d.kind === "SALE" && !d.revenueOnHold && d.amount !== null && !!d.date));
       if (!direct) throw new ApiError(409, "対象の入金・売上は確認できません。");
       const key = { mode, directId, pxEntryId };
       const before = await tx.salesReview.findUnique({ where: { mode_directId_pxEntryId: key } });

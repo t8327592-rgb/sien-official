@@ -3,6 +3,7 @@ export type SalesMode = "CASH" | "REVENUE";
 export type SalesDirect = {
   id: string; orderId: string; clientName: string; songTitle: string; customerType: string;
   kind: "RECEIPT" | "REFUND" | "SALE"; date: string | null; amount: number | null;
+  revenueOnHold?: boolean;
   fee: number; withholding: number; grossReference: number | null; hash: string;
 };
 export type SalesPx = {
@@ -38,7 +39,7 @@ function candidateReasons(d: SalesDirect, p: SalesPx) {
 }
 
 function pairsFor(data: SalesData, mode: SalesMode): SalesPair[] {
-  const direct = data.direct.filter(d => mode === "CASH" ? d.kind === "RECEIPT" : d.kind === "SALE" && d.amount !== null && !!d.date);
+  const direct = data.direct.filter(d => mode === "CASH" ? d.kind === "RECEIPT" : d.kind === "SALE" && !d.revenueOnHold && d.amount !== null && !!d.date);
   const reviews = new Map((mode === "CASH" ? data.cashReviews : data.revenueReviews).map(r => [salesPairKey(r.directId, r.pxEntryId), r]));
   const pairs: SalesPair[] = [];
   for (const d of direct) for (const p of data.px) {
@@ -76,6 +77,7 @@ export function buildSalesState(data: SalesData, mode: SalesMode) {
   const unknown: SalesUnknown[] = [];
   for (const d of direct) {
     const label = `${d.clientName}／${d.songTitle || "楽曲名未登録"}`;
+    if (d.revenueOnHold) { unknown.push({ id: d.id, source: "DIRECT", label, amount: d.amount, reason: "売上計上を保留中" }); continue; }
     if (d.amount === null || !d.date) { unknown.push({ id: d.id, source: "DIRECT", label, amount: d.amount, reason: d.amount === null ? "確定金額未確認" : "売上計上日未確認" }); continue; }
     if (heldIds.has(d.id)) continue;
     const allocations = pairs.filter(p => p.direct.id === d.id && p.state === "DUPLICATE").map(p => p.review!);

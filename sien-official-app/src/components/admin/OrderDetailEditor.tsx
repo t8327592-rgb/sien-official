@@ -6,6 +6,7 @@ import type { OrderSale } from "@/lib/admin-order-sales";
 import { OrderSaleNote } from "@/components/admin/OrderSaleNote";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { parseAdminMoney, patchAdminOrder, syncAdminDeadline } from "@/lib/admin-order-client";
 import { Copy, Edit2 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -14,6 +15,7 @@ type Order = OrderRecord;
 type TextField = { [K in keyof Order]: Order[K] extends string | null ? K : never }[keyof Order]; // 簡易的な型定義
 
 export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order; sale?: OrderSale }) {
+  const router = useRouter();
   const [order, setOrder] = useState<Order>(initialOrder);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -60,6 +62,7 @@ export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order;
     try {
       const value = ["price", "basePrice", "optionPrice"].includes(field) ? parseAdminMoney(editValue) : editValue.trim() || null;
       setOrder(await patchAdminOrder(order.id, { [field]: value }));
+      router.refresh();
       setEditingField(null);
       toast.success("保存しました");
       if (field === "deadline" && typeof value === "string") {
@@ -80,6 +83,7 @@ export function OrderDetailEditor({ initialOrder, sale }: { initialOrder: Order;
     setIsSaving(true);
     try {
       setOrder(await patchAdminOrder(order.id, bulkEditData));
+      router.refresh();
       toast.success("保存しました");
       setIsEditMode(false);
     } catch (error) {

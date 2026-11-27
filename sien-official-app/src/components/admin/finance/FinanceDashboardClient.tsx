@@ -73,7 +73,7 @@ export function FinanceDashboardClient({
   const thisYearExpenses = yearExpenses.reduce((s, e) => s + e.amount, 0);
   const thisYearProfit = thisYearSales - thisYearExpenses;
   const achievementRate = targetSales > 0 ? Math.round(thisMonthSales / targetSales * 100) : 0;
-  const missing = initialOrders.filter(o => !o.isTest && !["CANCELED", "CANCELLED"].includes(o.status) && (o.confirmedPrice === null || !o.revenueAt));
+  const missing = initialOrders.filter(o => !o.isTest && !["CANCELED", "CANCELLED"].includes(o.status) && (o.revenueOnHold || o.confirmedPrice === null || !o.revenueAt));
   const monthlyData = summary.months.map((m, i) => ({ name: `${i + 1}月`, 売上: m.revenue, 前年売上: previous.months[i].revenue, 経費: yearExpenses.filter(e => accountingParts(e.date).month === i).reduce((s, e) => s + e.amount, 0) }));
   const showMoney = (n: number | null) => n === null ? "—" : isAmountsVisible ? `¥${Math.round(n).toLocaleString()}` : "¥ ***,***";
   const change = (n: number, prior: number) => { const v = percentChange(n, prior); return v === null ? "比較なし" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`; };
@@ -190,7 +190,7 @@ export function FinanceDashboardClient({
       </div>
 
       <p className="text-sm text-slate-600 leading-relaxed">売上は確定金額を売上計上日で集計します。入金は実際の入金日で集計し、売上に加算しません。テストは除外、アーカイブは含みます。金額は税込です。</p>
-      {missing.length > 0 && <details className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm"><summary className="cursor-pointer font-bold text-amber-900">集計前に確認する案件：{missing.length}件（金額未確定・計上日未入力）</summary><p className="mt-2 text-xs text-amber-900">過去の見積や入金状況から金額・日付を自動補完していません。確認済みの案件から入力してください。</p><ul className="mt-3 space-y-2">{missing.map(o => <li key={o.id}><Link className="underline text-amber-900" href={`/admin/orders/${o.id}`}>{o.companyName || o.clientName}：{o.confirmedPrice === null ? "金額未確定" : "計上日未入力"}</Link></li>)}</ul></details>}
+      {missing.length > 0 && <details className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm"><summary className="cursor-pointer font-bold text-amber-900">売上未計上・保留中の案件：{missing.length}件</summary><ul className="mt-3 space-y-2">{missing.map(o => <li key={o.id}><Link className="underline text-amber-900" href={`/admin/orders/${o.id}`}>{o.companyName || o.clientName}：{o.revenueOnHold ? "計上保留中" : o.status !== "COMPLETED" ? "納品前・売上未計上" : o.confirmedPrice === null ? "金額未確定" : "計上日未入力"}</Link></li>)}</ul></details>}
       <div className="grid sm:grid-cols-3 gap-4">
         {[["売上計上した案件数", `${summary.count}件`], ["平均案件単価", showMoney(summary.average)], ["実入金（返金差引）", showMoney(summary.cash)]].map(([label, value]) => <div key={label} className="rounded-xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-900">{value}</p></div>)}
       </div>

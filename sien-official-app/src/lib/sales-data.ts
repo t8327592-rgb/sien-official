@@ -18,7 +18,7 @@ export async function loadSalesData(db?: Reader): Promise<SalesData> {
   for (const o of orders) {
     const common = { orderId: o.id, clientName: o.companyName || o.clientName, songTitle: o.songTitle || "", customerType: o.customerType };
     if (!["CANCELED", "CANCELLED"].includes(o.status)) {
-      const d = { ...common, id: o.id, kind: "SALE" as const, date: o.revenueAt ? accountingDateInput(o.revenueAt) : null, amount: o.confirmedPrice, fee: 0, withholding: 0, grossReference: o.confirmedPrice };
+      const d = { ...common, id: o.id, kind: "SALE" as const, date: o.revenueAt ? accountingDateInput(o.revenueAt) : null, amount: o.confirmedPrice, fee: 0, withholding: 0, grossReference: o.confirmedPrice, ...(o.revenueOnHold ? { revenueOnHold: true } : {}) };
       direct.push({ ...d, hash: hash([d, o.financeVersion, o.status]) });
     }
     for (const p of o.payments) {

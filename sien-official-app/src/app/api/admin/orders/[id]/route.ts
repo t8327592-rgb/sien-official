@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readJson, ApiError, apiErrorResponse } from "@/lib/api-input";
 import { validateAdminOrderUpdate, reconcileAdminOrderPrice } from "@/lib/admin-order-input";
+import { adjustmentAmount, readRevenueAdjustment, revenueAtDelivery } from "@/lib/order-revenue";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminRequest(request))) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,18 +37,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    if (status === "COMPLETED" && currentOrder?.status !== "COMPLETED") {
-      if (!currentOrder?.deliveredAt) {
-        dataToUpdate.deliveredAt = new Date();
-      }
+    const price = update.price === undefined ? currentOrder.price : update.price;
+    if (price !== null && price + adjustmentAmount(readRevenueAdjustment(currentOrder.revenueAdjustment)) > 2147483647) {
+      throw new ApiError(400, "追加料金を含む合計金額を確認してください。");
+    }
+    if (price !== currentOrder.price || (update.options !== undefined && update.options !== currentOrder.options) || (update.serviceType !== undefined && update.serviceType !== currentOrder.serviceType)) {
+      dataToUpdate.financeVersion = { increment: 1 };
+    }
+    if (status === "COMPLETED" && currentOrder.status !== "COMPLETED") {
+      const deliveredAt = currentOrder.deliveredAt ?? new Date();
+      if (!currentOrder.deliveredAt) dataToUpdate.deliveredAt = deliveredAt;
+      const revenue = revenueAtDelivery({ ...currentOrder, price }, deliveredAt);
+      if (revenue) Object.assign(dataToUpdate, revenue, { confirmedAt: currentOrder.confirmedAt ?? new Date(), financeVersion: { increment: 1 } });
     }
 
-    const updated = await prisma.order.updateMany({
-      where: { id, updatedAt: currentOrder.updatedAt },
-      data: dataToUpdate,
+    const updatedOrder = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${`order-finance:${id}`}, 0))`;
+      const updated = await tx.order.updateMany({
+        where: { id, updatedAt: currentOrder.updatedAt, financeVersion: currentOrder.financeVersion },
+        data: dataToUpdate,
+      });
+      if (!updated.count) throw new ApiError(409, "別の更新がありました。ページを再読み込みしてから、もう一度保存してください。");
+      return tx.order.findUnique({ where: { id } });
     });
-    if (!updated.count) throw new ApiError(409, "別の更新がありました。ページを再読み込みしてから、もう一度保存してください。");
-    const updatedOrder = await prisma.order.findUnique({ where: { id } });
 
     return NextResponse.json({ success: true, order: updatedOrder });
   } catch (error) {

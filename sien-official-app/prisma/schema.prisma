@@ -166,6 +166,8 @@ model Order {
   confirmedPrice    Int?
   confirmedAt       DateTime?
   revenueAt         DateTime?
+  revenueOnHold     Boolean  @default(false)
+  revenueAdjustment Json?
   financeVersion    Int      @default(0)
   payments          PaymentRecord[]
   feedback          OrderFeedback?

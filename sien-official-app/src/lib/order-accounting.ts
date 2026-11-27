@@ -6,12 +6,12 @@ export type AccountingPayment = {
 };
 export type AccountingOrder = {
   id: string; status: string; isTest: boolean; confirmedPrice: number | null;
-  revenueAt: Date | string | null; payments: AccountingPayment[];
+  revenueAt: Date | string | null; revenueOnHold?: boolean; payments: AccountingPayment[];
 };
 export const signedCash = (p: AccountingPayment) => (p.kind === "REFUND" ? -1 : 1) * p.amount;
 export const settledAmount = (p: AccountingPayment) => signedCash(p) + (p.kind === "REFUND" ? 0 : p.fee + p.withholding);
 export const activePayments = (order: AccountingOrder) => order.payments.filter(p => !p.voidedAt);
-export const isRevenue = (order: AccountingOrder) => !order.isTest && !["CANCELED", "CANCELLED"].includes(order.status) && order.confirmedPrice !== null && order.revenueAt !== null;
+export const isRevenue = (order: AccountingOrder) => !order.isTest && !order.revenueOnHold && !["CANCELED", "CANCELLED"].includes(order.status) && order.confirmedPrice !== null && order.revenueAt !== null;
 
 export function accountingSummary(orders: AccountingOrder[], year: number) {
   const months = Array.from({ length: 12 }, (_, month) => ({ month, revenue: 0, cash: 0, count: 0, average: null as number | null }));

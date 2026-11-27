@@ -3,6 +3,7 @@ import { OrderDetailEditor } from "@/components/admin/OrderDetailEditor";
 import { OrderFinanceEditor } from "@/components/admin/OrderFinanceEditor";
 import { BusinessOrderDetails } from "@/components/admin/BusinessOrderDetails";
 import { loadOrderSales } from "@/lib/admin-order-sales";
+import { fixedRevenueOptions } from "@/lib/order-revenue";
 
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +24,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  const sales = await loadOrderSales([id]);
+  const [sales, options] = await Promise.all([
+    loadOrderSales([id]),
+    prisma.option.findMany({ where: { isActive: true, category: { in: [order.serviceType, "COMMON"] } }, orderBy: [{ orderIndex: "asc" }, { id: "asc" }], select: { id: true, name: true, priceText: true } }),
+  ]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
@@ -45,7 +49,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
         {order.businessContact && <BusinessOrderDetails key={`business-${order.businessContact.updatedAt.toISOString()}`} orderId={order.id} companyName={order.companyName} contact={order.businessContact} />}
         <OrderDetailEditor key={`detail-${order.id}`} initialOrder={order} sale={sales[id]} />
-        <OrderFinanceEditor key={`finance-${order.id}`} initialOrder={order} />
+        <OrderFinanceEditor key={JSON.stringify([order.id, order.status, order.price, order.options, order.serviceType])} initialOrder={order} availableOptions={fixedRevenueOptions(order, options)} />
       </div>
 
     </div>

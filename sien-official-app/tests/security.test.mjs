@@ -456,8 +456,9 @@ test('admin order validation rejects invalid types, enums, dates and money witho
 
 test('admin PATCH rejects malformed or invalid input before writes and detects concurrent updates', async () => {
   let writes=0, conflict=false, authorized=true;
-  let order={id:'qa',status:'WORKING',basePrice:10000,optionPrice:2000,price:12000,createdAt:new Date(),updatedAt:new Date(),deliveredAt:null};
-  const mock={order:{findUnique:async()=>order,updateMany:async({data})=>{writes++; if(conflict)return{count:0};order={...order,...data};return{count:1};}}};
+  let order={id:'qa',status:'WORKING',basePrice:10000,optionPrice:2000,price:12000,createdAt:new Date(),updatedAt:new Date(),deliveredAt:null,confirmedPrice:null,revenueAt:null,financeVersion:0};
+  const orderModel={findUnique:async()=>order,updateMany:async({where,data})=>{writes++; if(conflict)return{count:0};assert.equal(where.financeVersion,order.financeVersion);order={...order,...data,financeVersion:order.financeVersion+(data.financeVersion?.increment??0)};return{count:1};}};
+  const mock={order:orderModel,$transaction:async work=>work({order:orderModel,$queryRaw:async()=>[]})};
   const {PATCH}=loader({'@/lib/prisma':{prisma:mock},'@/lib/admin-api-auth':{isAdminRequest:async()=>authorized}})('src/app/api/admin/orders/[id]/route.ts');
   const params={params:Promise.resolve({id:'qa'})};
   assert.equal((await PATCH(new Request('http://localhost',{method:'PATCH',body:'{'}),params)).status,400);
@@ -465,8 +466,25 @@ test('admin PATCH rejects malformed or invalid input before writes and detects c
   assert.equal(writes,0);
   assert.equal((await PATCH(request({optionPrice:3000}),params)).status,200); assert.equal(order.price,13000);
   assert.equal((await PATCH(request({status:'COMPLETED'}),params)).status,200); assert.ok(order.deliveredAt);
+  assert.equal(order.confirmedPrice,13000); assert.ok(order.revenueAt);
+  const previousDate=order.revenueAt;
+  assert.equal((await PATCH(request({status:'COMPLETED'}),params)).status,200); assert.equal(order.revenueAt,previousDate);
   conflict=true;assert.equal((await PATCH(request({status:'WORKING'}),params)).status,409);
   const count=writes;authorized=false;assert.equal((await PATCH(request({status:'PENDING'}),params)).status,401);assert.equal(writes,count);
+});
+
+test('delivery revenue uses Japanese delivery date and saved amounts while honoring holds and manual records', () => {
+  const { revenueAtDelivery, fixedRevenueOptions, priceWithAdjustment } = loader()('src/lib/order-revenue.ts');
+  const delivery=new Date('2026-11-30T15:10:00Z');
+  const order={price:8000,revenueAdjustment:{extra:2000,options:[{id:'qa-opt',name:'追加オプション',amount:1000}]},confirmedPrice:null,revenueAt:null,isTest:false,revenueOnHold:false};
+  const revenue=revenueAtDelivery(order,delivery);
+  assert.equal(revenue.confirmedPrice,11000);
+  assert.equal(revenue.revenueAt.toISOString(),'2026-11-30T15:00:00.000Z');
+  for (const exception of [{isTest:true},{revenueOnHold:true},{price:null},{revenueAt:delivery}]) assert.equal(revenueAtDelivery({...order,...exception},delivery),null);
+  assert.equal(revenueAtDelivery({...order,confirmedPrice:0},delivery).confirmedPrice,0);
+  assert.equal(priceWithAdjustment({...order,confirmedPrice:12000},{extra:4000,options:[]}),13000);
+  const entries=[{id:'fixed',name:'追加',priceText:'¥2,000'},{id:'range',name:'別途制作',priceText:'2,000円〜'},{id:'booked',name:'申込済み',priceText:'3,000円'}];
+  assert.equal(JSON.stringify(fixedRevenueOptions({options:'申込済み (3,000円)'},entries)),JSON.stringify([{id:'fixed',name:'追加',amount:2000}]));
 });
 
 test('admin client rejects lossy money parsing and reports API/network/calendar failures', async () => {
